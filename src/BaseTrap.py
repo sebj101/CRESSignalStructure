@@ -57,7 +57,7 @@ class BaseTrap(ABC):
         return v
 
     @abstractmethod
-    def CalcZMax(self, pitchAngle: ArrayLike):
+    def CalcZMax(self, pitchAngle: ArrayLike) -> ArrayLike:
         """
         Calculate the maximum axial position
 
@@ -68,7 +68,7 @@ class BaseTrap(ABC):
         """
 
     @abstractmethod
-    def CalcOmegaAxial(self, pitchAngle: ArrayLike, v: ArrayLike):
+    def CalcOmegaAxial(self, pitchAngle: ArrayLike, v: ArrayLike) -> ArrayLike:
         """
         Get the axial frequency of the electron's motion
 
@@ -79,7 +79,7 @@ class BaseTrap(ABC):
         """
 
     @abstractmethod
-    def CalcOmega0(self, v: ArrayLike, pitchAngle: ArrayLike):
+    def CalcOmega0(self, v: ArrayLike, pitchAngle: ArrayLike) -> ArrayLike:
         """
         Get the average cyclotron frequency
 
