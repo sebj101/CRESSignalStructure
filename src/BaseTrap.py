@@ -9,6 +9,7 @@ S. Jones 29-07-25
 from abc import ABC, abstractmethod
 import numpy as np
 import scipy.constants as sc
+from numpy.typing import ArrayLike
 
 
 class BaseTrap(ABC):
@@ -24,36 +25,50 @@ class BaseTrap(ABC):
 
     def _ValidatePitchAngle(self, pitchAngle):
         """Validate pitch angle parameter"""
-        if not isinstance(pitchAngle, (int, float)):
-            raise TypeError("Pitch angle must be a number")
-        if not np.isfinite(pitchAngle):
+        pitchAngle = np.asarray(pitchAngle)
+
+        if not np.issubdtype(pitchAngle.dtype, np.number):
+            raise TypeError("Pitch angle must be numeric")
+
+        if not np.all(np.isfinite(pitchAngle)):
             raise ValueError("Pitch angle must be finite")
-        if pitchAngle <= 0 or pitchAngle >= np.pi:
+
+        if np.any(pitchAngle <= 0) or np.any(pitchAngle >= np.pi):
             raise ValueError("Pitch angle must be in range (0, π)")
+
+        return pitchAngle
 
     def _ValidateVelocity(self, v):
         """Validate speed parameter"""
-        if not isinstance(v, (int, float)):
-            raise TypeError("Speed must be a number")
-        if v <= 0:
-            raise ValueError("Speed must be positive")
-        if v >= sc.c:
-            raise ValueError(f"Speed {v} m/s exceeds speed of light")
-        if not np.isfinite(v):
-            raise ValueError("Speed must be finite")
+        v = np.asarray(v)
+
+        if not np.issubdtype(v.dtype, np.number):
+            raise TypeError("Velocity must be numeric")
+
+        if np.any(v <= 0):
+            raise ValueError("Velocity must be positive")
+
+        if np.any(v >= sc.c):
+            raise ValueError(f"Velocity exceeds speed of light")
+
+        if not np.all(np.isfinite(v)):
+            raise ValueError("Velocity must be finite")
+
+        return v
 
     @abstractmethod
-    def CalcZMax(self, pitchAngle):
+    def CalcZMax(self, pitchAngle: ArrayLike):
         """
         Calculate the maximum axial position
 
         Parameters
         ----------
-        pitchAngle: float representing the pitch angle in radians
+        pitchAngle : ArrayLike 
+            Pitch angle in radians
         """
 
     @abstractmethod
-    def CalcOmegaAxial(self, pitchAngle, v):
+    def CalcOmegaAxial(self, pitchAngle: ArrayLike, v: ArrayLike):
         """
         Get the axial frequency of the electron's motion
 
@@ -64,7 +79,7 @@ class BaseTrap(ABC):
         """
 
     @abstractmethod
-    def CalcOmega0(self, v, pitchAngle):
+    def CalcOmega0(self, v: ArrayLike, pitchAngle: ArrayLike):
         """
         Get the average cyclotron frequency
 
@@ -78,19 +93,20 @@ class BaseTrap(ABC):
         """
         Getter for the gradient of the magnetic field
 
-        Returns:
-        --------
+        Returns
+        -------
             float: Gradient of the magnetic field in Tesla per metre
         """
         return self.__gradB
 
-    def SetGradB(self, gradB):
+    def SetGradB(self, gradB: float):
         """
         Setter for the gradient of the magnetic field
 
-        Parameters:
-        -----------
-            gradB (float): Gradient of the magnetic field in Tesla per metre
+        Parameters
+        ----------
+        gradB : float 
+            Gradient of the magnetic field in Tesla per metre
         """
         if not isinstance(gradB, (int, float)):
             raise TypeError("Gradient must be a number")
