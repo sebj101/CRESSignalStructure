@@ -18,7 +18,7 @@ class CircularWaveguide:
     def __str__(self):
         return f"Waveguide with radius {self.wgR} metres"
 
-    def _ValidateFrequency(self, omega):
+    def _ValidateFrequency(self, omega: float):
         """
         Validate inputted frequency parameter
         """
@@ -468,3 +468,39 @@ class CircularWaveguide:
                     [xArray[i], yArray[j], 0]), 1))**2 * (xArray[1] - xArray[0]) * (yArray[1] - yArray[0])
 
         return 1 / np.sqrt(E1Integral)
+
+    def GetPhaseVelocity(self, omega: float) -> float:
+        """
+        Get the phase velocity for an EM wave in the waveguide.
+
+        Parameters
+        ----------
+        omega : float
+            Angular frequency of the wave in rad/s
+
+        Returns
+        -------
+        float
+            Phase velocity in m/s
+        """
+        self._ValidateFrequency(omega)
+        omega_c = 1.841 * sc.c / self.wgR
+        return sc.c / np.sqrt(1 - (omega_c / omega)**2)
+
+    def GetGroupVelocity(self, omega: float) -> float:
+        """
+        Get the group velocity for an EM wave in the waveguide.
+
+        Parameters
+        ----------
+        omega : float
+            Angular frequency of the wave in rad/s
+
+        Returns
+        -------
+        float
+            Phase velocity in m/s
+        """
+        self._ValidateFrequency(omega)
+        omega_c = 1.841 * sc.c / self.wgR
+        return sc.c * np.sqrt(1 - (omega_c / omega)**2)
