@@ -9,7 +9,7 @@ S. Jones 29-07-25
 from abc import ABC, abstractmethod
 import numpy as np
 import scipy.constants as sc
-from numpy.typing import ArrayLike
+from numpy.typing import ArrayLike, NDArray
 
 
 class BaseTrap(ABC):
@@ -57,7 +57,7 @@ class BaseTrap(ABC):
         return v
 
     @abstractmethod
-    def CalcZMax(self, pitchAngle: ArrayLike) -> ArrayLike:
+    def CalcZMax(self, pitchAngle: ArrayLike) -> NDArray[np.floating]:
         """
         Calculate the maximum axial position
 
@@ -68,7 +68,7 @@ class BaseTrap(ABC):
         """
 
     @abstractmethod
-    def CalcOmegaAxial(self, pitchAngle: ArrayLike, v: ArrayLike) -> ArrayLike:
+    def CalcOmegaAxial(self, pitchAngle: ArrayLike, v: ArrayLike) -> NDArray[np.floating]:
         """
         Get the axial frequency of the electron's motion
 
@@ -79,7 +79,7 @@ class BaseTrap(ABC):
         """
 
     @abstractmethod
-    def CalcOmega0(self, v: ArrayLike, pitchAngle: ArrayLike) -> ArrayLike:
+    def CalcOmega0(self, v: ArrayLike, pitchAngle: ArrayLike) -> NDArray[np.floating]:
         """
         Get the average cyclotron frequency
 

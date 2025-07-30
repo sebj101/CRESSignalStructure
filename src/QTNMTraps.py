@@ -13,7 +13,7 @@ BathtubTrap: Two-coil bathtub magnetic field providing trapping field
 import numpy as np
 from src.BaseTrap import BaseTrap
 import scipy.constants as sc
-from numpy.typing import ArrayLike
+from numpy.typing import ArrayLike, NDArray
 
 
 class HarmonicTrap(BaseTrap):
@@ -55,7 +55,7 @@ class HarmonicTrap(BaseTrap):
         self.__L0 = L0
         self.SetGradB(gradB)
 
-    def CalcZMax(self, pitchAngle: ArrayLike):
+    def CalcZMax(self, pitchAngle: ArrayLike) -> NDArray[np.floating]:
         """
         Calc the maximum axial position
 
@@ -69,7 +69,7 @@ class HarmonicTrap(BaseTrap):
         result = np.where(np.abs(pitchAngle - np.pi/2) < 1e-10, 0.0, result)
         return result
 
-    def CalcOmegaAxial(self, pitchAngle: ArrayLike, v: ArrayLike):
+    def CalcOmegaAxial(self, pitchAngle: ArrayLike, v: ArrayLike) -> NDArray[np.floating]:
         """
         Get the axial frequency of the electron's motion in radians/s
 
@@ -82,7 +82,7 @@ class HarmonicTrap(BaseTrap):
         pitchAngle = self._ValidatePitchAngle(pitchAngle)
         return v * np.sin(pitchAngle) / self.__L0
 
-    def CalcOmega0(self, v: ArrayLike, pitchAngle: ArrayLike):
+    def CalcOmega0(self, v: ArrayLike, pitchAngle: ArrayLike) -> NDArray[np.floating]:
         """
         Get the average cyclotron frequency in radians/s
 
@@ -148,7 +148,7 @@ class BathtubTrap(BaseTrap):
         self.__L1 = L1
         self.SetGradB(gradB)
 
-    def CalcZMax(self, pitchAngle: ArrayLike):
+    def CalcZMax(self, pitchAngle: ArrayLike) -> NDArray[np.floating]:
         """
         Calc the maximum axial position
 
@@ -162,7 +162,7 @@ class BathtubTrap(BaseTrap):
         result = np.where(np.abs(pitchAngle - np.pi/2) < 1e-10, 0.0, result)
         return result
 
-    def CalcOmegaAxial(self, pitchAngle: ArrayLike, v: ArrayLike):
+    def CalcOmegaAxial(self, pitchAngle: ArrayLike, v: ArrayLike) -> NDArray[np.floating]:
         """
         Get the axial frequency of the electron's motion in radians/s
 
@@ -177,7 +177,7 @@ class BathtubTrap(BaseTrap):
 
         return wa / (1 + self.__L1 * np.tan(pitchAngle) / (self.__L0 * np.pi))
 
-    def CalcOmega0(self, v: ArrayLike, pitchAngle: ArrayLike):
+    def CalcOmega0(self, v: ArrayLike, pitchAngle: ArrayLike) -> NDArray[np.floating]:
         """
         Get the average cyclotron frequency in radians/s
 
