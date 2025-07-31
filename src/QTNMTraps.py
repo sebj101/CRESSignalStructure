@@ -97,6 +97,29 @@ class HarmonicTrap(BaseTrap):
         gamma = 1 / np.sqrt(1 - beta ** 2)
         return sc.e * self.__B0 / (sc.m_e * gamma) * (1 + self.CalcZMax(pitchAngle)**2 / (2 * self.__L0**2))
 
+    def Calcq(self, v: ArrayLike, pitchAngle: ArrayLike) -> NDArray[np.floating]:
+        """
+        Calculate the magnitude of the modulation of the CRES signal
+
+        Parameters
+        ----------
+        v : ArrayLike
+            Speed of the electron in m/s
+        pitchAngle:
+            Electron pitch angle in radians
+
+        Returns
+        -------
+        """
+        pitchAngle = self._ValidatePitchAngle(pitchAngle)
+        v = self._ValidateVelocity(v)
+
+        beta = v / sc.c
+        gamma = 1 / np.sqrt(1 - beta**2)
+        zmax = self.CalcZMax(pitchAngle)
+
+        return -sc.e * self.__B0 * zmax**2 / (gamma * sc.m_e * 4 * self.__L0**2 * self.CalcOmegaAxial(pitchAngle, v))
+
 
 class BathtubTrap(BaseTrap):
     """
