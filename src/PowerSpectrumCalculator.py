@@ -39,6 +39,8 @@ class PowerSpectrumCalculator:
         """
         if not isinstance(order, int):
             raise TypeError("Order must be an integer")
+        if order < 0:
+            raise TypeError("Order must be positive")
         if not np.isfinite(order):
             raise ValueError("Order must be finite")
 
@@ -64,6 +66,8 @@ class PowerSpectrumCalculator:
         """
         if not isinstance(order, int):
             raise TypeError("Order must be an integer")
+        if order < 0:
+            raise TypeError("Order must be positive")
         if not np.isfinite(order):
             raise ValueError("Order must be finite")
 
@@ -79,7 +83,7 @@ class PowerSpectrumCalculator:
             q = self.__trap.Calcq(v0, pitchAngle)
             MArr = np.arange(-6, 7, 1)
             amp1 = np.sum(jv(MArr, q) * jv(order - 2 * MArr, beta1 * zmax))
-            amp2 = np.sum(jv(MArr, q) * jv(order - 2 * MArr, beta2 * zmax))
+            amp2 = np.sum(jv(MArr, q) * jv(-order - 2 * MArr, beta2 * zmax))
             return (amp1, amp2)
         else:
             raise TypeError("Trap type currently not supported")
