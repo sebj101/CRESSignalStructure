@@ -222,3 +222,41 @@ class BathtubTrap(BaseTrap):
                               1.0,
                               (1 + zmax**2 / (2 * self.__L0**2)) / denominator)
         return prefac * correction
+
+    def CalcT1(self, v: ArrayLike, pitchAngle: ArrayLike) -> NDArray[np.floating]:
+        """
+        Calculate the time period for the motion in the flat part of the trap
+
+        Parameters
+        ----------
+        v : ArrayLike
+            Speed of the electron in m/s
+        pitchAngle : ArrayLike
+            Pitch angle in radians
+
+        Returns
+        -------
+        NDArray
+            Time period in seconds
+        """
+        pitchAngle = self._ValidatePitchAngle(pitchAngle)
+        v = self._ValidateVelocity(v)
+        return self.__L1 / (v * np.cos(pitchAngle))
+
+    def GetB0(self):
+        """
+        Getter for B0
+        """
+        return self.__B0
+
+    def GetL0(self):
+        """
+        Getter for L0
+        """
+        return self.__L0
+
+    def GetL1(self):
+        """
+        Getter for L1
+        """
+        return self.__L1
