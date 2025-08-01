@@ -218,9 +218,7 @@ class BathtubTrap(BaseTrap):
 
         zmax = self.CalcZMax(pitchAngle)
         denominator = 1 + self.__L1 * np.tan(pitchAngle) / (self.__L0 * np.pi)
-        correction = np.where(np.isinf(zmax) | (np.abs(denominator) < 1e-15),
-                              1.0,
-                              (1 + zmax**2 / (2 * self.__L0**2)) / denominator)
+        correction = 1 + zmax**2 / (2 * self.__L0**2) / denominator
         return prefac * correction
 
     def CalcT1(self, v: ArrayLike, pitchAngle: ArrayLike) -> NDArray[np.floating]:
