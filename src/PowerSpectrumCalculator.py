@@ -86,6 +86,56 @@ class PowerSpectrumCalculator:
             amp1 = np.sum(jv(MArr, q) * jv(order - 2 * MArr, beta1 * zmax))
             amp2 = np.sum(jv(MArr, q) * jv(-order - 2 * MArr, beta2 * zmax))
             return (amp1, amp2)
+        elif isinstance(self.__trap, BathtubTrap):
+            omega_a = v0 * np.sin(pitchAngle) / self.__trap.GetL0()
+            t1 = self.__trap.CalcT1(v0, pitchAngle)
+            t2 = t1 + np.pi / omega_a
+            T = 2 * t2
+            omegaAx = self.__trap.CalcOmegaAxial(pitchAngle, v0)
+            deltaOmega = self.__trap.CalcOmega0(
+                v0, pitchAngle) - sc.e * self.__trap.GetB0() / (self.__particle.GetGamma() * sc.m_e)
+            L1 = self.__trap.GetL1()
+
+            def CalcAlpha_n(n):
+                MArr = np.arange(-10, 11, 1)
+                A = t1 * np.sinc((deltaOmega + n * omegaAx)
+                                 * t1 / (2 * np.pi))
+                A *= np.exp(-1j * (deltaOmega + n * omegaAx) * t1 / 2)
+
+                B = np.sum(jv(MArr, deltaOmega/(2 * omegaAx))) * \
+                    np.exp(-1j * n * np.pi/2) * np.sinc((deltaOmega * t1 /
+                                                         2 - n * np.pi * omegaAx / (2 * omega_a) + MArr * np.pi) / np.pi)
+                B *= np.exp(-1j * (deltaOmega + n * omegaAx)
+                            * t1 / 2) * np.pi / omega_a
+
+                C = (-1)**n * A
+                D = (-1)**n * B
+                return (A + B + C + D) / T
+
+            def CalcBeta_n(n, klambda):
+                MArr = np.arange(-10, 11, 1)
+                vz0 = v0 * np.cos(pitchAngle)
+                E = t1 * np.exp(-1j * n * omegaAx * t1 / 2) * \
+                    np.sinc((klambda * vz0 - n * omegaAx) * t1 / (2 * np.pi))
+                F = np.sum(jv(MArr, klambda * zmax) * (1j)**(MArr-n) * np.sinc(
+                    (MArr * np.pi / 2 - n * np.pi * omegaAx / (2 * omega_a))/np.pi))
+                F *= np.exp(1j * klambda * L1/2) * np.pi * \
+                    np.exp(-1j * n * omegaAx * t1 / 2) / omega_a
+                G = (-1)**n * t1 * np.exp(-1j * n * omegaAx * t1 / 2) * \
+                    np.sinc((klambda * vz0 + n * omegaAx) * t1 / (2 * np.pi))
+                H = np.sum(jv(MArr, klambda * zmax) * (1j)**(-MArr-n) * np.sinc(
+                    (MArr * np.pi / 2 - n * np.pi * omegaAx / (2 * omega_a)) / np.pi))
+                H *= (-1)**n * np.exp(-1j * klambda * L1 /
+                                      2) * np.pi * np.exp(-1j * n * omegaAx * t1 / 2) / omega_a
+                return (E + F + G + H) / T
+
+            secondSum = np.arange(-10, 11, 1)
+            amp1 = np.sum(CalcAlpha_n(secondSum) *
+                          CalcBeta_n(order - secondSum, beta1))
+            amp2 = np.sum(CalcAlpha_n(secondSum) *
+                          CalcBeta_n(-order - secondSum, beta2))
+            return (amp1, amp2)
+
         else:
             raise TypeError("Trap type currently not supported")
 
