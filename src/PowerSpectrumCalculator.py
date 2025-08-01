@@ -48,8 +48,8 @@ class PowerSpectrumCalculator:
         # Treat the n = 0 case separately
         v0 = self.__particle.GetSpeed()
         pa = self.__particle.GetPitchAngle()
-        return (self.__trap.CalcOmega0(v0, pa) + order * self.__trap.CalcOmegaAxial(pa, v0),
-                self.__trap.CalcOmega0(v0, pa) - order * self.__trap.CalcOmegaAxial(pa, v0))
+        return ((self.__trap.CalcOmega0(v0, pa) + order * self.__trap.CalcOmegaAxial(pa, v0)) / (2*np.pi),
+                (self.__trap.CalcOmega0(v0, pa) - order * self.__trap.CalcOmegaAxial(pa, v0)) / (2*np.pi))
 
     def GetPeakAmp(self, order: int):
         """
@@ -77,8 +77,8 @@ class PowerSpectrumCalculator:
         pitchAngle = self.__particle.GetPitchAngle()
         v0 = self.__particle.GetSpeed()
         zmax = self.__trap.CalcZMax(pitchAngle)
-        beta1 = np.sqrt((f1 / sc.c)**2 - kc**2)
-        beta2 = np.sqrt((f2 / sc.c)**2 - kc**2)
+        beta1 = np.sqrt((f1 * 2 * np.pi / sc.c)**2 - kc**2)
+        beta2 = np.sqrt((f2 * 2 * np.pi / sc.c)**2 - kc**2)
 
         if isinstance(self.__trap, HarmonicTrap):
             q = self.__trap.Calcq(v0, pitchAngle)
@@ -98,9 +98,9 @@ class PowerSpectrumCalculator:
 
             def CalcAlpha_n(n):
                 MArr = np.arange(-10, 11, 1)
-                A = t1 * np.sinc((deltaOmega + n * omegaAx)
-                                 * t1 / (2 * np.pi))
-                A *= np.exp(-1j * (deltaOmega + n * omegaAx) * t1 / 2)
+                A = np.exp(-1j * (deltaOmega + n * omegaAx) * t1 / 2)
+                A *= t1 * np.sinc((deltaOmega + n * omegaAx)
+                                  * t1 / (2 * np.pi))
 
                 B = np.sum(jv(MArr, deltaOmega/(2 * omegaAx))) * \
                     np.exp(-1j * n * np.pi/2) * np.sinc((deltaOmega * t1 /
@@ -108,8 +108,8 @@ class PowerSpectrumCalculator:
                 B *= np.exp(-1j * (deltaOmega + n * omegaAx)
                             * t1 / 2) * np.pi / omega_a
 
-                C = (-1)**n * A
-                D = (-1)**n * B
+                C = (-1.0)**n * A
+                D = (-1.0)**n * B
                 return (A + B + C + D) / T
 
             def CalcBeta_n(n, klambda):
@@ -121,12 +121,12 @@ class PowerSpectrumCalculator:
                     (MArr * np.pi / 2 - n * np.pi * omegaAx / (2 * omega_a))/np.pi))
                 F *= np.exp(1j * klambda * L1/2) * np.pi * \
                     np.exp(-1j * n * omegaAx * t1 / 2) / omega_a
-                G = (-1)**n * t1 * np.exp(-1j * n * omegaAx * t1 / 2) * \
+                G = (-1.0)**n * t1 * np.exp(-1j * n * omegaAx * t1 / 2) * \
                     np.sinc((klambda * vz0 + n * omegaAx) * t1 / (2 * np.pi))
                 H = np.sum(jv(MArr, klambda * zmax) * (1j)**(-MArr-n) * np.sinc(
                     (MArr * np.pi / 2 - n * np.pi * omegaAx / (2 * omega_a)) / np.pi))
-                H *= (-1)**n * np.exp(-1j * klambda * L1 /
-                                      2) * np.pi * np.exp(-1j * n * omegaAx * t1 / 2) / omega_a
+                H *= (-1.0)**n * np.exp(-1j * klambda * L1 /
+                                        2) * np.pi * np.exp(-1j * n * omegaAx * t1 / 2) / omega_a
                 return (E + F + G + H) / T
 
             secondSum = np.arange(-10, 11, 1)
@@ -192,4 +192,4 @@ class PowerSpectrumCalculator:
             raise ValueError("Order must be finite")
 
         a1, a2 = self.GetPeakAmp(order)
-        return (a1**2 * self.GetPowerNorm(), a2**2 * self.GetPowerNorm())
+        return (np.abs(a1)**2 * self.GetPowerNorm(), np.abs(a2)**2 * self.GetPowerNorm())
