@@ -6,7 +6,7 @@ Module containing implementations of BaseTrap.
 Implementations:
 ---------------
 
-HarmonicTrap: Harmonic magnetic field providing trapping field 
+HarmonicTrap: Harmonic magnetic field providing trapping field
 BathtubTrap: Two-coil bathtub magnetic field providing trapping field
 """
 
@@ -30,11 +30,11 @@ class HarmonicTrap(BaseTrap):
 
         Parameters
         ----------
-        B0 : float 
+        B0 : float
             Magnetic field strength at the trap centre in T
-        L0 : float 
+        L0 : float
             Characteristic length of the trap in m
-        gradB : float 
+        gradB : float
             Gradient of the magnetic field in T/m
         """
         if not isinstance(B0, (int, float)):
@@ -136,13 +136,13 @@ class BathtubTrap(BaseTrap):
 
         Parameters
         ----------
-        B0 : float 
+        B0 : float
             Magnetic field strength at the trap centre in T
-        L0 : float 
+        L0 : float
             Characteristic length of trap quadratic section in m
-        L1 : float 
+        L1 : float
             Length of the flat region of the trap in m
-        gradB : float 
+        gradB : float
             Radial gradient of the magnetic field in T/m
         """
         if not isinstance(B0, (int, float)):
@@ -217,9 +217,7 @@ class BathtubTrap(BaseTrap):
         prefac = sc.e * self.__B0 / (sc.m_e * gamma)
 
         zmax = self.CalcZMax(pitchAngle)
-        denominator = 1 + self.__L1 * np.tan(pitchAngle) / (self.__L0 * np.pi)
-        correction = 1 + zmax**2 / (2 * self.__L0**2) / denominator
-        return prefac * correction
+        return prefac * (1 + (zmax**2 / (2 * self.__L0**2)) * (1 + self.__L1 * np.tan(pitchAngle) / (np.pi * self.__L0))**(-1))
 
     def CalcT1(self, v: ArrayLike, pitchAngle: ArrayLike) -> NDArray[np.floating]:
         """
