@@ -35,7 +35,7 @@ class PowerSpectrumCalculator:
         Returns
         -------
         tuple(float, float)
-            The frequency or frequencies at which components are observed in 
+            The frequency or frequencies at which components are observed in
             radians/s
         """
         if not isinstance(order, int):
@@ -96,15 +96,16 @@ class PowerSpectrumCalculator:
                 v0, pitchAngle) - sc.e * self.__trap.GetB0() / (self.__particle.GetGamma() * sc.m_e)
             L1 = self.__trap.GetL1()
 
+            MArr = np.arange(-20, 21, 1)
+
             def CalcAlpha_n(n):
-                MArr = np.arange(-10, 11, 1)
                 A = np.exp(-1j * (deltaOmega + n * omegaAx) * t1 / 2)
                 A *= t1 * np.sinc((deltaOmega + n * omegaAx)
                                   * t1 / (2 * np.pi))
 
-                B = np.sum(jv(MArr, deltaOmega/(2 * omegaAx))) * \
-                    np.exp(-1j * n * np.pi/2) * np.sinc((deltaOmega * t1 /
-                                                         2 - n * np.pi * omegaAx / (2 * omega_a) + MArr * np.pi) / np.pi)
+                B = np.sum(jv(MArr, deltaOmega/(2 * omegaAx)) *
+                           np.exp(-1j * n * np.pi/2) * np.sinc((deltaOmega * t1 /
+                                                                2 - n * np.pi * omegaAx / (2 * omega_a) + MArr * np.pi) / np.pi))
                 B *= np.exp(-1j * (deltaOmega + n * omegaAx)
                             * t1 / 2) * np.pi / omega_a
 
@@ -113,7 +114,6 @@ class PowerSpectrumCalculator:
                 return (A + B + C + D) / T
 
             def CalcBeta_n(n, klambda):
-                MArr = np.arange(-10, 11, 1)
                 vz0 = v0 * np.cos(pitchAngle)
                 E = t1 * np.exp(-1j * n * omegaAx * t1 / 2) * \
                     np.sinc((klambda * vz0 - n * omegaAx) * t1 / (2 * np.pi))
@@ -129,11 +129,12 @@ class PowerSpectrumCalculator:
                                         2) * np.pi * np.exp(-1j * n * omegaAx * t1 / 2) / omega_a
                 return (E + F + G + H) / T
 
-            secondSum = np.arange(-10, 11, 1)
-            amp1 = np.sum(CalcAlpha_n(secondSum) *
-                          CalcBeta_n(order - secondSum, beta1))
-            amp2 = np.sum(CalcAlpha_n(secondSum) *
-                          CalcBeta_n(-order - secondSum, beta2))
+            secondSum = np.arange(-15, 16, 1)
+            amp1 = 0.0
+            amp2 = 0.0
+            for n in secondSum:
+                amp1 += CalcAlpha_n(n) * CalcBeta_n(order - n, beta1)
+                amp2 += CalcAlpha_n(n) * CalcBeta_n(-order - n, beta2)
             return (amp1, amp2)
 
         else:
