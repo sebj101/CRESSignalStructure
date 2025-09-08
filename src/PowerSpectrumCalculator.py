@@ -96,45 +96,99 @@ class PowerSpectrumCalculator:
                 v0, pitchAngle) - sc.e * self.__trap.GetB0() / (self.__particle.GetGamma() * sc.m_e)
             L1 = self.__trap.GetL1()
 
-            MArr = np.arange(-20, 21, 1)
+            M_SUM_RANGE = 40
+            MArr = np.arange(-M_SUM_RANGE, 21, 1)
 
             def CalcAlpha_n(n):
-                A = np.exp(-1j * (deltaOmega + n * omegaAx) * t1 / 2)
-                A *= t1 * np.sinc((deltaOmega + n * omegaAx)
-                                  * t1 / (2 * np.pi))
+                """Vectorized version that handles array of n values"""
+                n = np.asarray(n)
 
-                B = np.sum(jv(MArr, deltaOmega/(2 * omegaAx)) *
-                           np.exp(-1j * n * np.pi/2) * np.sinc((deltaOmega * t1 /
-                                                                2 - n * np.pi * omegaAx / (2 * omega_a) + MArr * np.pi) / np.pi))
-                B *= np.exp(-1j * (deltaOmega + n * omegaAx)
-                            * t1 / 2) * np.pi / omega_a
+                # Broadcast n_array for vectorized computation
+                # n_array shape: (N,), we want final result shape: (N,)
+                # Shape: (N, 1) for broadcasting with MArr
+                n_broadcast = n[:, np.newaxis]
 
-                C = (-1.0)**n * A
-                D = (-1.0)**n * B
+                # Vectorized A computation
+                omega_term = deltaOmega + n * omegaAx  # Shape: (N,)
+                A = np.exp(-1j * omega_term * t1 / 2)
+                A *= t1 * np.sinc(omega_term * t1 / (2 * np.pi))
+
+                # Vectorized B computation - this is the tricky part due to the sum over MArr
+                # Shape: (len(MArr),) - independent of n
+                jv_term = jv(MArr, deltaOmega/(2 * omegaAx))
+                exp_n_term = np.exp(-1j * n * np.pi/2)  # Shape: (N,)
+
+                # The sinc term involves both n and MArr, so we need broadcasting
+                sinc_arg = (deltaOmega * t1 / 2 - n_broadcast * np.pi *
+                            omegaAx / (2 * omega_a) + MArr * np.pi) / np.pi
+                # sinc_arg shape: (N, len(MArr))
+                sinc_term = np.sinc(sinc_arg)
+
+                # Sum over MArr dimension (axis=1), result shape: (N,)
+                # Broadcasting: jv_term is (M,), sinc_term is (N,M)
+                B_sum = np.sum(jv_term * sinc_term, axis=1)
+                B = B_sum * exp_n_term * \
+                    np.exp(-1j * omega_term * t1 / 2) * np.pi / omega_a
+
+                # Vectorized C and D
+                sign_term = (-1.0)**n  # Shape: (N,)
+                C = sign_term * A
+                D = sign_term * B
+
                 return (A + B + C + D) / T
 
             def CalcBeta_n(n, klambda):
+                """Vectorized version of the above handling an array like n"""
+                n = np.asarray(n)
+
                 vz0 = v0 * np.cos(pitchAngle)
-                E = t1 * np.exp(-1j * n * omegaAx * t1 / 2) * \
-                    np.sinc((klambda * vz0 - n * omegaAx) * t1 / (2 * np.pi))
-                F = np.sum(jv(MArr, klambda * zmax) * (1j)**(MArr-n) * np.sinc(
-                    (MArr * np.pi / 2 - n * np.pi * omegaAx / (2 * omega_a))/np.pi))
-                F *= np.exp(1j * klambda * L1/2) * np.pi * \
-                    np.exp(-1j * n * omegaAx * t1 / 2) / omega_a
-                G = (-1.0)**n * t1 * np.exp(-1j * n * omegaAx * t1 / 2) * \
-                    np.sinc((klambda * vz0 + n * omegaAx) * t1 / (2 * np.pi))
-                H = np.sum(jv(MArr, klambda * zmax) * (1j)**(-MArr-n) * np.sinc(
-                    (MArr * np.pi / 2 - n * np.pi * omegaAx / (2 * omega_a)) / np.pi))
-                H *= (-1.0)**n * np.exp(-1j * klambda * L1 /
-                                        2) * np.pi * np.exp(-1j * n * omegaAx * t1 / 2) / omega_a
+
+                # E term is independent of M so can be easily vectorized
+                omegaTerm = n * omegaAx          # Shape (N, )
+                E = t1 * np.exp(-1j * omegaTerm * t1 / 2)
+                E *= np.sinc((klambda * vz0 - omegaTerm) * t1 / (2 * np.pi))
+
+                # Similar situation with G term
+                G = ((-1.0)**n) * t1 * np.exp(-1j * omegaTerm * t1 / 2)
+                G *= np.sinc((klambda * vz0 + omegaTerm) * t1 / (2 * np.pi))
+
+                # Broadcast n_array for vectorized computation
+                # n_array shape: (N,), we want final result shape: (N,)
+                # Shape: (N, 1) for broadcasting with MArr
+                n_broadcast = n[:, np.newaxis]
+
+                F = np.exp(1j * klambda * L1 / 2 - 1j *
+                           omegaTerm * t1 / 2) * np.pi / omega_a
+
+                # Vectorized B computation
+                # Shape: (M,) - independent of n
+                jv_term = jv(MArr, klambda * zmax)
+
+                # The sinc term involves both n and MArr, so we need broadcasting
+                sinc_arg = MArr * np.pi / 2 - n_broadcast * \
+                    np.pi * omegaAx / (2 * omega_a)
+                i_m_n = (1j)**(MArr - n_broadcast)
+                # sinc_arg shape: (N, M)
+                sinc_term = np.sinc(sinc_arg / np.pi)
+
+                # Sum over MArr dimension (axis=1), result shape: (N,)
+                F_sum = np.sum(jv_term * i_m_n * sinc_term, axis=1)
+                F *= F_sum
+
+                # Now do H term
+                H = ((-1.0)**n) * np.exp(-1j * klambda * L1 / 2 -
+                                         1j * omegaTerm * t1 / 2) * np.pi / omega_a
+                i_minus_m_n = (1j)**(-MArr - n_broadcast)
+                H_sum = np.sum(jv_term * i_minus_m_n * sinc_term, axis=1)
+                H *= H_sum
+
                 return (E + F + G + H) / T
 
-            secondSum = np.arange(-15, 16, 1)
-            amp1 = 0.0
-            amp2 = 0.0
-            for n in secondSum:
-                amp1 += CalcAlpha_n(n) * CalcBeta_n(order - n, beta1)
-                amp2 += CalcAlpha_n(n) * CalcBeta_n(-order - n, beta2)
+            secondSum = np.arange(-20, 21, 1)
+            amp1 = np.sum(CalcAlpha_n(secondSum) *
+                          CalcBeta_n(order - secondSum, beta1))
+            amp2 = np.sum(CalcAlpha_n(secondSum) *
+                          CalcBeta_n(-order - secondSum, beta2))
             return (amp1, amp2)
 
         else:
