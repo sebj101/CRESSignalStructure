@@ -23,7 +23,7 @@ class BaseField(ABC):
     """
 
     @abstractmethod
-    def evaluate_field(self, x: ArrayLike, y: ArrayLike, z: ArrayLike) -> NDArray:
+    def evaluate_field(self, x: ArrayLike, y: ArrayLike, z: ArrayLike) -> tuple:
         """
         Parameters
         ----------
