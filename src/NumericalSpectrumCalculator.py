@@ -35,11 +35,14 @@ def calc_zmax(trap: BaseField, particle: Particle) -> float:
         The maximum axial displacement in metres
     """
     pa = particle.GetPitchAngle()
-    centralField = trap.evaluate_field_magnitude(0., 0., 0.)
+    pStart = particle.GetPosition()
+
+    centralField = trap.evaluate_field_magnitude(pStart[0], pStart[1], 0.)
     muCentre = centralField / (np.sin(pa)**2)
 
     def zMaxEqn(z):
-        result = 1.0 - muCentre / trap.evaluate_field_magnitude(0., 0., z)
+        result = 1.0 - muCentre / trap.evaluate_field_magnitude(pStart[0],
+                                                                pStart[1], z)
         return result
 
     # Determine where the bounds of the equation solver should be
@@ -73,8 +76,9 @@ def calc_omega_axial(trap: BaseField, particle: Particle) -> float:
     """
     pa = particle.GetPitchAngle()
     ke = particle.GetEnergy() * sc.e
+    pStart = particle.GetPosition()
 
-    centralField = trap.evaluate_field_magnitude(0., 0., 0.)
+    centralField = trap.evaluate_field_magnitude(pStart[0], pStart[1], 0.)
 
     zMax = calc_zmax(trap, particle)
 
@@ -84,7 +88,7 @@ def calc_omega_axial(trap: BaseField, particle: Particle) -> float:
     # Calculate the integrand at each point
     integrationPoints = np.linspace(0, zMax, 2000, endpoint=False)
     integrand = 1.0 / np.sqrt((2 / particle.GetMass()) * (ke - muMag *
-                              trap.evaluate_field_magnitude(0., 0., integrationPoints)))
+                              trap.evaluate_field_magnitude(pStart[0], pStart[1], integrationPoints)))
 
     integral = 2 * np.trapezoid(integrand, integrationPoints) / np.pi
     return 1 / integral
@@ -109,13 +113,15 @@ def calc_t_vs_z(trap: BaseField, particle: Particle):
 
     pa = particle.GetPitchAngle()
     ke = particle.GetEnergy() * sc.e
-    centralField = trap.evaluate_field_magnitude(0., 0., 0.)
+    pStart = particle.GetPosition()
+
+    centralField = trap.evaluate_field_magnitude(pStart[0], pStart[1], 0.)
     zMax = calc_zmax(trap, particle)
     muMag = ke * np.sin(pa)**2 / centralField
 
     def t_integrand(z):
-        result = np.sqrt(particle.GetMass() / 2) / np.sqrt(ke -
-                                                           muMag * trap.evaluate_field_magnitude(0, 0, z))
+        result = np.sqrt(particle.GetMass() / 2) / np.sqrt(ke - muMag *
+                                                           trap.evaluate_field_magnitude(pStart[0], pStart[1], z))
         return result
 
     # For axially symmetric traps, we should only need to do one integration
@@ -158,7 +164,8 @@ def B_from_t(trap: BaseField, part: Particle, n_t_points: int):
     t, z = calc_t_vs_z(trap, part)
     t_to_z = interp1d(t, z, kind='cubic')
     z = t_to_z(t_vals)
-    return t_vals, trap.evaluate_field_magnitude(0, 0, z)
+    pStart = part.GetPosition()
+    return t_vals, trap.evaluate_field_magnitude(pStart[0], pStart[1], z)
 
 
 def cyclotron_phase_from_t(trap: BaseField, particle: Particle,
