@@ -5,7 +5,7 @@ Unit tests for Particle class
 import numpy as np
 import pytest
 import scipy.constants as sc
-from src.Particle import Particle
+from CRESSignalStructure.Particle import Particle
 
 
 class TestParticleConstruction:
