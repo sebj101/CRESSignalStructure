@@ -7,9 +7,9 @@ field maps
 S. Jones 17-10-25
 """
 
-from src.RealFields import BaseField, HarmonicField, BathtubField
-from src.Particle import Particle
-from src.CircularWaveguide import CircularWaveguide
+from CRESSignalStructure.RealFields import BaseField, HarmonicField, BathtubField
+from CRESSignalStructure.Particle import Particle
+from CRESSignalStructure.CircularWaveguide import CircularWaveguide
 import numpy as np
 import scipy.constants as sc
 from scipy.optimize import brentq

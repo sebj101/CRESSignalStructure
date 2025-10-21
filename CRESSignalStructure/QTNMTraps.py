@@ -11,7 +11,7 @@ BathtubTrap: Two-coil bathtub magnetic field providing trapping field
 """
 
 import numpy as np
-from src.BaseTrap import BaseTrap
+from CRESSignalStructure.BaseTrap import BaseTrap
 import scipy.constants as sc
 from numpy.typing import ArrayLike, NDArray
 
