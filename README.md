@@ -167,4 +167,4 @@ Contributions are welcome! Please feel free to submit issues or pull requests.
 
 ## Contact
 
-For questions or support, please open an issue on the GitHub repository or email seb.jones@ucl.ac.uk
+For questions or support, please open an issue on the GitHub repository or email seb.jones@ucl.ac.uk.
