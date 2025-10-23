@@ -68,14 +68,16 @@ class BaseTrap(ABC):
         """
 
     @abstractmethod
-    def CalcOmegaAxial(self, pitchAngle: ArrayLike, v: ArrayLike) -> NDArray[np.floating]:
+    def CalcOmegaAxial(self, v: ArrayLike, pitchAngle: ArrayLike) -> NDArray[np.floating]:
         """
         Get the axial frequency of the electron's motion
 
         Parameters
         ----------
-        pitchAngle: float representing the pitch angle in radians
-        v: float representing the speed of the electron in m/s
+        v : ArrayLike 
+            Speed of the electron in m/s
+        pitchAngle : ArrayLike 
+            Pitch angle in radians
         """
 
     @abstractmethod
@@ -85,8 +87,10 @@ class BaseTrap(ABC):
 
         Parameters
         ----------
-        v: float representing the speed of the electron in m/s
-        pitchAngle: float representing the pitch angle in radians
+        v : ArrayLike 
+            Speed of the electron in m/s
+        pitchAngle : ArrayLike 
+            Pitch angle in radians
         """
 
     def GetGradB(self):

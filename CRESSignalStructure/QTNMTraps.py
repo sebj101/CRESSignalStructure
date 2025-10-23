@@ -61,7 +61,8 @@ class HarmonicTrap(BaseTrap):
 
         Parameters
         ----------
-        pitchAngle : float representing the pitch angle in radians
+        pitchAngle : float 
+            Pitch angle in radians
         """
         pitchAngle = self._ValidatePitchAngle(pitchAngle)
         result = np.where(np.abs(pitchAngle) < 1e-10, np.inf,
@@ -69,14 +70,16 @@ class HarmonicTrap(BaseTrap):
         result = np.where(np.abs(pitchAngle - np.pi/2) < 1e-10, 0.0, result)
         return result
 
-    def CalcOmegaAxial(self, pitchAngle: ArrayLike, v: ArrayLike) -> NDArray[np.floating]:
+    def CalcOmegaAxial(self, v: ArrayLike, pitchAngle: ArrayLike) -> NDArray[np.floating]:
         """
         Get the axial frequency of the electron's motion in radians/s
 
         Parameters:
         ----------
-        pitchAngle: float representing the pitch angle in radians
-        v: float representing the speed of the electron in m/s
+        v : float 
+            Speed of the electron in m/s
+        pitchAngle : float
+            Pitch angle in radians
         """
         v = self._ValidateVelocity(v)
         pitchAngle = self._ValidatePitchAngle(pitchAngle)
@@ -88,8 +91,10 @@ class HarmonicTrap(BaseTrap):
 
         Parameters
         ----------
-        v: float representing the speed of the electron in m/s
-        pitchAngle: float representing the pitch angle in radians
+        v : ArrayLike 
+            Speed of the electron in m/s
+        pitchAngle : float 
+            Pitch angle in radians
         """
         v = self._ValidateVelocity(v)
         pitchAngle = self._ValidatePitchAngle(pitchAngle)
@@ -118,7 +123,7 @@ class HarmonicTrap(BaseTrap):
         gamma = 1 / np.sqrt(1 - beta**2)
         zmax = self.CalcZMax(pitchAngle)
 
-        return -sc.e * self.__B0 * zmax**2 / (gamma * sc.m_e * 4 * self.__L0**2 * self.CalcOmegaAxial(pitchAngle, v))
+        return -sc.e * self.__B0 * zmax**2 / (gamma * sc.m_e * 4 * self.__L0**2 * self.CalcOmegaAxial(v, pitchAngle))
 
     def GetB0(self) -> float:
         """
@@ -197,14 +202,16 @@ class BathtubTrap(BaseTrap):
         result = np.where(np.abs(pitchAngle - np.pi/2) < 1e-10, 0.0, result)
         return result
 
-    def CalcOmegaAxial(self, pitchAngle: ArrayLike, v: ArrayLike) -> NDArray[np.floating]:
+    def CalcOmegaAxial(self, v: ArrayLike, pitchAngle: ArrayLike) -> NDArray[np.floating]:
         """
         Get the axial frequency of the electron's motion in radians/s
 
         Parameters
         ----------
-        pitchAngle: float representing the pitch angle in radians
-        v: float representing the speed of the electron in m/s
+        v : ArrayLike 
+            Speed of the electron in m/s
+        pitchAngle : ArrayLike 
+            Pitch angle in radians
         """
         pitchAngle = self._ValidatePitchAngle(pitchAngle)
         v = self._ValidateVelocity(v)
@@ -218,8 +225,10 @@ class BathtubTrap(BaseTrap):
 
         Parameters
         ----------
-        v: float representing the speed of the electron in m/s
-        pitchAngle: float representing the pitch angle in radians
+        v : ArrayLike 
+            Speed of the electron in m/s
+        pitchAngle : ArrayLike 
+            Pitch angle in radians
         """
         pitchAngle = self._ValidatePitchAngle(pitchAngle)
         v = self._ValidateVelocity(v)

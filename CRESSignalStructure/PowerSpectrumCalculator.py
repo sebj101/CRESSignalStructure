@@ -48,8 +48,8 @@ class PowerSpectrumCalculator:
         # Treat the n = 0 case separately
         v0 = self.__particle.GetSpeed()
         pa = self.__particle.GetPitchAngle()
-        return ((self.__trap.CalcOmega0(v0, pa) + order * self.__trap.CalcOmegaAxial(pa, v0)) / (2*np.pi),
-                (self.__trap.CalcOmega0(v0, pa) - order * self.__trap.CalcOmegaAxial(pa, v0)) / (2*np.pi))
+        return ((self.__trap.CalcOmega0(v0, pa) + order * self.__trap.CalcOmegaAxial(v0, pa)) / (2*np.pi),
+                (self.__trap.CalcOmega0(v0, pa) - order * self.__trap.CalcOmegaAxial(v0, pa)) / (2*np.pi))
 
     def GetPeakAmp(self, order: int):
         """
@@ -91,7 +91,7 @@ class PowerSpectrumCalculator:
             t1 = self.__trap.CalcT1(v0, pitchAngle)
             t2 = t1 + np.pi / omega_a
             T = 2 * t2
-            omegaAx = self.__trap.CalcOmegaAxial(pitchAngle, v0)
+            omegaAx = self.__trap.CalcOmegaAxial(v0, pitchAngle)
             deltaOmega = self.__trap.CalcOmega0(
                 v0, pitchAngle) - sc.e * self.__trap.GetB0() / (self.__particle.GetGamma() * sc.m_e)
             L1 = self.__trap.GetL1()
