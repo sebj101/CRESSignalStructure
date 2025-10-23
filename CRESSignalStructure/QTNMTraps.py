@@ -120,6 +120,18 @@ class HarmonicTrap(BaseTrap):
 
         return -sc.e * self.__B0 * zmax**2 / (gamma * sc.m_e * 4 * self.__L0**2 * self.CalcOmegaAxial(pitchAngle, v))
 
+    def GetB0(self) -> float:
+        """
+        Getter for B0
+        """
+        return self.__B0
+
+    def GetL0(self) -> float:
+        """
+        Getter for L0
+        """
+        return self.__L0
+
 
 class BathtubTrap(BaseTrap):
     """
