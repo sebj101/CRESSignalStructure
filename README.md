@@ -69,12 +69,12 @@ particle = Particle(
 calculator = PowerSpectrumCalculator(trap, waveguide, particle)
 
 # Get peak frequencies for the fundamental (order=0)
-freq_plus, freq_minus = calculator.GetPeakFrequency(order=0)
-print(f"Cyclotron frequency: {freq_plus/1e9:.3f} GHz")
+freq = calculator.GetPeakFrequency(order=0)
+print(f"Cyclotron frequency: {freq/1e9:.3f} GHz")
 
 # Get power in the fundamental peak
-power_plus, power_minus = calculator.GetSpectrumPowers(order=0)
-print(f"Power: {power_plus*1e12:.3f} pW")
+power = calculator.GetPeakPower(order=0)
+print(f"Power: {power_plus*1e15:.3f} fW")
 ```
 
 ## Core Components
@@ -109,7 +109,7 @@ The **CircularWaveguide** class models TE11 mode electromagnetic fields in circu
 ### Power Spectrum Calculators
 
 - **PowerSpectrumCalculator**: Analytical calculations for harmonic and bathtub traps
-- **NumericalSpectrumCalculator**: Numerical integration approach for arbitrary field configurations
+- **NumericalSpectrumCalculator**: Numerical integration approach for arbitrary magnetic field configurations
 
 ## Examples
 
