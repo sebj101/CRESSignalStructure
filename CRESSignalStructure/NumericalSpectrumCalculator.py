@@ -10,6 +10,7 @@ S. Jones 17-10-25
 from CRESSignalStructure.RealFields import BaseField, HarmonicField, BathtubField
 from CRESSignalStructure.Particle import Particle
 from CRESSignalStructure.CircularWaveguide import CircularWaveguide
+from CRESSignalStructure.BaseSpectrumCalculator import BaseSpectrumCalculator
 import numpy as np
 import scipy.constants as sc
 from scipy.optimize import brentq
@@ -216,10 +217,11 @@ def calc_omega_0(trap: BaseField, particle: Particle,
     return phi_Ta / t[-1]
 
 
-class NumericalSpectrumCalculator:
+class NumericalSpectrumCalculator(BaseSpectrumCalculator):
     def __init__(self, field: BaseField, waveguide: CircularWaveguide,
                  particle: Particle):
-        self.__field = field
+        super().__init__(field, waveguide, particle)
+        self.__trap = field
         self.__waveguide = waveguide
         self.__particle = particle
 
@@ -243,8 +245,8 @@ class NumericalSpectrumCalculator:
         if not np.any(np.isfinite(order)):
             raise ValueError("Order must be finite")
 
-        f0 = calc_omega_0(self.__field, self.__particle) / (2 * np.pi)
-        fa = calc_omega_axial(self.__field, self.__particle) / (2 * np.pi)
+        f0 = calc_omega_0(self.__trap, self.__particle) / (2 * np.pi)
+        fa = calc_omega_axial(self.__trap, self.__particle) / (2 * np.pi)
         return f0 + order * fa
 
     def GetPeakAmp(self, order: ArrayLike) -> NDArray:
@@ -263,15 +265,15 @@ class NumericalSpectrumCalculator:
             raise ValueError("Order must be finite")
 
         # Get the z position array
-        t1, z = calc_t_vs_z(self.__field, self.__particle)
+        t1, z = calc_t_vs_z(self.__trap, self.__particle)
         # NB these t values are not uniformly distributed
         interp_t1_z = interp1d(t1, z, kind='cubic')
 
         N_T_POINTS = 499
-        omega_a = calc_omega_axial(self.__field, self.__particle)
-        omega_0 = calc_omega_0(self.__field, self.__particle, N_T_POINTS)
+        omega_a = calc_omega_axial(self.__trap, self.__particle)
+        omega_0 = calc_omega_0(self.__trap, self.__particle, N_T_POINTS)
         t, phi_t = cyclotron_phase_from_t(
-            self.__field, self.__particle, N_T_POINTS)
+            self.__trap, self.__particle, N_T_POINTS)
         Ta = t[-1]
         z_t = interp_t1_z(t)  # These are uniform in t
 
