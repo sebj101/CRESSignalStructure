@@ -138,13 +138,15 @@ pytest --cov=CRESSignalStructure
 ```
 CRESSignalStructure/
 ├── CRESSignalStructure/           # Main package directory
-│   ├── BaseTrap.py                # Abstract trap base class
-│   ├── QTNMTraps.py               # Harmonic and bathtub trap implementations
-│   ├── BaseField.py               # Abstract field base class
-│   ├── RealFields.py              # Field implementations
-│   ├── Particle.py                # Particle physics and kinematics
-│   ├── CircularWaveguide.py       # Waveguide calculations
-│   ├── PowerSpectrumCalculator.py # Analytical spectrum calculator
+|   ├── __init__.py
+│   ├── BaseTrap.py                     # Abstract trap base class
+│   ├── QTNMTraps.py                    # Harmonic and bathtub trap implementations
+│   ├── BaseField.py                    # Abstract field base class
+│   ├── RealFields.py                   # Field implementations
+│   ├── Particle.py                     # Particle physics and kinematics
+│   ├── CircularWaveguide.py            # Waveguide calculations
+|   ├── BaseSpectrumCalculator.py       # Abstract spectrum calculator base class
+│   ├── PowerSpectrumCalculator.py      # Analytical spectrum calculator
 │   └── NumericalSpectrumCalculator.py  # Numerical spectrum calculator
 ├── tests/                         # Unit tests
 ├── *.ipynb                        # Example notebooks
