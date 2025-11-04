@@ -225,7 +225,7 @@ class NumericalSpectrumCalculator(BaseSpectrumCalculator):
         self.__waveguide = waveguide
         self.__particle = particle
 
-    def GetPeakFrequency(self, order: ArrayLike) -> NDArray:
+    def GetPeakFrequency(self, order: ArrayLike, negativeFreqs=False) -> NDArray:
         """
         Calculate the frequencies at which the components occur
 
@@ -233,6 +233,8 @@ class NumericalSpectrumCalculator(BaseSpectrumCalculator):
         ----------
         order : int
             The order of the peak to calculate the frequency for
+        negativeFreqs : bool
+            Boolean to return negative frequencies (default false)
 
         Returns
         -------
@@ -247,9 +249,12 @@ class NumericalSpectrumCalculator(BaseSpectrumCalculator):
 
         f0 = calc_omega_0(self.__trap, self.__particle) / (2 * np.pi)
         fa = calc_omega_axial(self.__trap, self.__particle) / (2 * np.pi)
-        return f0 + order * fa
+        if negativeFreqs == True:
+            return -f0 - order * fa
+        else:
+            return f0 + order * fa
 
-    def GetPeakAmp(self, order: ArrayLike) -> NDArray:
+    def GetPeakAmp(self, order: ArrayLike, negativeFreqs=False) -> NDArray:
         """
         Calculate the complex amplitude of a peak, given the order
 
@@ -257,6 +262,13 @@ class NumericalSpectrumCalculator(BaseSpectrumCalculator):
         ----------
         order : ArrayLike
             Order of the peak for which we are calculating the amplitude 
+        negativeFreqs : bool
+            Boolean to return amps for negative frequencies (default false)
+
+        Returns
+        -------
+        NDArray
+            Complex peak amplitudes
         """
         order = np.asarray(order)
         if not np.issubdtype(order.dtype, np.integer):
@@ -295,4 +307,8 @@ class NumericalSpectrumCalculator(BaseSpectrumCalculator):
         integrand = common_phase * order_phase
 
         # Integrate along time axis (axis=1) for each order
-        return simpson(integrand, t, axis=1) / Ta
+        amp = simpson(integrand, t, axis=1) / Ta
+        if negativeFreqs == True:
+            return np.conjugate(amp)
+        else:
+            return amp

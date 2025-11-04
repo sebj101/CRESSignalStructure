@@ -28,7 +28,7 @@ class BaseSpectrumCalculator(ABC):
         self.__particle = particle
 
     @abstractmethod
-    def GetPeakAmp(self, order: ArrayLike) -> NDArray:
+    def GetPeakAmp(self, order: ArrayLike, negativeFreqs=False) -> NDArray:
         """
         Calculate the complex amplitude of a peak, given the order
 
@@ -36,6 +36,8 @@ class BaseSpectrumCalculator(ABC):
         ----------
         order : ArrayLike
             Order of the peak for which we are calculating the amplitude
+        negativeFreqs : bool
+            Boolean to return amps for negative frequencies (default false)
 
         Returns
         -------
@@ -44,7 +46,7 @@ class BaseSpectrumCalculator(ABC):
         """
 
     @abstractmethod
-    def GetPeakFrequency(self, order: ArrayLike) -> NDArray:
+    def GetPeakFrequency(self, order: ArrayLike, negativeFreqs=False) -> NDArray:
         """
         Calculate the frequencies at which the components occur
 
@@ -52,6 +54,8 @@ class BaseSpectrumCalculator(ABC):
         ----------
         order : ArrayLike
             The order of the peak to calculate the frequency for
+        negativeFreqs : bool
+            Boolean to return negative frequencies for given order (default false)
 
         Returns
         -------

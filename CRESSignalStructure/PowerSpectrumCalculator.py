@@ -26,7 +26,7 @@ class PowerSpectrumCalculator(BaseSpectrumCalculator):
         self.__waveguide = waveguide
         self.__particle = particle
 
-    def GetPeakFrequency(self, order: ArrayLike) -> NDArray:
+    def GetPeakFrequency(self, order: ArrayLike, negativeFreqs=False) -> NDArray:
         """
         Calculate the frequencies at which the components occur
 
@@ -34,6 +34,8 @@ class PowerSpectrumCalculator(BaseSpectrumCalculator):
         ----------
         order : ArrayLike
             The order of the peak to calculate the frequency for
+        negativeFreqs : bool
+            Boolean to return negative frequencies (default false)
 
         Returns
         -------
@@ -50,9 +52,12 @@ class PowerSpectrumCalculator(BaseSpectrumCalculator):
         pa = self.__particle.GetPitchAngle()
         f0 = self.__trap.CalcOmega0(v0, pa) / (2 * np.pi)
         fa = self.__trap.CalcOmegaAxial(v0, pa) / (2*np.pi)
-        return f0 + order * fa
+        if negativeFreqs == True:
+            return -f0 - order * fa
+        else:
+            return f0 + order * fa
 
-    def GetPeakAmp(self, order: ArrayLike) -> NDArray:
+    def GetPeakAmp(self, order: ArrayLike, negativeFreqs=False) -> NDArray:
         """
         Calculate the peak amplitude in the sidebands for a given peak order
 
@@ -60,6 +65,8 @@ class PowerSpectrumCalculator(BaseSpectrumCalculator):
         ----------
         order : ArrayLike
             Order of peak to calculate for
+        negativeFreqs : bool
+            Boolean to return amps for negative frequencies (default false)
 
         Returns
         -------
@@ -185,7 +192,11 @@ class PowerSpectrumCalculator(BaseSpectrumCalculator):
             secondSum = np.arange(-20, 21, 1)
             amp = np.sum(CalcAlpha_n(secondSum) *
                          CalcBeta_n(order - secondSum, beta))
-            return amp
+
+            if negativeFreqs == True:
+                return np.conjugate(amp)
+            else:
+                return amp
 
         else:
             raise TypeError("Trap type currently not supported")
