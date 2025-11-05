@@ -33,9 +33,19 @@ class SignalGenerator:
         acq_time : float
             Total acquisition time in seconds
         """
-        self.__sample_rate = sample_rate
-        self.__lo_freq = lo_freq
-        self.__acq_time = acq_time
+        def _validate_positive_float(freq: float, variable: str):
+            if not isinstance(freq, float):
+                raise TypeError(f"{variable} must be a float")
+            if freq <= 0.0 or not np.isfinite(freq):
+                raise ValueError(f"{variable} must be positive and finite")
+
+            return freq
+
+        self.__sample_rate = _validate_positive_float(
+            sample_rate, "Sample rate")
+        self.__lo_freq = _validate_positive_float(lo_freq, "LO frequency")
+        self.__acq_time = _validate_positive_float(
+            acq_time, "Acquisition time")
         self.__spec_calc = spectrum_calc
 
     def GenerateSignal(self, max_order: int) -> NDArray:
@@ -52,6 +62,11 @@ class SignalGenerator:
         NDArray 
             A 1D array of complex numbers representing the time series signal
         """
+        if not isinstance(max_order, int):
+            raise TypeError("max_order must be an integer")
+        if max_order < 0 or not np.isfinite(max_order):
+            raise ValueError("max_order must be finite and >= 0")
+
         FAST_SAMPLE_FACTOR = 5
         FAST_SAMPLE_FREQ = FAST_SAMPLE_FACTOR * self.__sample_rate
         N_SAMPLES = int(self.__acq_time * FAST_SAMPLE_FREQ)
