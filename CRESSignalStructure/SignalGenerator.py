@@ -101,4 +101,4 @@ class SignalGenerator:
         rf_signal_filtered = sosfilt(sos, rf_signal_dm, zi=None)
 
         # Return reduced signal
-        return rf_signal_filtered[::FAST_SAMPLE_FACTOR]
+        return rf_signal_filtered[::FAST_SAMPLE_FACTOR] * np.sqrt(self.__spec_calc.GetPowerNorm())
