@@ -83,8 +83,8 @@ class SignalGenerator:
             fourier_amps, self.__spec_calc.GetPeakAmp(orders, True))
 
         # Calculate the chirp rate
-        beta = self.__spec_calc.__particle.GetBeta()
-        gamma = self.__spec_calc.__particle.GetGamma()
+        beta = self.__spec_calc.GetParticle().GetBeta()
+        gamma = self.__spec_calc.GetParticle().GetGamma()
         central_freq = self.__spec_calc.GetPeakFrequency(0)
         chirp_rate_ang = sc.e**2 * (2 * np.pi * central_freq)**3 * gamma * \
             beta**2 / (6 * np.pi * sc.epsilon_0 * sc.c) / \
