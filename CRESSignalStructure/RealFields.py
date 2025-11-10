@@ -5,7 +5,9 @@ Contains real magnetic fields derived from the BaseField class
 """
 
 from CRESSignalStructure.BaseField import BaseField
+from CRESSignalStructure.Particle import Particle
 from scipy.special import ellipk, ellipe
+from scipy.optimize import brentq
 import scipy.constants as sc
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
@@ -94,6 +96,23 @@ class CoilField(BaseField):
         else:
             return b_x, b_y, b_z
 
+    def CalcZMax(self, particle: Particle) -> float:
+        pa = particle.GetPitchAngle()
+        pStart = particle.GetPosition()
+
+        centralField = self.evaluate_field_magnitude(pStart[0], pStart[1], 0.)
+        muCentre = centralField / (np.sin(pa)**2)
+
+        def zMaxEqn(z):
+            result = 1.0 - muCentre / \
+                self.evaluate_field_magnitude(pStart[0], pStart[1], z)
+            return result
+
+        # Determine where the bounds of the equation solver should be
+        upperZBound = 1.0
+        zmax, _ = brentq(zMaxEqn, 0.0, upperZBound, full_output=True)
+        return zmax
+
 
 class BathtubField(BaseField):
     """
@@ -131,6 +150,24 @@ class BathtubField(BaseField):
 
         return b_x + self.background[0], b_y + self.background[1], b_z + self.background[2]
 
+    def CalcZMax(self, particle: Particle) -> float:
+        pa = particle.GetPitchAngle()
+        pStart = particle.GetPosition()
+
+        centralField = self.evaluate_field_magnitude(pStart[0], pStart[1], 0.)
+        muCentre = centralField / (np.sin(pa)**2)
+
+        def zMaxEqn(z):
+            result = 1.0 - muCentre / \
+                self.evaluate_field_magnitude(pStart[0], pStart[1], z)
+            return result
+
+        # Determine where the bounds of the equation solver should be
+        upperZBound = np.max([self.coil1.z, self.coil2.z])
+
+        zmax, _ = brentq(zMaxEqn, 0.0, upperZBound, full_output=True)
+        return zmax
+
 
 class HarmonicField(BaseField):
     """
@@ -156,3 +193,20 @@ class HarmonicField(BaseField):
     def evaluate_field(self, x: ArrayLike, y: ArrayLike, z: ArrayLike) -> tuple:
         b_x_coil, b_y_coil, b_z_coil = self.coil.evaluate_field(x, y, z)
         return b_x_coil, b_y_coil, b_z_coil + self.background[2]
+
+    def CalcZMax(self, particle: Particle) -> float:
+        pa = particle.GetPitchAngle()
+        pStart = particle.GetPosition()
+
+        centralField = self.evaluate_field_magnitude(pStart[0], pStart[1], 0.)
+        muCentre = centralField / (np.sin(pa)**2)
+
+        def zMaxEqn(z):
+            result = 1.0 - muCentre / \
+                self.evaluate_field_magnitude(pStart[0], pStart[1], z)
+            return result
+
+        # Determine where the bounds of the equation solver should be
+        upperZBound = 1.0
+        zmax, _ = brentq(zMaxEqn, 0.0, upperZBound, full_output=True)
+        return zmax
