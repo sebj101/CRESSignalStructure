@@ -10,6 +10,8 @@ from abc import ABC, abstractmethod
 from numpy.typing import NDArray, ArrayLike
 from CRESSignalStructure.Particle import Particle
 from CRESSignalStructure.CircularWaveguide import CircularWaveguide
+from CRESSignalStructure.BaseTrap import BaseTrap
+from CRESSignalStructure.BaseField import BaseField
 from scipy.special import jvp, j1
 import numpy as np
 from scipy.integrate import quad
@@ -85,8 +87,15 @@ class BaseSpectrumCalculator(ABC):
         r_gyro = np.sqrt(self.__particle.GetPosition()[
                          0]**2 + self.__particle.GetPosition()[1]**2)
 
-        prefactor = self.__waveguide.CalcTE11Impedance(self.__trap.CalcOmega0(
-            self.__particle.GetSpeed(), self.__particle.GetPitchAngle())) * (sc.e * self.__particle.GetSpeed())**2 / (8 * np.pi * alpha)
+        prefactor = 0.0
+        if issubclass(type(self.__trap), BaseTrap) == True:
+            prefactor = self.__waveguide.CalcTE11Impedance(self.__trap.CalcOmega0(self.__particle.GetSpeed(
+            ), self.__particle.GetPitchAngle())) * (sc.e * self.__particle.GetSpeed())**2 / (8 * np.pi * alpha)
+        elif issubclass(type(self.__trap), BaseField) == True:
+            prefactor = self.__waveguide.CalcTE11Impedance(self.__trap.CalcOmega0(
+                self.__particle)) * (sc.e * self.__particle.GetSpeed())**2 / (8 * np.pi * alpha)
+        else:
+            prefactor = 0.0
 
         if r_gyro == 0:
             # Handle the special case where r_gyro = 0

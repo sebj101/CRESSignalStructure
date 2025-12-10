@@ -1,7 +1,7 @@
 """
 NumericalSpectrumCalculator.py
 
-Contains a class for numerical calculations of power spectra from arbitrary 
+Contains a class for numerical calculations of power spectra from arbitrary
 field maps
 
 S. Jones 17-10-25
@@ -14,7 +14,7 @@ from CRESSignalStructure.BaseSpectrumCalculator import BaseSpectrumCalculator
 import numpy as np
 import scipy.constants as sc
 from scipy.optimize import brentq
-from scipy.integrate import simpson, cumulative_simpson
+from scipy.integrate import simpson, cumulative_simpson, quad
 from scipy.interpolate import interp1d
 from numpy.typing import ArrayLike, NDArray
 
@@ -76,22 +76,23 @@ def calc_omega_axial(trap: BaseField, particle: Particle) -> float:
         Axial frequency in radians/s
     """
     pa = particle.GetPitchAngle()
-    ke = particle.GetEnergy() * sc.e
+    gamma = particle.GetGamma()
+    p0 = gamma * particle.GetMass() * particle.GetSpeed()
     pStart = particle.GetPosition()
 
     centralField = trap.evaluate_field_magnitude(pStart[0], pStart[1], 0.)
-
     zMax = calc_zmax(trap, particle)
 
     # Equivalent magnetic moment
-    muMag = ke * np.sin(pa)**2 / centralField
+    muMag = gamma * particle.GetMass() * (np.sin(pa) * particle.GetSpeed())**2 / \
+        (2 * centralField)
 
     # Calculate the integrand at each point
-    integrationPoints = np.linspace(0, zMax, 2000, endpoint=False)
-    integrand = 1.0 / np.sqrt((2 / particle.GetMass()) * (ke - muMag *
-                              trap.evaluate_field_magnitude(pStart[0], pStart[1], integrationPoints)))
+    integrationPoints = np.linspace(0, zMax, 900000, endpoint=False)
+    integrand = gamma * particle.GetMass() / np.sqrt(p0**2 - 2 * gamma * particle.GetMass()
+                                                     * muMag * trap.evaluate_field_magnitude(pStart[0], pStart[1], integrationPoints))
 
-    integral = 2 * np.trapezoid(integrand, integrationPoints) / np.pi
+    integral = float(2 * simpson(integrand, integrationPoints) / np.pi)
     return 1 / integral
 
 
@@ -113,20 +114,22 @@ def calc_t_vs_z(trap: BaseField, particle: Particle):
     """
 
     pa = particle.GetPitchAngle()
-    ke = particle.GetEnergy() * sc.e
+    gamma = particle.GetGamma()
+    p0 = gamma * particle.GetMass() * particle.GetSpeed()
     pStart = particle.GetPosition()
 
     centralField = trap.evaluate_field_magnitude(pStart[0], pStart[1], 0.)
     zMax = calc_zmax(trap, particle)
-    muMag = ke * np.sin(pa)**2 / centralField
+    muMag = gamma * particle.GetMass() * (np.sin(pa) * particle.GetSpeed())**2 / \
+        (2 * centralField)
 
     def t_integrand(z):
-        result = np.sqrt(particle.GetMass() / 2) / np.sqrt(ke - muMag *
-                                                           trap.evaluate_field_magnitude(pStart[0], pStart[1], z))
+        result = gamma * particle.GetMass() / np.sqrt(p0**2 - 2 * gamma * particle.GetMass()
+                                                      * muMag * trap.evaluate_field_magnitude(pStart[0], pStart[1], z))
         return result
 
     # For axially symmetric traps, we should only need to do one integration
-    zVals1 = np.linspace(0.0, 0.999 * zMax, 100)
+    zVals1 = np.linspace(0.0, 0.9995 * zMax, 100)
     tVals1 = cumulative_simpson(t_integrand(zVals1), x=zVals1, initial=0.0)
     zVals2 = np.flip(zVals1[:-1])
     tVals2 = 2 * tVals1[-1] - np.flip(tVals1[:-1])
@@ -261,7 +264,7 @@ class NumericalSpectrumCalculator(BaseSpectrumCalculator):
         Parameters
         ----------
         order : ArrayLike
-            Order of the peak for which we are calculating the amplitude 
+            Order of the peak for which we are calculating the amplitude
         negativeFreqs : bool
             Boolean to return amps for negative frequencies (default false)
 
