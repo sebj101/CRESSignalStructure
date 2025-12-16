@@ -23,7 +23,9 @@ CRES is a technique used to measure the energy of electrons through the cyclotro
 
 ### Prerequisites
 
-- Python >= 3.8
+- Python >= 3.9
+- Numpy
+- Scipy >= 1.12
 - pip
 
 ### Install from Source
