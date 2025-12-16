@@ -48,7 +48,7 @@ class SignalGenerator:
             acq_time, "Acquisition time")
         self.__spec_calc = spectrum_calc
 
-    def GenerateSignal(self, max_order: int) -> NDArray:
+    def GenerateSignal(self, max_order: int) -> tuple[NDArray, NDArray]:
         """
         Main method orchestrating signal generation
 
@@ -101,4 +101,4 @@ class SignalGenerator:
         rf_signal_filtered = sosfilt(sos, rf_signal_dm, zi=None)
 
         # Return reduced signal
-        return rf_signal_filtered[::FAST_SAMPLE_FACTOR] * np.sqrt(self.__spec_calc.GetPowerNorm())
+        return times_fast_sample[::FAST_SAMPLE_FACTOR], rf_signal_filtered[::FAST_SAMPLE_FACTOR] * np.sqrt(self.__spec_calc.GetPowerNorm())
