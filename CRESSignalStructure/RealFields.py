@@ -42,9 +42,9 @@ class CoilField(BaseField):
 
     def evaluate_field(self, x: ArrayLike, y: ArrayLike, z: ArrayLike) -> tuple:
         # Convert inputs to numpy arrays
-        x = np.asarray(x)
-        y = np.asarray(y)
-        z = np.asarray(z)
+        x = np.asarray(x, dtype=float)
+        y = np.asarray(y, dtype=float)
+        z = np.asarray(z, dtype=float)
 
         x, y, z = np.broadcast_arrays(x, y, z)
 
