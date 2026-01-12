@@ -120,6 +120,7 @@ Example Jupyter notebooks are provided in the repository:
 - [TestPowerSpec.ipynb](TestPowerSpec.ipynb) - Basic power spectrum calculations
 - [HarmonicComparison.ipynb](HarmonicComparison.ipynb) - Comparison of harmonic trap models
 - [RealisticFields.ipynb](RealisticFields.ipynb) - Working with realistic magnetic field configurations
+- [SignalGenExample.ipynb](SignalGenExample.ipynb) - Generating downmixed and sampled signals
 
 ## Testing
 
