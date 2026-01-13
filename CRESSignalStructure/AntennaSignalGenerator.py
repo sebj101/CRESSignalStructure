@@ -24,7 +24,7 @@ class AntennaSignalGenerator:
 
     This class computes the voltage signal detected by an antenna from
     a radiating electron, accounting for:
-    - Retarded time effects (finite speed of light propagation)
+    - Retarded time effects
     - Liénard-Wiechert electromagnetic fields
     - Antenna effective length and directional response
     - Receiver chain downmixing and digitization
@@ -35,7 +35,7 @@ class AntennaSignalGenerator:
     """
 
     def __init__(self, trajectory: Trajectory, antenna: BaseAntenna,
-                 receiver_chain: ReceiverChain, oversampling_factor: int = 5):
+                 receiver_chain: ReceiverChain):
         """
         Initialize AntennaSignalGenerator
 
@@ -47,8 +47,6 @@ class AntennaSignalGenerator:
             Antenna for detecting the radiation
         receiver_chain : ReceiverChain
             Receiver chain for signal processing
-        oversampling_factor : int, optional
-            Factor by which to oversample relative to ADC rate (default 5)
 
         Raises
         ------
@@ -64,15 +62,17 @@ class AntennaSignalGenerator:
         if not isinstance(receiver_chain, ReceiverChain):
             raise TypeError("receiver_chain must be a ReceiverChain object")
 
-        if not isinstance(oversampling_factor, int):
-            raise TypeError("oversampling_factor must be an integer")
-        if oversampling_factor < 1:
-            raise ValueError("oversampling_factor must be positive")
+        # Check what the trajectory sampling frequency is vs the digitizer frequency
+        traj_sample_freq = trajectory.get_sample_rate()
+        dig_sample_freq = receiver_chain.get_sample_rate()
+        if traj_sample_freq <= dig_sample_freq:
+            raise ValueError(f'Trajectory sample rate {traj_sample_freq:.2e} Hz'
+                             'must not be less than the digitizer sample rate '
+                             f'of {dig_sample_freq:.2e} Hz')
 
         self.__trajectory = trajectory
         self.__antenna = antenna
         self.__receiver_chain = receiver_chain
-        self.__oversampling_factor = oversampling_factor
 
         # Calculate average cyclotron frequency for antenna calculations
         self.__avg_cyclotron_frequency = self._calculate_average_cyclotron_frequency()

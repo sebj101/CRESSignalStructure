@@ -204,7 +204,8 @@ class ReceiverChain:
         """
         return signal * self._receiver_gain
 
-    def digitize(self, time: NDArray, signal: NDArray) -> tuple[NDArray, NDArray]:
+    def digitize(self, time: NDArray, signal: NDArray,
+                 oversample_factor: int) -> tuple[NDArray, NDArray]:
         """
         Complete digitization pipeline: downmix, filter, gain, and resample
 
@@ -219,39 +220,29 @@ class ReceiverChain:
             Time array in seconds at the signal's native sample rate
         signal : NDArray
             Real-valued RF signal
+        oversample_factor : int
+            Oversampling factor versus
 
         Returns
         -------
         tuple[NDArray, NDArray]
             time_digitized : Time array at ADC sample rate
             signal_digitized : Complex digitized IF signal
-
-        Examples
-        --------
-        >>> digitizer = Digitizer(sample_rate=200e6, lo_frequency=26e9)
-        >>> t_dig, sig_dig = digitizer.digitize(time, rf_signal)
         """
         # Validate that input sample rate matches or exceeds ADC sample rate
         if len(time) < 2:
             raise ValueError("Need at least 2 time points")
 
-        input_dt = self._sample_rate * 5.
-
         # Downmix to IF
         if_signal = self._downmix(time, signal)
-
         # Apply low-pass filter to remove upper sideband
         if_signal = self._lowpass_filter(if_signal)
-
         # Apply receiver gain
         if_signal = self._apply_gain(if_signal)
 
         # Resample to ADC sample rate with integer decimation
-        DECIMATION_FACTOR = 5
-        dec_factor = int(DECIMATION_FACTOR)
-        time_resampled = time[::DECIMATION_FACTOR]
-        if_signal_resampled = if_signal[::DECIMATION_FACTOR]
-
+        time_resampled = time[::oversample_factor]
+        if_signal_resampled = if_signal[::oversample_factor]
         return time_resampled, if_signal_resampled
 
     def get_sample_rate(self) -> float:
