@@ -7,7 +7,7 @@ Tests for ShortDipoleAntenna and HalfWaveDipoleAntenna classes
 import pytest
 import numpy as np
 import scipy.constants as sc
-from CRESSignalStructure.DipoleAntennas import ShortDipoleAntenna, HalfWaveDipoleAntenna
+from CRESSignalStructure.antennas import ShortDipoleAntenna, HalfWaveDipoleAntenna
 
 
 class TestShortDipoleAntenna:

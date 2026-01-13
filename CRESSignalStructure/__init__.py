@@ -82,9 +82,7 @@ from .BaseTrap import BaseTrap
 from .QTNMTraps import HarmonicTrap, BathtubTrap
 
 # Antennas
-from .BaseAntenna import BaseAntenna
-from .IsotropicAntenna import IsotropicAntenna
-from .DipoleAntennas import ShortDipoleAntenna, HalfWaveDipoleAntenna
+from .antennas import BaseAntenna, IsotropicAntenna, ShortDipoleAntenna, HalfWaveDipoleAntenna
 
 # Trajectories
 from .TrajectoryGenerator import Trajectory, TrajectoryGenerator

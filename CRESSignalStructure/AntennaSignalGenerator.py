@@ -14,7 +14,7 @@ import scipy.constants as sc
 from scipy.interpolate import CubicSpline
 
 from CRESSignalStructure.TrajectoryGenerator import Trajectory
-from CRESSignalStructure.BaseAntenna import BaseAntenna
+from CRESSignalStructure.antennas import BaseAntenna
 from CRESSignalStructure.ReceiverChain import ReceiverChain
 
 
