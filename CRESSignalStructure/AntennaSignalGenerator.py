@@ -35,7 +35,7 @@ class AntennaSignalGenerator:
     """
 
     def __init__(self, trajectory: Trajectory, antenna: BaseAntenna,
-                 receiver_chain: ReceiverChain):
+                 receiver_chain: ReceiverChain, oversampling_factor: int = 5):
         """
         Initialize AntennaSignalGenerator
 
@@ -47,6 +47,8 @@ class AntennaSignalGenerator:
             Antenna for detecting the radiation
         receiver_chain : ReceiverChain
             Receiver chain for signal processing
+        oversampling_factor : int
+            Factor by which we oversample the digitizer sample rate
 
         Raises
         ------
@@ -69,10 +71,13 @@ class AntennaSignalGenerator:
             raise ValueError(f'Trajectory sample rate {traj_sample_freq:.2e} Hz'
                              'must not be less than the digitizer sample rate '
                              f'of {dig_sample_freq:.2e} Hz')
+        if oversampling_factor < 1:
+            raise ValueError('Oversample factor must be positive')
 
         self.__trajectory = trajectory
         self.__antenna = antenna
         self.__receiver_chain = receiver_chain
+        self.__oversampling_factor = oversampling_factor
 
         # Calculate average cyclotron frequency for antenna calculations
         self.__avg_cyclotron_frequency = self._calculate_average_cyclotron_frequency()
@@ -91,7 +96,7 @@ class AntennaSignalGenerator:
 
         # Sample field magnitudes along the trajectory
         # Use a subset of points to avoid excessive computation
-        n_samples = min(100, len(pos))
+        n_samples = min(1000, len(pos))
         indices = np.linspace(0, len(pos) - 1, n_samples, dtype=int)
 
         B_samples = np.array([
@@ -103,7 +108,7 @@ class AntennaSignalGenerator:
         # Average cyclotron frequency
         gamma = self.__trajectory.particle.GetGamma()
         mass = self.__trajectory.particle.GetMass()
-        avg_B = np.mean(B_samples)
+        avg_B = np.mean(B_samples, dtype=float)
         omega_c_avg = sc.e * avg_B / (gamma * mass)
         f_c_avg = omega_c_avg / (2 * np.pi)
 
@@ -121,7 +126,8 @@ class AntennaSignalGenerator:
         -------
         tuple[NDArray, CubicSpline]
             t_advanced : Advanced time array
-            spline : Cubic spline for interpolating trajectory time from advanced time
+            spline : Cubic spline for interpolating trajectory time from 
+            advanced time
         """
         # Get electron positions
         r_electron = self.__trajectory.position
@@ -144,7 +150,7 @@ class AntennaSignalGenerator:
         return t_advanced, spline
 
     def _calculate_retarded_quantities(self, t_obs: NDArray,
-                                       spline: CubicSpline) -> dict:
+                                       t_spline: CubicSpline) -> dict:
         """
         Calculate electron position, velocity, and acceleration at retarded times
 
@@ -155,8 +161,8 @@ class AntennaSignalGenerator:
         ----------
         t_obs : NDArray
             Observation times at antenna
-        spline : CubicSpline
-            Spline for interpolating trajectory time from advanced time
+        t_spline : CubicSpline
+            Spline for interpolating retarded time from observation time
 
         Returns
         -------
@@ -171,7 +177,7 @@ class AntennaSignalGenerator:
         """
         # Find retarded times by inverting the advanced time relationship
         # t_obs corresponds to t_advanced, so we use the spline to get t_ret
-        t_ret = spline(t_obs)
+        t_ret = t_spline(t_obs)
 
         # Create splines for trajectory quantities
         pos_spline = CubicSpline(
@@ -189,19 +195,18 @@ class AntennaSignalGenerator:
         # Calculate distance and direction from electron to antenna
         r_antenna = self.__antenna.GetPosition()
         r_vec = r_antenna - r_ret  # Vector from electron to antenna
-        R = np.linalg.norm(r_vec, axis=1)  # Distance
-        n_hat = r_vec / R[:, np.newaxis]  # Unit vector toward antenna
+        R_ret = np.linalg.norm(r_vec, axis=1)  # Distance
+        n_hat = r_vec / R_ret[:, np.newaxis]  # Unit vector toward antenna
 
         return {
-            'r_ret': r_ret,
             'v_ret': v_ret,
             'a_ret': a_ret,
             't_ret': t_ret,
-            'R_ret': R,
+            'R_ret': R_ret,
             'n_hat_ret': n_hat
         }
 
-    def _calculate_lienard_wiechert_field(self, ret_quantities: dict) -> NDArray:
+    def _calculate_E_field(self, ret_quantities: dict) -> NDArray:
         """
         Calculate electric field at antenna using Liénard-Wiechert formula.
 
@@ -215,6 +220,7 @@ class AntennaSignalGenerator:
         NDArray
             Electric field vector at antenna position, shape (N, 3)
         """
+        t_ret = ret_quantities['t_ret']
         n_hat = ret_quantities['n_hat_ret']
         v = ret_quantities['v_ret']
         a = ret_quantities['a_ret']
@@ -223,7 +229,6 @@ class AntennaSignalGenerator:
         beta = v / sc.c
         beta_dot = a / sc.c
         n_dot_beta = np.sum(n_hat * beta, axis=1)  # Shape (N,)
-        gamma = self.__trajectory.particle.GetGamma()
 
         # Prefactor
         q = self.__trajectory.particle.GetCharge()
@@ -237,9 +242,8 @@ class AntennaSignalGenerator:
         a_term = R * ((np.sum(n_hat * beta_dot)) * (n_hat - beta) /
                       sc.c - np.sum(n_hat * (n_hat - beta), axis=1) * beta_dot / sc.c)
 
-        # Total electric field
-        E_field = prefactor * (v_term + a_term)
-
+        # Total electric field. No field before signal has propagated to antenna
+        E_field = np.where(t_ret >= 0.0, prefactor * (v_term + a_term), 0)
         return E_field
 
     def _calculate_antenna_voltage(self, E_field: NDArray, ret_quantities: dict) -> NDArray:
@@ -260,19 +264,19 @@ class AntennaSignalGenerator:
         NDArray
             Real-valued voltage signal, shape (N,)
         """
+        t_ret = ret_quantities['t_ret']
         n_hat = ret_quantities['n_hat_ret']
         antenna_orientation = self.__antenna.GetOrientation()
 
-        # Direction from which signal arrives (opposite of n_hat)
+        # Direction from which signal arrives
         # Shape: (N, 3)
         k_hat = -n_hat
 
         # Calculate theta: angle from antenna orientation axis
         # Shape: (N,)
         cos_theta = np.dot(k_hat, antenna_orientation)
-        theta = np.arccos(np.clip(cos_theta, -1, 1))
+        theta = np.arccos(cos_theta)
 
-        # Calculate phi: azimuthal angle in antenna x-y plane
         # Project k_hat onto plane perpendicular to antenna orientation
         # k_perp = k_hat - (k_hat · orientation) * orientation
         # Shape: (N, 3)
@@ -307,7 +311,6 @@ class AntennaSignalGenerator:
         l_eff_array = self.__antenna.GetEffectiveLength(self.__avg_cyclotron_frequency,
                                                         theta, phi)
 
-        # Vectorized voltage calculation: V = E · l_eff (dot product for each point)
         # Shape: (N,)
         voltage = np.sum(E_field * l_eff_array, axis=1)
 
@@ -319,7 +322,7 @@ class AntennaSignalGenerator:
 
         This method performs the complete signal generation pipeline:
         1. Calculate advanced times and create interpolation spline
-        2. Generate observation time grid at oversampled rate
+        2. Generate observation time grid at trajectory sampling
         3. Calculate retarded time quantities via interpolation
         4. Calculate Liénard-Wiechert electric field at antenna
         5. Calculate antenna voltage from E-field
@@ -342,8 +345,8 @@ class AntennaSignalGenerator:
 
         Notes
         -----
-        The signal is generated at oversampling_factor times the ADC sample rate,
-        then filtered and decimated by the receiver chain.
+        The signal is generated at the ADC sample rate times the oversampling
+        factor, then filtered and decimated by the receiver chain.
         """
         # Step 1: Calculate advanced time and create spline
         t_advanced, spline = self._calculate_advanced_time()
@@ -364,18 +367,13 @@ class AntennaSignalGenerator:
         # Create time array
         t_obs = np.linspace(t_obs_start, t_obs_end, n_points)
 
-        # Step 3: Calculate retarded time quantities
         ret_quantities = self._calculate_retarded_quantities(t_obs, spline)
-
-        # Step 4: Calculate Liénard-Wiechert electric field
-        E_field = self._calculate_lienard_wiechert_field(ret_quantities)
-
-        # Step 5: Calculate antenna voltage
+        E_field = self._calculate_E_field(ret_quantities)
         voltage = self._calculate_antenna_voltage(E_field, ret_quantities)
 
-        # Step 6: Downmix and digitize
+        # Downmix and digitize
         t_digitized, signal_digitized = self.__receiver_chain.digitize(
-            t_obs, voltage)
+            t_obs, voltage, self.__oversampling_factor)
 
         if return_time:
             return t_digitized, signal_digitized
