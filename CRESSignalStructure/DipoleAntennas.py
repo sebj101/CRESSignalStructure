@@ -235,7 +235,7 @@ class HalfWaveDipoleAntenna(BaseAntenna):
     """
 
     def __init__(self, position: ArrayLike, orientation: ArrayLike,
-                 resonant_frequency: float, wire_radius: float = None):
+                 resonant_frequency: float, wire_radius: float = 0.0):
         """
         Constructor for HalfWaveDipoleAntenna
 
@@ -275,12 +275,12 @@ class HalfWaveDipoleAntenna(BaseAntenna):
         self._length = self._lambda0 / 2
 
         # Set wire radius
-        if wire_radius is None:
+        if wire_radius == 0.0:
             self._wire_radius = self._lambda0 / 1000
         else:
             if not isinstance(wire_radius, (int, float)):
                 raise TypeError("Wire radius must be a number")
-            if wire_radius <= 0:
+            if wire_radius < 0:
                 raise ValueError("Wire radius must be positive")
             if not np.isfinite(wire_radius):
                 raise ValueError("Wire radius must be finite")
@@ -339,7 +339,8 @@ class HalfWaveDipoleAntenna(BaseAntenna):
         # l_eff(θ_d) = (λ/π) * cos((π/2)cos(θ_d)) / sin(θ_d)
         # This accounts for the sinusoidal current distribution along the dipole
         # Shape: (N,)
-        pattern_factor = np.cos((np.pi / 2) * cos_theta_d) / (sin_theta_d + 1e-20)
+        pattern_factor = np.cos(
+            (np.pi / 2) * cos_theta_d) / (sin_theta_d + 1e-20)
         l_eff_magnitude = (wavelength / np.pi) * pattern_factor
 
         # Handle cases where wave propagates along dipole axis (no coupling)
@@ -348,7 +349,8 @@ class HalfWaveDipoleAntenna(BaseAntenna):
         safe_norm = np.where(norm > 1e-10, norm, 1.0)
 
         # Shape: (N, 3)
-        l_eff = l_eff_magnitude[..., np.newaxis] * projection / safe_norm[..., np.newaxis]
+        l_eff = l_eff_magnitude[..., np.newaxis] * \
+            projection / safe_norm[..., np.newaxis]
 
         # Set to zero where norm was too small (no coupling)
         l_eff = np.where(norm[..., np.newaxis] > 1e-10, l_eff, 0.0)
