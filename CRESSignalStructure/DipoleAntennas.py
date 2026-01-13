@@ -317,10 +317,7 @@ class HalfWaveDipoleAntenna(BaseAntenna):
         # Check if inputs are scalar (for return shape)
         is_scalar = (np.asarray(theta).size == 1 and np.asarray(phi).size == 1)
 
-        # Effective length magnitude for half-wave dipole
-        # Shape: (N,)
         wavelength = sc.c / frequency
-        l_eff_magnitude = wavelength / np.pi
 
         # Project perpendicular to propagation direction
         # projection = d̂ - (d̂·k̂)k̂
@@ -333,13 +330,25 @@ class HalfWaveDipoleAntenna(BaseAntenna):
         # Norm of projection, shape: (N,)
         norm = np.linalg.norm(projection, axis=-1)
 
+        # Calculate angle between dipole axis and incoming wave direction
+        # cos_theta_d = d̂ · k̂, sin_theta_d = |d̂ - (d̂·k̂)k̂| = |projection|
+        cos_theta_d = dot_product
+        sin_theta_d = norm
+
+        # Effective length magnitude for half-wave dipole including angular pattern
+        # l_eff(θ_d) = (λ/π) * cos((π/2)cos(θ_d)) / sin(θ_d)
+        # This accounts for the sinusoidal current distribution along the dipole
+        # Shape: (N,)
+        pattern_factor = np.cos((np.pi / 2) * cos_theta_d) / (sin_theta_d + 1e-20)
+        l_eff_magnitude = (wavelength / np.pi) * pattern_factor
+
         # Handle cases where wave propagates along dipole axis (no coupling)
         # Avoid division by zero by replacing small norms with 1
         # Shape: (N,)
         safe_norm = np.where(norm > 1e-10, norm, 1.0)
 
         # Shape: (N, 3)
-        l_eff = l_eff_magnitude * projection / safe_norm[..., np.newaxis]
+        l_eff = l_eff_magnitude[..., np.newaxis] * projection / safe_norm[..., np.newaxis]
 
         # Set to zero where norm was too small (no coupling)
         l_eff = np.where(norm[..., np.newaxis] > 1e-10, l_eff, 0.0)
