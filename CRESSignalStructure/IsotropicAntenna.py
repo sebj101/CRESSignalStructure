@@ -63,7 +63,8 @@ class IsotropicAntenna(BaseAntenna):
         if not np.isfinite(impedance):
             raise ValueError("Impedance must be finite")
         if np.real(impedance) < 0:
-            raise ValueError("Impedance real part (resistance) must be non-negative")
+            raise ValueError(
+                "Impedance real part (resistance) must be non-negative")
         self._impedance = complex(impedance)
 
         # Validate effective length
@@ -78,7 +79,7 @@ class IsotropicAntenna(BaseAntenna):
         # Set a default orientation (not physically meaningful for isotropic)
         self._orientation = np.array([0.0, 0.0, 1.0])
 
-    def GetEffectiveLength(self, frequency: float, theta: float, phi: float) -> NDArray:
+    def GetEffectiveLength(self, frequency: float, theta: ArrayLike, phi: ArrayLike) -> NDArray:
         """
         Get the effective length vector of the isotropic antenna
 
@@ -89,17 +90,18 @@ class IsotropicAntenna(BaseAntenna):
 
         Parameters
         ----------
-        frequency : float
-            Frequency in Hz (not used for isotropic antenna)
-        theta : float
-            Polar angle in radians (angle from z-axis)
-        phi : float
-            Azimuthal angle in radians (angle in x-y plane)
+        frequency : ArrayLike
+            Frequency in Hz (not used for isotropic antenna), scalar or array
+        theta : ArrayLike
+            Polar angle in radians (angle from z-axis), scalar or array
+        phi : ArrayLike
+            Azimuthal angle in radians (angle in x-y plane), scalar or array
 
         Returns
         -------
         NDArray
-            3-vector effective length in meters
+            If inputs are scalars: 3-vector effective length in meters
+            If inputs are arrays: (N, 3) array of effective length vectors
 
         Notes
         -----
@@ -107,32 +109,43 @@ class IsotropicAntenna(BaseAntenna):
         direction and has constant magnitude. For an isotropic antenna,
         we choose an arbitrary transverse direction.
         """
-        frequency = self._validate_frequency(frequency)
-        theta, phi = self._validate_angles(theta, phi)
+        self._validate_frequency(frequency)
+        k_hat = self._get_k_hat(theta, phi)
 
-        # Direction of incoming wave (k-vector direction)
-        k_hat = np.array([
-            np.sin(theta) * np.cos(phi),
-            np.sin(theta) * np.sin(phi),
-            np.cos(theta)
-        ])
+        # Check if inputs are scalar (for return shape)
+        is_scalar = (np.asarray(theta).size == 1 and np.asarray(phi).size == 1)
 
-        # Choose an arbitrary direction perpendicular to k_hat
-        # Use a stable method to find perpendicular vector
-        if np.abs(k_hat[2]) < 0.9:
-            # k is not too close to z-axis, use z-cross-k
-            perp = np.array([-k_hat[1], k_hat[0], 0.0])
-        else:
-            # k is close to z-axis, use x-cross-k
-            perp = np.array([0.0, -k_hat[2], k_hat[1]])
+        # Choose perpendicular direction for each k_hat
+        # For vectors not too close to z-axis, use z-cross-k: [-k_y, k_x, 0]
+        # For vectors close to z-axis, use x-cross-k: [0, -k_z, k_y]
+        # Shape: (N, 3)
+        perp = np.where(
+            (np.abs(k_hat[..., 2:3]) < 0.9),
+            np.stack([-k_hat[..., 1], k_hat[..., 0],
+                     np.zeros_like(k_hat[..., 0])], axis=-1),
+            np.stack([np.zeros_like(k_hat[..., 0]), -
+                     k_hat[..., 2], k_hat[..., 1]], axis=-1)
+        )
 
         # Normalize and scale by effective length
-        perp_norm = np.linalg.norm(perp)
-        if perp_norm > 1e-10:
-            l_eff = self._effective_length * perp / perp_norm
-        else:
-            # Degenerate case (shouldn't happen)
-            l_eff = np.array([self._effective_length, 0.0, 0.0])
+        # Shape: (N,)
+        perp_norm = np.linalg.norm(perp, axis=-1, keepdims=True)
+
+        # Avoid division by zero
+        perp_norm = np.where(perp_norm > 1e-10, perp_norm, 1.0)
+
+        # Shape: (N, 3)
+        l_eff = self._effective_length * perp / perp_norm
+
+        # Handle degenerate cases (parallel to chosen axis)
+        # Replace with [l_eff, 0, 0] where norm was too small
+        degenerate = (np.linalg.norm(perp, axis=-1) < 1e-10)
+        if np.any(degenerate):
+            default_vec = np.array([self._effective_length, 0.0, 0.0])
+            l_eff = np.where(degenerate[..., np.newaxis], default_vec, l_eff)
+
+        if is_scalar:
+            return l_eff.reshape(3)
 
         return l_eff
 

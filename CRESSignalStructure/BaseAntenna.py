@@ -21,7 +21,7 @@ class BaseAntenna(ABC):
     """
 
     @abstractmethod
-    def GetEffectiveLength(self, frequency: float, theta: float, phi: float) -> NDArray:
+    def GetEffectiveLength(self, frequency: float, theta: ArrayLike, phi: ArrayLike) -> NDArray:
         """
         Get the effective length vector of the antenna
 
@@ -32,15 +32,20 @@ class BaseAntenna(ABC):
         ----------
         frequency : float
             Frequency in Hz
-        theta : float
-            Polar angle in radians (angle from antenna axis/z-axis)
-        phi : float
-            Azimuthal angle in radians (angle in x-y plane)
+        theta : ArrayLike
+            Polar angle in radians (scalar or array, angle from antenna axis/z-axis)
+        phi : ArrayLike
+            Azimuthal angle in radians (scalar or array, angle in x-y plane)
 
         Returns
         -------
         NDArray
-            3-vector representing effective length in meters [l_x, l_y, l_z]
+            If inputs are scalars: 3-vector representing effective length [l_x, l_y, l_z]
+            If inputs are arrays: (N, 3) array of effective length vectors
+
+        Notes
+        -----
+        All input arrays must be broadcastable to the same shape.
         """
         pass
 
@@ -235,3 +240,31 @@ class BaseAntenna(ABC):
             raise ValueError("Direction vector must have non-zero length")
 
         return direction / norm
+
+    def _get_k_hat(self, theta: ArrayLike, phi: ArrayLike):
+        """
+        Gets the direction of the incoming wave
+
+        Parameters
+        ----------
+        theta : ArrayLike
+            Polar angle in radians (measured from propagation direction)
+        phi : ArrayLike
+            Azimuthal angle in radians (measured from propagation direction)
+
+        Returns
+        -------
+            If inputs are scalars: Unit 3-vector of propagation direction
+            If inputs are arrays: (N, 3) array of propagation directions
+        """
+        # Convert the inputs to arrays
+        theta = np.atleast_1d(theta)
+        phi = np.atleast_1d(phi)
+
+        if theta.shape != phi.shape:
+            raise ValueError('theta and phi arrays must have same shape but '
+                             f'have shapes {theta.shape} and {phi.shape}.')
+
+        return np.stack([np.sin(theta) * np.cos(phi),
+                         np.sin(theta) * np.sin(phi),
+                         np.cos(theta)], axis=-1)

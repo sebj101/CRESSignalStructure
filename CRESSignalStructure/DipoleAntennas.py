@@ -69,7 +69,7 @@ class ShortDipoleAntenna(BaseAntenna):
             raise ValueError("Resistance must be finite")
         self._resistance = float(resistance)
 
-    def GetEffectiveLength(self, frequency: float, theta: float, phi: float) -> NDArray:
+    def GetEffectiveLength(self, frequency: float, theta: ArrayLike, phi: ArrayLike) -> NDArray:
         """
         Get the effective length vector of the short dipole
 
@@ -81,39 +81,43 @@ class ShortDipoleAntenna(BaseAntenna):
         ----------
         frequency : float
             Frequency in Hz (not used for short dipole approximation)
-        theta : float
-            Polar angle in radians (measured from propagation direction)
-        phi : float
-            Azimuthal angle in radians
+        theta : ArrayLike
+            Polar angle in radians (measured from propagation direction), scalar or array
+        phi : ArrayLike
+            Azimuthal angle in radians, scalar or array
 
         Returns
         -------
         NDArray
-            3-vector effective length in meters
+            If inputs are scalars: 3-vector effective length in meters
+            If inputs are arrays: (N, 3) array of effective length vectors
 
         Notes
         -----
         The effective length is given by:
-        l_eff = l * (d̂ - (d̂·k̂)k̂) * sin(θ_d)
-        where d̂ is the dipole direction, k̂ is the propagation direction,
-        and θ_d is the angle between them.
+        l_eff = l * (d̂ - (d̂·k̂)k̂)
+        where d̂ is the dipole direction and k̂ is the propagation direction.
         """
-        frequency = self._validate_frequency(frequency)
-        theta, phi = self._validate_angles(theta, phi)
+        self._validate_frequency(frequency)
+        k_hat = self._get_k_hat(theta, phi)
 
-        # Direction of incoming wave (k-vector direction)
-        k_hat = np.array([
-            np.sin(theta) * np.cos(phi),
-            np.sin(theta) * np.sin(phi),
-            np.cos(theta)
-        ])
+        # Check if inputs are scalar (for return shape)
+        is_scalar = (np.asarray(theta).size == 1 and np.asarray(phi).size == 1)
 
         # Project dipole direction perpendicular to propagation direction
-        # E_effective = E - (E·k̂)k̂  (only transverse E-field components matter)
-        projection = self._orientation - np.dot(self._orientation, k_hat) * k_hat
+        # projection = d̂ - (d̂·k̂)k̂  (only transverse E-field components matter)
+        # Shape: (N,)
+        dot_product = np.dot(k_hat, self._orientation)
+
+        # Shape: (N, 3)
+        projection = self._orientation - dot_product[..., np.newaxis] * k_hat
 
         # Effective length is physical length times projection
+        # Shape: (N, 3)
         l_eff = self._length * projection
+
+        if is_scalar:
+            return l_eff.reshape(3)
 
         return l_eff
 
@@ -282,7 +286,7 @@ class HalfWaveDipoleAntenna(BaseAntenna):
                 raise ValueError("Wire radius must be finite")
             self._wire_radius = float(wire_radius)
 
-    def GetEffectiveLength(self, frequency: float, theta: float, phi: float) -> NDArray:
+    def GetEffectiveLength(self, frequency: float, theta: ArrayLike, phi: ArrayLike) -> NDArray:
         """
         Get the effective length vector of the half-wave dipole
 
@@ -294,43 +298,55 @@ class HalfWaveDipoleAntenna(BaseAntenna):
 
         Parameters
         ----------
-        frequency : float
-            Frequency in Hz
-        theta : float
-            Polar angle in radians
-        phi : float
-            Azimuthal angle in radians
+        frequency : ArrayLike
+            Frequency in Hz, scalar or array
+        theta : ArrayLike
+            Polar angle in radians, scalar or array
+        phi : ArrayLike
+            Azimuthal angle in radians, scalar or array
 
         Returns
         -------
         NDArray
-            3-vector effective length in meters
+            If inputs are scalars: 3-vector effective length in meters
+            If inputs are arrays: (N, 3) array of effective length vectors
         """
-        frequency = self._validate_frequency(frequency)
-        theta, phi = self._validate_angles(theta, phi)
+        k_hat = self._get_k_hat(theta, phi)
+        self._validate_frequency(frequency)
 
+        # Check if inputs are scalar (for return shape)
+        is_scalar = (np.asarray(theta).size == 1 and np.asarray(phi).size == 1)
+
+        # Effective length magnitude for half-wave dipole
+        # Shape: (N,)
         wavelength = sc.c / frequency
-
-        # Effective length for half-wave dipole
         l_eff_magnitude = wavelength / np.pi
 
-        # Direction of incoming wave
-        k_hat = np.array([
-            np.sin(theta) * np.cos(phi),
-            np.sin(theta) * np.sin(phi),
-            np.cos(theta)
-        ])
-
         # Project perpendicular to propagation direction
-        projection = self._orientation - np.dot(self._orientation, k_hat) * k_hat
-        norm = np.linalg.norm(projection)
+        # projection = d̂ - (d̂·k̂)k̂
+        # Shape: (N,)
+        dot_product = np.dot(k_hat, self._orientation)
 
-        if norm < 1e-10:
-            # Wave propagating along dipole axis - no coupling
-            return np.zeros(3)
+        # Shape: (N, 3)
+        projection = self._orientation - dot_product[..., np.newaxis] * k_hat
 
-        # Normalize and scale
-        l_eff = l_eff_magnitude * projection / norm * norm
+        # Norm of projection, shape: (N,)
+        norm = np.linalg.norm(projection, axis=-1)
+
+        # Handle cases where wave propagates along dipole axis (no coupling)
+        # Avoid division by zero by replacing small norms with 1
+        # Shape: (N,)
+        safe_norm = np.where(norm > 1e-10, norm, 1.0)
+
+        # Shape: (N, 3)
+        l_eff = l_eff_magnitude * projection / safe_norm[..., np.newaxis]
+
+        # Set to zero where norm was too small (no coupling)
+        l_eff = np.where(norm[..., np.newaxis] > 1e-10, l_eff, 0.0)
+
+        # Return scalar shape if inputs were scalar
+        if is_scalar:
+            return l_eff.reshape(3)
 
         return l_eff
 
