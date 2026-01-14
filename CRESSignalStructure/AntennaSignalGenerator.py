@@ -236,14 +236,19 @@ class AntennaSignalGenerator:
             (R**2 * (1 - n_dot_beta)**3)
 
         # Velocity field term
-        v_term = (n_hat - beta) * (1 - np.sum(beta * beta, axis=1))
+        v_term = (n_hat - beta) * \
+            (1 - np.sum(beta * beta, axis=1))[:, np.newaxis]
 
         # Acceleration field term
-        a_term = R * ((np.sum(n_hat * beta_dot)) * (n_hat - beta) /
-                      sc.c - np.sum(n_hat * (n_hat - beta), axis=1) * beta_dot / sc.c)
+        n_hat_dot_beta_dot = np.sum(n_hat * beta_dot, axis=1)[:, np.newaxis]
+        # a_term_1 = R * n_hat_dot_beta_dot * (n_hat - beta) / sc.c
+        # a_term_2 = -R *
+        print(n_hat_dot_beta_dot.shape)
+        a_term = R[:, np.newaxis] * (np.sum(n_hat * beta_dot, axis=1)[:, np.newaxis] * (n_hat - beta) /
+                                     sc.c - np.sum(n_hat * (n_hat - beta), axis=1)[:, np.newaxis] * beta_dot / sc.c)
 
         # Total electric field. No field before signal has propagated to antenna
-        E_field = np.where(t_ret >= 0.0, prefactor * (v_term + a_term), 0)
+        E_field = prefactor[:, np.newaxis] * (v_term + a_term)
         return E_field
 
     def _calculate_antenna_voltage(self, E_field: NDArray, ret_quantities: dict) -> NDArray:
