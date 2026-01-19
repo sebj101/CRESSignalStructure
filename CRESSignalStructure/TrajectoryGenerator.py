@@ -322,6 +322,9 @@ class TrajectoryGenerator:
         Uses the field's calc_t_vs_z method to get the analytic relationship,
         then interpolates to create uniformly-sampled time points.
 
+        Special case: If the pitch angle is very close to 90 degrees, approximate 
+        as no axial motion 
+
         Parameters
         ----------
         sample_rate : float
@@ -334,21 +337,27 @@ class TrajectoryGenerator:
         tuple[NDArray, NDArray]
             Time array (N,) and z-position array (N,)
         """
-        # Get analytic t vs z relationship
-        t_analytic, z_analytic = self.field.calc_t_vs_z(self.particle)
-        Ta = t_analytic[-1]  # Axial period
-
-        # Create interpolator
-        t_to_z = interp1d(t_analytic, z_analytic, kind='cubic')
-
         # Create uniformly-spaced time array
         n_points = int(np.round(t_max * sample_rate))
         t_vals = np.linspace(0, t_max, n_points)
 
-        # Interpolate, accounting for periodicity
-        z_pos = t_to_z(np.mod(t_vals, Ta))
+        PERPENDICULAR_THRESHOLD = 1e-4 * np.pi / 180
+        # Use approximation if we're too close to 90 degree pitch angle
+        if abs(np.pi/2 - self.particle.GetPitchAngle()) < PERPENDICULAR_THRESHOLD:
+            p_init = self.particle.GetPosition()
+            z_pos = np.full(n_points, p_init[2])
+            return t_vals, z_pos
 
-        return t_vals, z_pos
+        else:
+            # Get analytic t vs z relationship
+            t_analytic, z_analytic = self.field.calc_t_vs_z(self.particle)
+            Ta = t_analytic[-1]  # Axial period
+
+            t_to_z = interp1d(t_analytic, z_analytic, kind='cubic')
+            # Interpolate, accounting for periodicity
+            z_pos = t_to_z(np.mod(t_vals, Ta))
+
+            return t_vals, z_pos
 
     def _calc_azimuthal_motion(self, t: NDArray, z: NDArray) -> NDArray:
         """
