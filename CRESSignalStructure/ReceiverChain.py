@@ -149,17 +149,10 @@ class ReceiverChain:
             )
 
         # Generate LO signals for IQ mixing
-        lo_phase = 2 * np.pi * self._lo_frequency * time
-        lo_i = np.cos(lo_phase)
-        lo_q = np.sin(lo_phase)
-
-        # Mix signal with LO (downconversion)
-        i_channel = signal * lo_i
-        q_channel = signal * lo_q
+        lo_signal = np.exp(-2j * np.pi * self._lo_frequency * time)
 
         # Combine into complex IF signal
-        if_signal = i_channel + 1j * q_channel
-
+        if_signal = signal * lo_signal
         return if_signal
 
     def _lowpass_filter(self, if_signal: NDArray) -> NDArray:
