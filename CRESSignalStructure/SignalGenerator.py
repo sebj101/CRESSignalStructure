@@ -60,7 +60,8 @@ class SignalGenerator:
         Returns
         -------
         NDArray 
-            A 1D array of complex numbers representing the time series signal
+            A 1D array of complex numbers representing the time series signal in 
+            units of volts, assuming a 50 Ohm impedance
         """
         if not isinstance(max_order, int):
             raise TypeError("max_order must be an integer")
@@ -98,7 +99,9 @@ class SignalGenerator:
         # Generate a Butterworth filter and filter the signal
         sos = butter(N=8, Wn=self.__sample_rate / 2, btype='low', output='sos',
                      fs=self.__sample_rate * FAST_SAMPLE_FACTOR)
-        rf_signal_filtered = sosfilt(sos, rf_signal_dm, zi=None)
+        IMPEDANCE = 50.0  # Ohms
+        rf_signal_filtered = sosfilt(
+            sos, rf_signal_dm, zi=None) * np.sqrt(IMPEDANCE)
 
         # Return reduced signal
         return times_fast_sample[::FAST_SAMPLE_FACTOR], rf_signal_filtered[::FAST_SAMPLE_FACTOR] * np.sqrt(self.__spec_calc.GetPowerNorm())
