@@ -146,7 +146,6 @@ class BaseAntenna(ABC):
         """
         pass
 
-    @abstractmethod
     def GetPosition(self) -> NDArray:
         """
         Get the antenna position in the trap coordinate system
@@ -156,9 +155,8 @@ class BaseAntenna(ABC):
         NDArray
             3-vector position in meters [x, y, z]
         """
-        pass
+        return self._pos.copy()
 
-    @abstractmethod
     def GetOrientation(self) -> NDArray:
         """
         Get the antenna orientation unit vector
@@ -171,7 +169,7 @@ class BaseAntenna(ABC):
         NDArray
             3-vector unit direction
         """
-        pass
+        return self._z_ax.copy()
 
     def GetGain(self, theta: float, phi: float) -> float:
         """

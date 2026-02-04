@@ -209,28 +209,6 @@ class ShortDipoleAntenna(BaseAntenna):
 
         return R + 1j * X_c
 
-    def GetPosition(self) -> NDArray:
-        """
-        Get the antenna position
-
-        Returns
-        -------
-        NDArray
-            3-vector position in meters
-        """
-        return self._pos.copy()
-
-    def GetOrientation(self) -> NDArray:
-        """
-        Get the antenna orientation
-
-        Returns
-        -------
-        NDArray
-            3-vector unit direction along dipole axis
-        """
-        return self._z_ax.copy()
-
     def GetGain(self, theta: float, phi: float) -> float:
         """
         Get the antenna gain pattern for a short dipole
@@ -515,28 +493,6 @@ class HalfWaveDipoleAntenna(BaseAntenna):
         X = 42.5 + 1000 * delta_f
 
         return R_rad + 1j * X
-
-    def GetPosition(self) -> NDArray:
-        """
-        Get the antenna position
-
-        Returns
-        -------
-        NDArray
-            3-vector position in meters
-        """
-        return self._pos.copy()
-
-    def GetOrientation(self) -> NDArray:
-        """
-        Get the antenna orientation
-
-        Returns
-        -------
-        NDArray
-            3-vector unit direction along dipole axis
-        """
-        return self._z_ax.copy()
 
     def GetGain(self, theta: float, phi: float) -> float:
         """

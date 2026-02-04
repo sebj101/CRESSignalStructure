@@ -223,32 +223,6 @@ class IsotropicAntenna(BaseAntenna):
         frequency = self._validate_frequency(frequency)
         return self._impedance
 
-    def GetPosition(self) -> NDArray:
-        """
-        Get the antenna position
-
-        Returns
-        -------
-        NDArray
-            3-vector position in meters [x, y, z]
-        """
-        return self._pos.copy()
-
-    def GetOrientation(self) -> NDArray:
-        """
-        Get the antenna orientation
-
-        For an isotropic antenna, orientation is not physically meaningful
-        since the antenna responds equally in all directions. This returns
-        an arbitrary unit vector (z-direction).
-
-        Returns
-        -------
-        NDArray
-            3-vector unit direction (arbitrary for isotropic antenna)
-        """
-        return self._z_ax.copy()
-
     def GetGain(self, theta: float, phi: float) -> float:
         """
         Get the antenna gain pattern for an isotropic antenna
