@@ -17,11 +17,91 @@ class BaseAntenna(ABC):
     Abstract base class for antennas detecting CRES radiation
 
     This class defines the interface that all antenna implementations must follow,
-    including methods for calculating effective length, impedance, and position.
+    including methods for calculating effective length, impedance, and polarisation.
     """
 
+    def __init__(self, pos: NDArray, z_ax: NDArray, x_ax: NDArray):
+        self._pos = self._validate_position(pos)
+        self._z_ax = self._validate_direction(z_ax)
+        self._x_ax = self._validate_direction(x_ax)
+        self._y_ax = np.cross(self._z_ax, self._x_ax)
+
     @abstractmethod
-    def GetEffectiveLength(self, frequency: float, theta: ArrayLike, phi: ArrayLike) -> NDArray:
+    def GetETheta(self, pos: NDArray) -> NDArray:
+        """
+        Get the component of the antenna radiation pattern in the theta direction
+
+        Parameters
+        ----------
+        pos : NDArray
+            Array of N position 3-vectors (shape(N,3)) to calculate the field at
+            in metres
+
+        Returns
+        -------
+        NDArray
+            An (N,3) array of electric field vectors 
+        """
+        pass
+
+    @abstractmethod
+    def GetEPhi(self, pos: NDArray) -> NDArray:
+        """
+        Get the component of the antenna radiation pattern in the phi direction
+
+        Parameters
+        ----------
+        pos : NDArray
+            Array of N position 3-vectors (shape(N,3)) to calculate the field at
+            in metres
+
+        Returns
+        -------
+        NDArray
+            An (N,3) array of electric field vectors 
+        """
+        pass
+
+    def GetTheta(self, pos: NDArray) -> NDArray:
+        """
+        Calculates polar angle theta w.r.t. antenna axes
+
+        Parameters
+        ----------
+        pos : NDArray
+            Array of N position 3-vectors (shape(N,3)) in metres
+
+        Returns
+        -------
+        NDArray
+            An (N,1) array of angles in radians
+        """
+        r = self._pos - pos
+        rHat = r / np.linalg.norm(r, axis=1, keepdims=True)
+        return np.acos(np.dot(rHat, self._z_ax))
+
+    def GetPhi(self, pos: NDArray) -> NDArray:
+        """
+        Calculates azimuthal angle phi w.r.t. antenna axes
+
+        Parameters
+        ----------
+        pos : NDArray
+            Array of N position 3-vectors (shape(N,3)) in metres
+
+        Returns
+        -------
+        NDArray
+            An (N,1) array of angles in radians
+        """
+        r = self._pos - pos
+        rHat = r / np.linalg.norm(r, axis=1, keepdims=True)
+        phi = np.atan2(np.dot(rHat, self._y_ax), np.dot(rHat, self._x_ax))
+        return phi
+
+    @abstractmethod
+    def GetEffectiveLength(self, frequency: float,
+                           theta: ArrayLike, phi: ArrayLike) -> NDArray:
         """
         Get the effective length vector of the antenna
 

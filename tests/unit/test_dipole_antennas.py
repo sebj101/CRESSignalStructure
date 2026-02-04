@@ -375,3 +375,142 @@ class TestAntennaComparison:
 
         # Original should be unchanged
         assert antenna.GetOrientation()[0] == pytest.approx(0.0)
+
+
+class TestShortDipoleGetEFields:
+    """Tests for ShortDipoleAntenna GetETheta and GetEPhi"""
+
+    def setup_method(self):
+        self.antenna = ShortDipoleAntenna(
+            position=np.array([0.0, 0.0, 0.0]),
+            orientation=np.array([0.0, 0.0, 1.0]),
+            length=0.005
+        )
+
+    def test_e_theta_zero_at_poles(self):
+        """E_theta is zero along ±z (the dipole axis)"""
+        pos = np.array([[0.0, 0.0, 1.0], [0.0, 0.0, -1.0]])
+        E = self.antenna.GetETheta(pos)
+        np.testing.assert_array_almost_equal(E, np.zeros((2, 3)))
+
+    def test_e_theta_equator_direction_and_magnitude(self):
+        """At the equator E_theta = −ẑ with magnitude 1, for any azimuth"""
+        pos = np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [1.0, 1.0, 0.0]])
+        E = self.antenna.GetETheta(pos)
+        for row in E:
+            np.testing.assert_array_almost_equal(row, [0.0, 0.0, -1.0])
+
+    def test_e_theta_magnitude_is_sin_theta(self):
+        """Magnitude of E_theta equals sin(theta) across the sphere"""
+        thetas = np.linspace(0.01, np.pi - 0.01, 30)
+        pos = np.column_stack([np.sin(thetas), np.zeros(30), np.cos(thetas)])
+        magnitudes = np.linalg.norm(self.antenna.GetETheta(pos), axis=1)
+        np.testing.assert_array_almost_equal(magnitudes, np.sin(thetas))
+
+    def test_e_theta_perpendicular_to_r_hat(self):
+        """E_theta is transverse: E_theta · r_hat = 0"""
+        pos = np.array([
+            [1.0, 0.0, 0.0],
+            [1.0, 1.0, 0.0],
+            [1.0, 0.0, 1.0],
+            [0.0, 1.0, 1.0],
+        ])
+        E = self.antenna.GetETheta(pos)
+        r_hat = pos / np.linalg.norm(pos, axis=1, keepdims=True)
+        dots = np.sum(E * r_hat, axis=1)
+        np.testing.assert_array_almost_equal(dots, np.zeros(4))
+
+    def test_e_theta_x_oriented_dipole(self):
+        """E_theta correct for a dipole aligned with x instead of z"""
+        antenna = ShortDipoleAntenna(
+            position=np.array([0.0, 0.0, 0.0]),
+            orientation=np.array([1.0, 0.0, 0.0]),
+            length=0.005
+        )
+        # Along dipole axis → zero
+        E_along = antenna.GetETheta(np.array([[1.0, 0.0, 0.0]]))
+        np.testing.assert_array_almost_equal(E_along, [[0.0, 0.0, 0.0]])
+        # Perpendicular → magnitude 1
+        E_perp = antenna.GetETheta(np.array([[0.0, 1.0, 0.0]]))
+        assert np.linalg.norm(E_perp) == pytest.approx(1.0)
+
+    def test_e_theta_offset_antenna(self):
+        """E_theta is correct when antenna is not at origin"""
+        antenna = ShortDipoleAntenna(
+            position=np.array([1.0, 0.0, 0.0]),
+            orientation=np.array([0.0, 0.0, 1.0]),
+            length=0.005
+        )
+        # r = [2,0,0] - [1,0,0] = [1,0,0]: same geometry as origin case
+        E = antenna.GetETheta(np.array([[2.0, 0.0, 0.0]]))
+        np.testing.assert_array_almost_equal(E, [[0.0, 0.0, -1.0]])
+
+    def test_e_phi_is_zero(self):
+        """E_phi is zero everywhere for a short dipole"""
+        pos = np.array([
+            [1.0, 0.0, 0.0], [0.0, 1.0, 0.0],
+            [0.0, 0.0, 1.0], [1.0, 1.0, 1.0],
+        ])
+        np.testing.assert_array_almost_equal(
+            self.antenna.GetEPhi(pos), np.zeros((4, 3))
+        )
+
+    def test_e_theta_single_point_input(self):
+        """GetETheta accepts a single 1D point and returns (1, 3)"""
+        E = self.antenna.GetETheta(np.array([1.0, 0.0, 0.0]))
+        assert E.shape == (1, 3)
+        np.testing.assert_array_almost_equal(E, [[0.0, 0.0, -1.0]])
+
+
+class TestHalfWaveDipoleGetEFields:
+    """Tests for HalfWaveDipoleAntenna GetETheta and GetEPhi"""
+
+    def setup_method(self):
+        self.antenna = HalfWaveDipoleAntenna(
+            position=np.array([0.0, 0.0, 0.0]),
+            orientation=np.array([0.0, 0.0, 1.0]),
+            resonant_frequency=26e9
+        )
+
+    def test_e_theta_zero_at_poles(self):
+        """E_theta is zero along ±z"""
+        pos = np.array([[0.0, 0.0, 1.0], [0.0, 0.0, -1.0]])
+        E = self.antenna.GetETheta(pos)
+        np.testing.assert_array_almost_equal(E, np.zeros((2, 3)))
+
+    def test_e_theta_unit_magnitude_at_equator(self):
+        """At theta = pi/2: F = cos(0)/1 = 1, direction = −ẑ"""
+        pos = np.array([[1.0, 0.0, 0.0]])
+        E = self.antenna.GetETheta(pos)
+        np.testing.assert_array_almost_equal(E, [[0.0, 0.0, -1.0]])
+
+    def test_e_theta_magnitude_matches_pattern(self):
+        """Magnitude matches cos((pi/2)cos(theta)) / sin(theta)"""
+        thetas = np.linspace(0.05, np.pi - 0.05, 30)
+        pos = np.column_stack([np.sin(thetas), np.zeros(30), np.cos(thetas)])
+        magnitudes = np.linalg.norm(self.antenna.GetETheta(pos), axis=1)
+        expected = np.cos(0.5 * np.pi * np.cos(thetas)) / np.sin(thetas)
+        np.testing.assert_array_almost_equal(magnitudes, expected)
+
+    def test_e_theta_perpendicular_to_r_hat(self):
+        """E_theta is transverse"""
+        pos = np.array([
+            [1.0, 0.0, 0.0],
+            [1.0, 1.0, 0.0],
+            [1.0, 0.0, 1.0],
+            [0.0, 1.0, 1.0],
+        ])
+        E = self.antenna.GetETheta(pos)
+        r_hat = pos / np.linalg.norm(pos, axis=1, keepdims=True)
+        dots = np.sum(E * r_hat, axis=1)
+        np.testing.assert_array_almost_equal(dots, np.zeros(4))
+
+    def test_e_phi_is_zero(self):
+        """E_phi is zero everywhere for a half-wave dipole"""
+        pos = np.array([
+            [1.0, 0.0, 0.0], [0.0, 1.0, 0.0],
+            [0.0, 0.0, 1.0], [1.0, 1.0, 1.0],
+        ])
+        np.testing.assert_array_almost_equal(
+            self.antenna.GetEPhi(pos), np.zeros((4, 3))
+        )

@@ -25,7 +25,7 @@ class ShortDipoleAntenna(BaseAntenna):
     from the antenna axis.
     """
 
-    def __init__(self, position: ArrayLike, orientation: ArrayLike,
+    def __init__(self, position: NDArray, orientation: ArrayLike,
                  length: float, resistance: float = 1.0):
         """
         Constructor for ShortDipoleAntenna
@@ -49,9 +49,16 @@ class ShortDipoleAntenna(BaseAntenna):
         ValueError
             If parameters have invalid values
         """
-        # Validate inputs
-        self._position = self._validate_position(position)
-        self._orientation = self._validate_direction(orientation)
+        # Validate orientation first so we can derive x_ax for the base class
+        orientation_hat = self._validate_direction(orientation)
+
+        # x_ax is arbitrary for a dipole (azimuthally symmetric)
+        ref = np.array([0.0, 0.0, 1.0]) if abs(
+            orientation_hat[2]) < 0.9 else np.array([1.0, 0.0, 0.0])
+        x_ax = np.cross(orientation_hat, ref)
+        x_ax /= np.linalg.norm(x_ax)
+
+        super().__init__(position, orientation_hat, x_ax)
 
         if not isinstance(length, (int, float)):
             raise TypeError("Length must be a number")
@@ -68,6 +75,48 @@ class ShortDipoleAntenna(BaseAntenna):
         if not np.isfinite(resistance):
             raise ValueError("Resistance must be finite")
         self._resistance = float(resistance)
+
+    def GetETheta(self, pos: NDArray) -> NDArray:
+        """
+        Get the theta component of the short dipole radiation pattern
+
+        For a short dipole the far-field pattern is E_θ ∝ sin(θ).  Using the
+        identity sin(θ)·θ̂ = cos(θ)·r̂ − ẑ avoids any division by sin(θ) and
+        is well-defined at the poles.
+
+        Parameters
+        ----------
+        pos : NDArray
+            Array of N position 3-vectors (shape (N,3)) in metres
+
+        Returns
+        -------
+        NDArray
+            (N, 3) array of E_theta vectors
+        """
+        pos = np.atleast_2d(pos)
+        r = pos - self._pos                                          # (N, 3)
+        r_hat = r / np.linalg.norm(r, axis=1, keepdims=True)        # (N, 3)
+        cos_theta = np.dot(r_hat, self._z_ax)                       # (N,)
+        return cos_theta[:, np.newaxis] * r_hat - self._z_ax         # (N, 3)
+
+    def GetEPhi(self, pos: NDArray) -> NDArray:
+        """
+        Get the phi component of the short dipole radiation pattern
+
+        A short dipole has no phi component (azimuthally symmetric).
+
+        Parameters
+        ----------
+        pos : NDArray
+            Array of N position 3-vectors (shape (N,3)) in metres
+
+        Returns
+        -------
+        NDArray
+            (N, 3) array of zeros
+        """
+        return np.zeros((np.atleast_2d(pos).shape[0], 3))
 
     def GetEffectiveLength(self, frequency: float, theta: ArrayLike, phi: ArrayLike) -> NDArray:
         """
@@ -107,10 +156,10 @@ class ShortDipoleAntenna(BaseAntenna):
         # Project dipole direction perpendicular to propagation direction
         # projection = d̂ - (d̂·k̂)k̂  (only transverse E-field components matter)
         # Shape: (N,)
-        dot_product = np.dot(k_hat, self._orientation)
+        dot_product = np.dot(k_hat, self._z_ax)
 
         # Shape: (N, 3)
-        projection = self._orientation - dot_product[..., np.newaxis] * k_hat
+        projection = self._z_ax - dot_product[..., np.newaxis] * k_hat
 
         # Effective length is physical length times projection
         # Shape: (N, 3)
@@ -169,7 +218,7 @@ class ShortDipoleAntenna(BaseAntenna):
         NDArray
             3-vector position in meters
         """
-        return self._position.copy()
+        return self._pos.copy()
 
     def GetOrientation(self) -> NDArray:
         """
@@ -180,7 +229,7 @@ class ShortDipoleAntenna(BaseAntenna):
         NDArray
             3-vector unit direction along dipole axis
         """
-        return self._orientation.copy()
+        return self._z_ax.copy()
 
     def GetGain(self, theta: float, phi: float) -> float:
         """
@@ -211,7 +260,7 @@ class ShortDipoleAntenna(BaseAntenna):
         ])
 
         # Angle between dipole axis and observation direction
-        cos_theta_d = np.dot(self._orientation, r_hat)
+        cos_theta_d = np.dot(self._z_ax, r_hat)
         sin_theta_d = np.sqrt(1 - cos_theta_d**2)
 
         # Short dipole gain pattern: G(θ) = 1.5 * sin²(θ_d)
@@ -234,7 +283,7 @@ class HalfWaveDipoleAntenna(BaseAntenna):
     At resonance, the input impedance is approximately 73 + j42.5 Ω.
     """
 
-    def __init__(self, position: ArrayLike, orientation: ArrayLike,
+    def __init__(self, position: NDArray, orientation: ArrayLike,
                  resonant_frequency: float, wire_radius: float = 0.0):
         """
         Constructor for HalfWaveDipoleAntenna
@@ -258,9 +307,16 @@ class HalfWaveDipoleAntenna(BaseAntenna):
         ValueError
             If parameters have invalid values
         """
-        # Validate inputs
-        self._position = self._validate_position(position)
-        self._orientation = self._validate_direction(orientation)
+        # Validate orientation first so we can derive x_ax for the base class
+        orientation_hat = self._validate_direction(orientation)
+
+        # x_ax is arbitrary for a dipole (azimuthally symmetric)
+        ref = np.array([0.0, 0.0, 1.0]) if abs(
+            orientation_hat[2]) < 0.9 else np.array([1.0, 0.0, 0.0])
+        x_ax = np.cross(orientation_hat, ref)
+        x_ax /= np.linalg.norm(x_ax)
+
+        super().__init__(position, orientation_hat, x_ax)
 
         if not isinstance(resonant_frequency, (int, float)):
             raise TypeError("Resonant frequency must be a number")
@@ -285,6 +341,63 @@ class HalfWaveDipoleAntenna(BaseAntenna):
             if not np.isfinite(wire_radius):
                 raise ValueError("Wire radius must be finite")
             self._wire_radius = float(wire_radius)
+
+    def GetETheta(self, pos: NDArray) -> NDArray:
+        """
+        Get the theta component of the half-wave dipole radiation pattern
+
+        The half-wave dipole pattern is F(θ) = cos((π/2)cos(θ)) / sin(θ).
+        Letting v = cos(θ)·r̂ − ẑ  (so that |v| = sin(θ) and v/|v| = θ̂),
+        the full vector pattern is:
+            F(θ)·θ̂ = cos((π/2)cos(θ)) · v / |v|²
+        The result is zeroed where sin(θ) ≈ 0; the field is zero at the
+        poles so this is exact.
+
+        Parameters
+        ----------
+        pos : NDArray
+            Array of N position 3-vectors (shape (N,3)) in metres
+
+        Returns
+        -------
+        NDArray
+            (N, 3) array of E_theta vectors
+        """
+        pos = np.atleast_2d(pos)
+        r = pos - self._pos                                          # (N, 3)
+        r_hat = r / np.linalg.norm(r, axis=1, keepdims=True)        # (N, 3)
+        cos_theta = np.dot(r_hat, self._z_ax)                       # (N,)
+
+        v = cos_theta[:, np.newaxis] * r_hat - self._z_ax            # (N, 3)
+        sin_theta_sq = np.sum(v * v, axis=1)                         # (N,)
+
+        # cos((π/2)cos(θ)) / sin²(θ), zeroed at the poles.
+        # safe_sin_sq avoids the divide-by-zero that np.where would otherwise
+        # evaluate before selecting.
+        safe_sin_sq = np.where(sin_theta_sq > 1e-20, sin_theta_sq, 1.0)
+        pattern = np.where(sin_theta_sq > 1e-20,
+                           np.cos(0.5 * np.pi * cos_theta) / safe_sin_sq,
+                           0.0)                                      # (N,)
+
+        return pattern[:, np.newaxis] * v                            # (N, 3)
+
+    def GetEPhi(self, pos: NDArray) -> NDArray:
+        """
+        Get the phi component of the half-wave dipole radiation pattern
+
+        A half-wave dipole has no phi component (azimuthally symmetric).
+
+        Parameters
+        ----------
+        pos : NDArray
+            Array of N position 3-vectors (shape (N,3)) in metres
+
+        Returns
+        -------
+        NDArray
+            (N, 3) array of zeros
+        """
+        return np.zeros((np.atleast_2d(pos).shape[0], 3))
 
     def GetEffectiveLength(self, frequency: float, theta: ArrayLike, phi: ArrayLike) -> NDArray:
         """
@@ -322,10 +435,10 @@ class HalfWaveDipoleAntenna(BaseAntenna):
         # Project perpendicular to propagation direction
         # projection = d̂ - (d̂·k̂)k̂
         # Shape: (N,)
-        dot_product = np.dot(k_hat, self._orientation)
+        dot_product = np.dot(k_hat, self._z_ax)
 
         # Shape: (N, 3)
-        projection = self._orientation - dot_product[..., np.newaxis] * k_hat
+        projection = self._z_ax - dot_product[..., np.newaxis] * k_hat
 
         # Norm of projection, shape: (N,)
         norm = np.linalg.norm(projection, axis=-1)
@@ -412,7 +525,7 @@ class HalfWaveDipoleAntenna(BaseAntenna):
         NDArray
             3-vector position in meters
         """
-        return self._position.copy()
+        return self._pos.copy()
 
     def GetOrientation(self) -> NDArray:
         """
@@ -423,7 +536,7 @@ class HalfWaveDipoleAntenna(BaseAntenna):
         NDArray
             3-vector unit direction along dipole axis
         """
-        return self._orientation.copy()
+        return self._z_ax.copy()
 
     def GetGain(self, theta: float, phi: float) -> float:
         """
@@ -457,7 +570,7 @@ class HalfWaveDipoleAntenna(BaseAntenna):
         ])
 
         # Angle between dipole axis and observation direction
-        cos_theta_d = np.dot(self._orientation, r_hat)
+        cos_theta_d = np.dot(self._z_ax, r_hat)
         sin_theta_d = np.sqrt(1 - cos_theta_d**2)
 
         # Avoid division by zero at the poles

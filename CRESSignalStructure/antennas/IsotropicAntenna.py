@@ -32,7 +32,7 @@ class IsotropicAntenna(BaseAntenna):
     simplification for modeling omnidirectional reception.
     """
 
-    def __init__(self, position: ArrayLike, impedance: complex = 50.0 + 0j,
+    def __init__(self, position: NDArray, impedance: complex = 50.0 + 0j,
                  effective_length: float = 0.01):
         """
         Constructor for IsotropicAntenna
@@ -54,8 +54,8 @@ class IsotropicAntenna(BaseAntenna):
         ValueError
             If parameters have invalid values
         """
-        # Validate position
-        self._position = self._validate_position(position)
+        # Axes are arbitrary for an isotropic antenna
+        super().__init__(position, np.array([0.0, 0.0, 1.0]), np.array([1.0, 0.0, 0.0]))
 
         # Validate impedance
         if not isinstance(impedance, (int, float, complex)):
@@ -76,8 +76,62 @@ class IsotropicAntenna(BaseAntenna):
             raise ValueError("Effective length must be finite")
         self._effective_length = float(effective_length)
 
-        # Set a default orientation (not physically meaningful for isotropic)
-        self._orientation = np.array([0.0, 0.0, 1.0])
+    def GetETheta(self, pos: NDArray) -> NDArray:
+        """
+        Get the theta component of the isotropic radiation pattern
+
+        Returns a unit vector in the θ̂ direction at each observation point.
+        Zeroed at the poles (θ = 0, π) where θ̂ is undefined.
+
+        Parameters
+        ----------
+        pos : NDArray
+            Array of N position 3-vectors (shape (N,3)) in metres
+
+        Returns
+        -------
+        NDArray
+            (N, 3) array of unit θ̂ vectors
+        """
+        pos = np.atleast_2d(pos)
+        r = pos - self._pos                                          # (N, 3)
+        r_hat = r / np.linalg.norm(r, axis=1, keepdims=True)        # (N, 3)
+        cos_theta = np.dot(r_hat, self._z_ax)                       # (N,)
+
+        # v = sin(θ)·θ̂
+        v = cos_theta[:, np.newaxis] * r_hat - self._z_ax            # (N, 3)
+        sin_theta = np.linalg.norm(v, axis=1, keepdims=True)        # (N, 1)
+
+        safe_sin = np.where(sin_theta > 1e-10, sin_theta, 1.0)
+        return np.where(sin_theta > 1e-10, v / safe_sin, 0.0)       # (N, 3)
+
+    def GetEPhi(self, pos: NDArray) -> NDArray:
+        """
+        Get the phi component of the isotropic radiation pattern
+
+        Returns a unit vector in the φ̂ direction at each observation point.
+        Zeroed at the poles (θ = 0, π) where φ̂ is undefined.
+
+        Parameters
+        ----------
+        pos : NDArray
+            Array of N position 3-vectors (shape (N,3)) in metres
+
+        Returns
+        -------
+        NDArray
+            (N, 3) array of unit φ̂ vectors
+        """
+        pos = np.atleast_2d(pos)
+        r = pos - self._pos                                          # (N, 3)
+        r_hat = r / np.linalg.norm(r, axis=1, keepdims=True)        # (N, 3)
+
+        # cross(ẑ, r̂) = sin(θ)·φ̂
+        v = np.cross(self._z_ax, r_hat)                              # (N, 3)
+        sin_theta = np.linalg.norm(v, axis=1, keepdims=True)        # (N, 1)
+
+        safe_sin = np.where(sin_theta > 1e-10, sin_theta, 1.0)
+        return np.where(sin_theta > 1e-10, v / safe_sin, 0.0)       # (N, 3)
 
     def GetEffectiveLength(self, frequency: float, theta: ArrayLike, phi: ArrayLike) -> NDArray:
         """
@@ -178,7 +232,7 @@ class IsotropicAntenna(BaseAntenna):
         NDArray
             3-vector position in meters [x, y, z]
         """
-        return self._position.copy()
+        return self._pos.copy()
 
     def GetOrientation(self) -> NDArray:
         """
@@ -193,7 +247,7 @@ class IsotropicAntenna(BaseAntenna):
         NDArray
             3-vector unit direction (arbitrary for isotropic antenna)
         """
-        return self._orientation.copy()
+        return self._z_ax.copy()
 
     def GetGain(self, theta: float, phi: float) -> float:
         """
