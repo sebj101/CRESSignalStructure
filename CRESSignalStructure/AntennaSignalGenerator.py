@@ -244,8 +244,10 @@ class AntennaSignalGenerator:
         a_term = R[:, np.newaxis] * (np.sum(n_hat * beta_dot, axis=1)[:, np.newaxis] * (n_hat - beta) /
                                      sc.c - np.sum(n_hat * (n_hat - beta), axis=1)[:, np.newaxis] * beta_dot / sc.c)
 
-        # Total electric field. No field before signal has propagated to antenna
+        # Total electric field
         E_field = prefactor[:, np.newaxis] * (v_term + a_term)
+        # Zero field before signal has propagated to antenna
+        E_field[t_ret < 0] = 0.0
         return E_field
 
     def _calculate_antenna_voltage(self, E_field: NDArray, ret_quantities: dict) -> NDArray:
