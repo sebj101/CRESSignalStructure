@@ -228,21 +228,24 @@ class AntennaSignalGenerator:
 
         beta = v / sc.c
         beta_dot = a / sc.c
-        n_dot_beta = np.sum(n_hat * beta, axis=1)  # Shape (N,)
+        n_dot_beta = np.sum(n_hat * beta, axis=1)  # (N,)
 
         # Prefactor
         q = self.__trajectory.particle.GetCharge()
         prefactor = q / (4 * np.pi * sc.epsilon_0) / \
             (R**2 * (1 - n_dot_beta)**3)
 
-        # Velocity field term
-        v_term = (n_hat - beta) * \
-            (1 - np.sum(beta * beta, axis=1))[:, np.newaxis]
+        # Velocity field term: (n - beta)(1 - beta^2)
+        beta_sq = np.sum(beta * beta, axis=1, keepdims=True)  # (N, 1)
+        v_term = (n_hat - beta) * (1 - beta_sq)
 
-        # Acceleration field term
-        n_hat_dot_beta_dot = np.sum(n_hat * beta_dot, axis=1)[:, np.newaxis]
-        a_term = R[:, np.newaxis] * (np.sum(n_hat * beta_dot, axis=1)[:, np.newaxis] * (n_hat - beta) /
-                                     sc.c - np.sum(n_hat * (n_hat - beta), axis=1)[:, np.newaxis] * beta_dot / sc.c)
+        # Acceleration field term: R/c * [n·beta_dot (n - beta) - n·(n - beta) beta_dot]
+        n_dot_beta_dot = np.sum(n_hat * beta_dot, axis=1,
+                                keepdims=True)       # (N, 1)
+        n_dot_n_minus_beta = np.sum(
+            n_hat * (n_hat - beta), axis=1, keepdims=True)  # (N, 1)
+        a_term = R[:, np.newaxis] / sc.c * (
+            n_dot_beta_dot * (n_hat - beta) - n_dot_n_minus_beta * beta_dot)
 
         # Total electric field
         E_field = prefactor[:, np.newaxis] * (v_term + a_term)
