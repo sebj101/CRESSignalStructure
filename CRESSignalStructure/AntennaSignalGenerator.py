@@ -241,9 +241,6 @@ class AntennaSignalGenerator:
 
         # Acceleration field term
         n_hat_dot_beta_dot = np.sum(n_hat * beta_dot, axis=1)[:, np.newaxis]
-        # a_term_1 = R * n_hat_dot_beta_dot * (n_hat - beta) / sc.c
-        # a_term_2 = -R *
-        print(n_hat_dot_beta_dot.shape)
         a_term = R[:, np.newaxis] * (np.sum(n_hat * beta_dot, axis=1)[:, np.newaxis] * (n_hat - beta) /
                                      sc.c - np.sum(n_hat * (n_hat - beta), axis=1)[:, np.newaxis] * beta_dot / sc.c)
 
