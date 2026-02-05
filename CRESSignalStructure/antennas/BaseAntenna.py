@@ -100,32 +100,31 @@ class BaseAntenna(ABC):
         return phi
 
     @abstractmethod
-    def GetEffectiveLength(self, frequency: float,
-                           theta: ArrayLike, phi: ArrayLike) -> NDArray:
+    def GetEffectiveLength(self, frequency: float, pos: NDArray) -> NDArray:
         """
-        Get the effective length vector of the antenna
+        Get the effective length of the antenna
 
         The effective length relates the incident electric field to the
-        open-circuit voltage at the antenna terminals: V_oc = E · l_eff
+        open-circuit voltage at the antenna terminals: V_oc = E · l_eff.
+        Subclasses with a single dominant polarisation (e.g. dipoles)
+        should implement this in terms of GetETheta / GetEPhi.
 
         Parameters
         ----------
         frequency : float
             Frequency in Hz
-        theta : ArrayLike
-            Polar angle in radians (scalar or array, angle from antenna axis/z-axis)
-        phi : ArrayLike
-            Azimuthal angle in radians (scalar or array, angle in x-y plane)
+        pos : NDArray
+            Array of N position 3-vectors (shape (N,3)) in metres.
+            Each vector is the point at which the radiation pattern is
+            evaluated — typically a synthetic point at unit distance from
+            the antenna toward each source.  Only the direction from the
+            antenna matters; magnitude is normalised internally by
+            GetETheta / GetEPhi.
 
         Returns
         -------
         NDArray
-            If inputs are scalars: 3-vector representing effective length [l_x, l_y, l_z]
-            If inputs are arrays: (N, 3) array of effective length vectors
-
-        Notes
-        -----
-        All input arrays must be broadcastable to the same shape.
+            (N, 3) array of effective length vectors in meters
         """
         pass
 
@@ -319,30 +318,4 @@ class BaseAntenna(ABC):
 
         return direction / norm
 
-    def _get_k_hat(self, theta: ArrayLike, phi: ArrayLike):
-        """
-        Gets the direction of the incoming wave
 
-        Parameters
-        ----------
-        theta : ArrayLike
-            Polar angle in radians (measured from propagation direction)
-        phi : ArrayLike
-            Azimuthal angle in radians (measured from propagation direction)
-
-        Returns
-        -------
-            If inputs are scalars: Unit 3-vector of propagation direction
-            If inputs are arrays: (N, 3) array of propagation directions
-        """
-        # Convert the inputs to arrays
-        theta = np.atleast_1d(theta)
-        phi = np.atleast_1d(phi)
-
-        if theta.shape != phi.shape:
-            raise ValueError('theta and phi arrays must have same shape but '
-                             f'have shapes {theta.shape} and {phi.shape}.')
-
-        return np.stack([np.sin(theta) * np.cos(phi),
-                         np.sin(theta) * np.sin(phi),
-                         np.cos(theta)], axis=-1)

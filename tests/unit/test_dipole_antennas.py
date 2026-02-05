@@ -75,15 +75,15 @@ class TestShortDipoleAntenna:
         )
 
         frequency = 26e9  # 26 GHz
-        theta = np.pi / 2  # Horizontal
-        phi = 0.0
+        # Unit-distance point in equatorial plane (perpendicular to dipole)
+        pos = np.array([[1.0, 0.0, 0.0]])
 
-        l_eff = antenna.GetEffectiveLength(frequency, theta, phi)
+        l_eff = antenna.GetEffectiveLength(frequency, pos)
 
         # For perpendicular incidence, effective length should be full length
         assert np.linalg.norm(l_eff) == pytest.approx(0.005, rel=1e-6)
         # Should be in z-direction
-        assert l_eff[2] == pytest.approx(0.005, rel=1e-6)
+        assert l_eff[0, 2] == pytest.approx(0.005, rel=1e-6)
 
     def test_effective_length_parallel_incidence(self):
         """Test effective length for parallel wave incidence (along dipole)"""
@@ -95,10 +95,10 @@ class TestShortDipoleAntenna:
         )
 
         frequency = 26e9
-        theta = 0.0  # Along z-axis
-        phi = 0.0
+        # Unit-distance point along dipole axis
+        pos = np.array([[0.0, 0.0, 1.0]])
 
-        l_eff = antenna.GetEffectiveLength(frequency, theta, phi)
+        l_eff = antenna.GetEffectiveLength(frequency, pos)
 
         # For parallel incidence, effective length should be zero
         assert np.linalg.norm(l_eff) == pytest.approx(0.0, abs=1e-10)
@@ -240,10 +240,10 @@ class TestHalfWaveDipoleAntenna:
             resonant_frequency=resonant_frequency
         )
 
-        theta = np.pi / 2  # Perpendicular
-        phi = 0.0
+        # Unit-distance point in equatorial plane (perpendicular to dipole)
+        pos = np.array([[1.0, 0.0, 0.0]])
 
-        l_eff = antenna.GetEffectiveLength(resonant_frequency, theta, phi)
+        l_eff = antenna.GetEffectiveLength(resonant_frequency, pos)
 
         wavelength = sc.c / resonant_frequency
         expected_magnitude = wavelength / np.pi  # ~0.318 λ
@@ -259,10 +259,10 @@ class TestHalfWaveDipoleAntenna:
             resonant_frequency=resonant_frequency
         )
 
-        theta = 0.0  # Parallel to dipole
-        phi = 0.0
+        # Unit-distance point along dipole axis
+        pos = np.array([[0.0, 0.0, 1.0]])
 
-        l_eff = antenna.GetEffectiveLength(resonant_frequency, theta, phi)
+        l_eff = antenna.GetEffectiveLength(resonant_frequency, pos)
 
         # Should be zero for parallel incidence
         assert np.linalg.norm(l_eff) == pytest.approx(0.0, abs=1e-10)

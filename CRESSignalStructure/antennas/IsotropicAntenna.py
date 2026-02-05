@@ -133,73 +133,53 @@ class IsotropicAntenna(BaseAntenna):
         safe_sin = np.where(sin_theta > 1e-10, sin_theta, 1.0)
         return np.where(sin_theta > 1e-10, v / safe_sin, 0.0)       # (N, 3)
 
-    def GetEffectiveLength(self, frequency: float, theta: ArrayLike, phi: ArrayLike) -> NDArray:
+    def GetEffectiveLength(self, frequency: float, pos: NDArray) -> NDArray:
         """
         Get the effective length vector of the isotropic antenna
 
-        For an isotropic antenna, the effective length is constant in magnitude
-        and has no directional or polarization dependence. We return a vector
-        that is perpendicular to the direction of arrival to represent that
-        the antenna couples to the transverse electric field.
+        An isotropic antenna has no polarisation preference, so the
+        effective length direction is an arbitrary unit vector perpendicular
+        to the direction of arrival.  This means it couples to only one
+        polarisation component per call.
 
         Parameters
         ----------
-        frequency : ArrayLike
-            Frequency in Hz (not used for isotropic antenna), scalar or array
-        theta : ArrayLike
-            Polar angle in radians (angle from z-axis), scalar or array
-        phi : ArrayLike
-            Azimuthal angle in radians (angle in x-y plane), scalar or array
+        frequency : float
+            Frequency in Hz
+        pos : NDArray
+            Array of N position 3-vectors (shape (N,3)) in metres
 
         Returns
         -------
         NDArray
-            If inputs are scalars: 3-vector effective length in meters
-            If inputs are arrays: (N, 3) array of effective length vectors
-
-        Notes
-        -----
-        The effective length is oriented perpendicular to the propagation
-        direction and has constant magnitude. For an isotropic antenna,
-        we choose an arbitrary transverse direction.
+            (N, 3) array of effective length vectors in meters
         """
         self._validate_frequency(frequency)
-        k_hat = self._get_k_hat(theta, phi)
+        pos = np.atleast_2d(pos)
 
-        # Check if inputs are scalar (for return shape)
-        is_scalar = (np.asarray(theta).size == 1 and np.asarray(phi).size == 1)
+        # Direction from antenna toward each position
+        r = pos - self._pos
+        k_hat = r / np.linalg.norm(r, axis=1, keepdims=True)  # (N, 3)
 
-        # Choose perpendicular direction for each k_hat
-        # For vectors not too close to z-axis, use z-cross-k: [-k_y, k_x, 0]
-        # For vectors close to z-axis, use x-cross-k: [0, -k_z, k_y]
-        # Shape: (N, 3)
+        # Choose a perpendicular direction per k_hat.
+        # Not close to z-axis: cross(z, k) = [-k_y, k_x, 0]
+        # Close to z-axis:     cross(x, k) = [0, -k_z, k_y]
         perp = np.where(
-            (np.abs(k_hat[..., 2:3]) < 0.9),
-            np.stack([-k_hat[..., 1], k_hat[..., 0],
-                     np.zeros_like(k_hat[..., 0])], axis=-1),
-            np.stack([np.zeros_like(k_hat[..., 0]), -
-                     k_hat[..., 2], k_hat[..., 1]], axis=-1)
+            (np.abs(k_hat[:, 2:3]) < 0.9),
+            np.stack([-k_hat[:, 1], k_hat[:, 0],
+                      np.zeros(len(k_hat))], axis=-1),
+            np.stack([np.zeros(len(k_hat)), -
+                      k_hat[:, 2], k_hat[:, 1]], axis=-1)
         )
 
-        # Normalize and scale by effective length
-        # Shape: (N,)
-        perp_norm = np.linalg.norm(perp, axis=-1, keepdims=True)
+        perp_norm = np.linalg.norm(perp, axis=1, keepdims=True)
+        safe_norm = np.where(perp_norm > 1e-10, perp_norm, 1.0)
+        l_eff = self._effective_length * perp / safe_norm
 
-        # Avoid division by zero
-        perp_norm = np.where(perp_norm > 1e-10, perp_norm, 1.0)
-
-        # Shape: (N, 3)
-        l_eff = self._effective_length * perp / perp_norm
-
-        # Handle degenerate cases (parallel to chosen axis)
-        # Replace with [l_eff, 0, 0] where norm was too small
-        degenerate = (np.linalg.norm(perp, axis=-1) < 1e-10)
+        # Fallback for degenerate cases
+        degenerate = (perp_norm.ravel() < 1e-10)
         if np.any(degenerate):
-            default_vec = np.array([self._effective_length, 0.0, 0.0])
-            l_eff = np.where(degenerate[..., np.newaxis], default_vec, l_eff)
-
-        if is_scalar:
-            return l_eff.reshape(3)
+            l_eff[degenerate] = np.array([self._effective_length, 0.0, 0.0])
 
         return l_eff
 

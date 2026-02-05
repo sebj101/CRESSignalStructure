@@ -264,64 +264,22 @@ class AntennaSignalGenerator:
         E_field : NDArray
             Electric field at antenna, shape (N, 3)
         ret_quantities : dict
-            Dictionary with retarded time quantities (for calculating angles)
+            Dictionary with retarded time quantities
 
         Returns
         -------
         NDArray
             Real-valued voltage signal, shape (N,)
         """
-        t_ret = ret_quantities['t_ret']
-        n_hat = ret_quantities['n_hat_ret']
-        antenna_orientation = self.__antenna.GetOrientation()
+        # Synthetic positions at unit distance from antenna toward each source.
+        # n_hat_ret points source->antenna, so -n_hat_ret is antenna->source.
+        # GetETheta normalises internally, so only direction matters.
+        pos = self.__antenna.GetPosition() - ret_quantities['n_hat_ret']
 
-        # Direction from which signal arrives
-        # Shape: (N, 3)
-        k_hat = -n_hat
+        l_eff = self.__antenna.GetEffectiveLength(
+            self.__avg_cyclotron_frequency, pos)
 
-        # Calculate theta: angle from antenna orientation axis
-        # Shape: (N,)
-        cos_theta = np.dot(k_hat, antenna_orientation)
-        theta = np.arccos(cos_theta)
-
-        # Project k_hat onto plane perpendicular to antenna orientation
-        # k_perp = k_hat - (k_hat · orientation) * orientation
-        # Shape: (N, 3)
-        k_perp = k_hat - cos_theta[:, np.newaxis] * antenna_orientation
-
-        # Norm of perpendicular component, shape: (N,)
-        k_perp_norm = np.linalg.norm(k_perp, axis=1)
-
-        # Define antenna x-axis (perpendicular to orientation)
-        # This is the same for all points, so compute once
-        if np.abs(antenna_orientation[2]) < 0.9:
-            antenna_x = np.array([0, 0, 1])
-        else:
-            antenna_x = np.array([1, 0, 0])
-
-        # Make x perpendicular to orientation
-        antenna_x = antenna_x - \
-            np.dot(antenna_x, antenna_orientation) * antenna_orientation
-        antenna_x = antenna_x / np.linalg.norm(antenna_x)
-
-        # Calculate phi for all points
-        # For points where k_perp_norm is very small, phi is undefined (set to 0)
-        # Shape: (N,)
-        cos_phi = np.sum(k_perp * antenna_x, axis=1) / (k_perp_norm + 1e-20)
-        phi = np.arccos(np.clip(cos_phi, -1, 1))
-
-        # Set phi to 0 where k_perp_norm is too small (signal along antenna axis)
-        phi = np.where(k_perp_norm > 1e-10, phi, 0.0)
-
-        # Get antenna effective length for all points (vectorized)
-        # Shape: (N, 3)
-        l_eff_array = self.__antenna.GetEffectiveLength(self.__avg_cyclotron_frequency,
-                                                        theta, phi)
-
-        # Shape: (N,)
-        voltage = np.sum(E_field * l_eff_array, axis=1)
-
-        return voltage
+        return np.sum(E_field * l_eff, axis=1)
 
     def generate_signal(self, return_time: bool = True) -> tuple[NDArray, NDArray] | NDArray:
         """

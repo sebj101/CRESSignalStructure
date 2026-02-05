@@ -118,57 +118,27 @@ class ShortDipoleAntenna(BaseAntenna):
         """
         return np.zeros((np.atleast_2d(pos).shape[0], 3))
 
-    def GetEffectiveLength(self, frequency: float, theta: ArrayLike, phi: ArrayLike) -> NDArray:
+    def GetEffectiveLength(self, frequency: float, pos: NDArray) -> NDArray:
         """
         Get the effective length vector of the short dipole
 
-        For a short dipole, the effective length is approximately equal to
-        the physical length in the direction of the antenna, projected
-        perpendicular to the direction of propagation.
+        Derived from the radiation pattern via reciprocity:
+        l_eff = -length * E_theta(pos)
 
         Parameters
         ----------
         frequency : float
-            Frequency in Hz (not used for short dipole approximation)
-        theta : ArrayLike
-            Polar angle in radians (measured from propagation direction), scalar or array
-        phi : ArrayLike
-            Azimuthal angle in radians, scalar or array
+            Frequency in Hz
+        pos : NDArray
+            Array of N position 3-vectors (shape (N,3)) in metres
 
         Returns
         -------
         NDArray
-            If inputs are scalars: 3-vector effective length in meters
-            If inputs are arrays: (N, 3) array of effective length vectors
-
-        Notes
-        -----
-        The effective length is given by:
-        l_eff = l * (d̂ - (d̂·k̂)k̂)
-        where d̂ is the dipole direction and k̂ is the propagation direction.
+            (N, 3) array of effective length vectors in meters
         """
         self._validate_frequency(frequency)
-        k_hat = self._get_k_hat(theta, phi)
-
-        # Check if inputs are scalar (for return shape)
-        is_scalar = (np.asarray(theta).size == 1 and np.asarray(phi).size == 1)
-
-        # Project dipole direction perpendicular to propagation direction
-        # projection = d̂ - (d̂·k̂)k̂  (only transverse E-field components matter)
-        # Shape: (N,)
-        dot_product = np.dot(k_hat, self._z_ax)
-
-        # Shape: (N, 3)
-        projection = self._z_ax - dot_product[..., np.newaxis] * k_hat
-
-        # Effective length is physical length times projection
-        # Shape: (N, 3)
-        l_eff = self._length * projection
-
-        if is_scalar:
-            return l_eff.reshape(3)
-
-        return l_eff
+        return -self._length * self.GetETheta(pos)
 
     def GetImpedance(self, frequency: float) -> complex:
         """
@@ -377,80 +347,28 @@ class HalfWaveDipoleAntenna(BaseAntenna):
         """
         return np.zeros((np.atleast_2d(pos).shape[0], 3))
 
-    def GetEffectiveLength(self, frequency: float, theta: ArrayLike, phi: ArrayLike) -> NDArray:
+    def GetEffectiveLength(self, frequency: float, pos: NDArray) -> NDArray:
         """
         Get the effective length vector of the half-wave dipole
 
-        For a half-wave dipole with sinusoidal current distribution,
-        the effective length in the direction of the antenna is:
-        l_eff = λ/π ≈ 0.318λ
-
-        This is then projected perpendicular to the propagation direction.
+        Derived from the radiation pattern via reciprocity:
+        l_eff = -(λ/π) * E_theta(pos)
 
         Parameters
         ----------
-        frequency : ArrayLike
-            Frequency in Hz, scalar or array
-        theta : ArrayLike
-            Polar angle in radians, scalar or array
-        phi : ArrayLike
-            Azimuthal angle in radians, scalar or array
+        frequency : float
+            Frequency in Hz
+        pos : NDArray
+            Array of N position 3-vectors (shape (N,3)) in metres
 
         Returns
         -------
         NDArray
-            If inputs are scalars: 3-vector effective length in meters
-            If inputs are arrays: (N, 3) array of effective length vectors
+            (N, 3) array of effective length vectors in meters
         """
-        k_hat = self._get_k_hat(theta, phi)
         self._validate_frequency(frequency)
-
-        # Check if inputs are scalar (for return shape)
-        is_scalar = (np.asarray(theta).size == 1 and np.asarray(phi).size == 1)
-
         wavelength = sc.c / frequency
-
-        # Project perpendicular to propagation direction
-        # projection = d̂ - (d̂·k̂)k̂
-        # Shape: (N,)
-        dot_product = np.dot(k_hat, self._z_ax)
-
-        # Shape: (N, 3)
-        projection = self._z_ax - dot_product[..., np.newaxis] * k_hat
-
-        # Norm of projection, shape: (N,)
-        norm = np.linalg.norm(projection, axis=-1)
-
-        # Calculate angle between dipole axis and incoming wave direction
-        # cos_theta_d = d̂ · k̂, sin_theta_d = |d̂ - (d̂·k̂)k̂| = |projection|
-        cos_theta_d = dot_product
-        sin_theta_d = norm
-
-        # Effective length magnitude for half-wave dipole including angular pattern
-        # l_eff(θ_d) = (λ/π) * cos((π/2)cos(θ_d)) / sin(θ_d)
-        # This accounts for the sinusoidal current distribution along the dipole
-        # Shape: (N,)
-        pattern_factor = np.cos(
-            (np.pi / 2) * cos_theta_d) / (sin_theta_d + 1e-20)
-        l_eff_magnitude = (wavelength / np.pi) * pattern_factor
-
-        # Handle cases where wave propagates along dipole axis (no coupling)
-        # Avoid division by zero by replacing small norms with 1
-        # Shape: (N,)
-        safe_norm = np.where(norm > 1e-10, norm, 1.0)
-
-        # Shape: (N, 3)
-        l_eff = l_eff_magnitude[..., np.newaxis] * \
-            projection / safe_norm[..., np.newaxis]
-
-        # Set to zero where norm was too small (no coupling)
-        l_eff = np.where(norm[..., np.newaxis] > 1e-10, l_eff, 0.0)
-
-        # Return scalar shape if inputs were scalar
-        if is_scalar:
-            return l_eff.reshape(3)
-
-        return l_eff
+        return -(wavelength / np.pi) * self.GetETheta(pos)
 
     def GetImpedance(self, frequency: float) -> complex:
         """
