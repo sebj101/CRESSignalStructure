@@ -9,7 +9,7 @@ of trapped electrons including grad-B drift effects.
 import numpy as np
 from numpy.typing import NDArray
 import scipy.constants as sc
-from scipy.integrate import cumulative_simpson
+from scipy.integrate import cumulative_simpson, trapezoid
 from scipy.interpolate import interp1d
 
 from CRESSignalStructure.BaseField import BaseField
@@ -228,6 +228,78 @@ class TrajectoryGenerator:
         acc = self._calc_acceleration(pos, vel, sample_rate)
 
         return Trajectory(t, pos, vel, acc, self.field, self.particle)
+
+    def _calc_larmor_power(self) -> float:
+        """
+        Calculate time-averaged relativistic Larmor power over one axial period
+
+        The relativistic Larmor power for an electron in a magnetic field is:
+        P = (q^4 * B^2 * v_perp^2) / (6π ε_0 m^2 c^3 γ^2)
+
+        Since B(z) and v_perp(z) vary along the trajectory, we calculate the
+        trajectory over one axial period (without energy loss) and compute the
+        time-averaged power.
+
+        Returns
+        -------
+        float
+            Time-averaged radiated power in Watts
+        """
+        PERPENDICULAR_THRESHOLD = 1e-4 * np.pi / 180
+
+        # Get particle's starting position
+        p_start = self.particle.GetPosition()
+
+        # Special case: nearly perpendicular pitch angle (no axial motion)
+        if abs(np.pi/2 - self.particle.GetPitchAngle()) < PERPENDICULAR_THRESHOLD:
+            # Use power at starting position
+            B = self.field.evaluate_field_magnitude(
+                p_start[0], p_start[1], p_start[2])
+            v_perp = self.particle.GetSpeed()  # All velocity is perpendicular
+
+            q = abs(self.particle.GetCharge())
+            m = self.particle.GetMass()
+            gamma = self.particle.GetGamma()
+
+            prefactor = q**4 / (6 * np.pi * sc.epsilon_0 * m**2 * sc.c**3 * gamma**2)
+            return prefactor * B**2 * v_perp**2
+
+        # General case: average over one axial period
+        # Get one axial period trajectory (without energy loss)
+        t_analytic, z_analytic = self.field.calc_t_vs_z(self.particle)
+        T_axial = t_analytic[-1]  # Axial period
+
+        # Evaluate B field along the trajectory
+        B_vals = self.field.evaluate_field_magnitude(
+            p_start[0], p_start[1], z_analytic)
+
+        # Calculate time-dependent perpendicular velocity using adiabatic invariant
+        # sin²θ(z) * B(z) = sin²θ_0 * B_0 (constant)
+        B_0 = self.field.evaluate_field_magnitude(
+            p_start[0], p_start[1], p_start[2])
+        theta_0 = self.particle.GetPitchAngle()
+
+        sin_theta_squared = np.sin(theta_0)**2 * B_0 / B_vals
+        sin_theta_squared = np.clip(sin_theta_squared, 0.0, 1.0)
+
+        # Perpendicular velocity at each point (speed is constant for this calc)
+        v_total = self.particle.GetSpeed()
+        v_perp = v_total * np.sqrt(sin_theta_squared)
+
+        # Physical constants
+        q = abs(self.particle.GetCharge())
+        m = self.particle.GetMass()
+        gamma = self.particle.GetGamma()
+
+        # Relativistic Larmor power at each point along trajectory
+        prefactor = q**4 / (6 * np.pi * sc.epsilon_0 * m**2 * sc.c**3 * gamma**2)
+        P_local = prefactor * B_vals**2 * v_perp**2
+
+        # Time-averaged power over one axial period
+        # Use trapezoidal integration: <P> = (1/T) ∫ P(t) dt
+        P_avg = trapezoid(P_local, t_analytic) / T_axial
+
+        return P_avg
 
     def _validate_parameters(self, sample_rate: float, t_max: float) -> None:
         """
