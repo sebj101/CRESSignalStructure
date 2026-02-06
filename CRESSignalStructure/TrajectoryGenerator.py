@@ -223,14 +223,9 @@ class TrajectoryGenerator:
         # Validate parameters
         self._validate_parameters(sample_rate, t_max)
 
-        # Calculate position components
         t, pos = self._calc_position(sample_rate, t_max)
-
-        # Calculate velocity from field and particle properties
         vel = self._calc_velocity(t, pos, sample_rate)
-
-        # Calculate acceleration via gradient
-        acc = self._calc_acceleration(vel, sample_rate)
+        acc = self._calc_acceleration(pos, vel, sample_rate)
 
         return Trajectory(t, pos, vel, acc, self.field, self.particle)
 
@@ -484,12 +479,19 @@ class TrajectoryGenerator:
 
         return np.column_stack([vel_x, vel_y, vel_z])
 
-    def _calc_acceleration(self, vel: NDArray, sample_rate: float) -> NDArray:
+    def _calc_acceleration(self, pos: NDArray, vel: NDArray, sample_rate: float) -> NDArray:
         """
-        Calculate acceleration via numerical gradient of velocity
+        Calculate acceleration using hybrid approach
+
+        Uses Lorentz force for perpendicular (cyclotron) acceleration and
+        numerical gradient for parallel (mirror force) acceleration. This
+        combines physical accuracy for high-frequency cyclotron motion with
+        numerical calculation for slower axial dynamics.
 
         Parameters
         ----------
+        pos : NDArray
+            Position array (N, 3)
         vel : NDArray
             Velocity array (N, 3)
         sample_rate : float
@@ -500,5 +502,44 @@ class TrajectoryGenerator:
         NDArray
             Acceleration array (N, 3)
         """
+        # Extract position components
+        x = pos[:, 0]
+        y = pos[:, 1]
+        z = pos[:, 2]
+
+        # Evaluate magnetic field at each position
+        B_x, B_y, B_z = self.field.evaluate_field(x, y, z)
+        B = np.column_stack([B_x, B_y, B_z])
+
+        # Calculate unit vector along B field
+        B_mag = np.linalg.norm(B, axis=1, keepdims=True)
+        B_hat = B / B_mag
+
+        # Physical constants
+        charge = self.particle.GetCharge()
+        mass = self.particle.GetMass()
+        gamma = self.particle.GetGamma()
+
+        # Calculate Lorentz force: a_perp = (q/(γm)) × (v × B)
+        # This gives accurate perpendicular (cyclotron) acceleration
+        v_cross_B = np.cross(vel, B)
+        a_lorentz = (charge / (gamma * mass)) * v_cross_B
+
+        # Calculate parallel velocity component
+        v_parallel = np.sum(vel * B_hat, axis=1, keepdims=True) * B_hat
+
+        # Calculate parallel acceleration using numerical gradient
+        # This captures the mirror force effects
         dt = 1.0 / sample_rate
-        return np.gradient(vel, dt, axis=0)
+        a_parallel_numerical = np.gradient(v_parallel, dt, axis=0)
+
+        # The Lorentz force is perpendicular to B, so it has no parallel component
+        # We need to add the parallel acceleration from the gradient
+        # Project Lorentz acceleration onto perpendicular plane
+        a_lorentz_parallel = np.sum(a_lorentz * B_hat, axis=1, keepdims=True) * B_hat
+        a_lorentz_perp = a_lorentz - a_lorentz_parallel
+
+        # Combine: use Lorentz for perpendicular, numerical for parallel
+        acceleration = a_lorentz_perp + a_parallel_numerical
+
+        return acceleration
