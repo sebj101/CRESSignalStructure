@@ -3,7 +3,7 @@ BatchGen.py
 
 A command-line tool to generate large CRES datasets split across multiple files.
 Usage example:
-    python BatchGen.py --files 1 --events 5 --energy-min 18580 --energy-max 18600 --mp
+    python BatchGen.py --files 1 --events 5 --energy-min 18580 --energy-max 18600 --mp --no-fft --pitch-min 89.5 --pitch-max 90.0
 """
 import os
 import argparse
@@ -11,7 +11,7 @@ import time
 import numpy as np
 import scipy.constants as sc
 
-# Import your simulation architecture
+# Imports
 from CRESSignalStructure.RealFields import HarmonicField
 from CRESSignalStructure.CircularWaveguide import CircularWaveguide
 from CRESSignalStructure.Particle import Particle
@@ -28,7 +28,7 @@ def main():
     parser.add_argument("--outdir", type=str, default="data/batch_run", help="Output directory")
     parser.add_argument("--prefix", type=str, default="run", help="Filename prefix")
     
-    # Physics Ranges (UPDATED)
+    # Physics Ranges
     parser.add_argument("--energy-min", type=float, default=18600.0, help="Min Electron Energy (eV)")
     parser.add_argument("--energy-max", type=float, default=18600.0, help="Max Electron Energy (eV)")
     parser.add_argument("--pitch-min", type=float, default=89.5, help="Min Pitch (deg)")
@@ -45,8 +45,8 @@ def main():
         os.makedirs(args.outdir)
         print(f"Created output directory: {args.outdir}")
 
-    # 3. Define Physics (The "Truth")
-    print("Initializing Physics Model...")
+    # 3. Define Physics
+    print("Initialising Physics Model...")
     
     TRAP_DEPTH = 4e-3  # 4 mT
     B0 = 1.0           # 1 T
@@ -66,7 +66,7 @@ def main():
     calc = NumericalSpectrumCalculator(trap, wg, ref_p)
     f_carrier = calc.GetPeakFrequency(0)
 
-    LO_FREQ = f_carrier - (F_DIGITIZER / 4)
+    LO_FREQ = f_carrier - (F_DIGITIZER / 4) # Locked in value
     
     print(f"  - Trap Current: {I_COIL:.4f} A")
     print(f"  - Central Freq: {f_carrier/1e9:.4f} GHz")
@@ -85,7 +85,7 @@ def main():
     param_ranges = {
         'energy': (args.energy_min, args.energy_max), 
         'pitch': (np.radians(args.pitch_min), np.radians(args.pitch_max)),
-        'r': (0.0, 1e-4),   # Tiny radial spread
+        'r': (0.0, 1e-4),   
         'z': (0.0, 0.0),    # Center of trap
         'theta': (0.0, 2*np.pi)
     }
