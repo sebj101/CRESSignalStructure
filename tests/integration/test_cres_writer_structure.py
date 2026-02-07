@@ -89,9 +89,12 @@ class TestCRESWriterStructure:
     def test_context_manager_safety(self, tmp_path):
         """Test that the file is closed properly even if an error occurs"""
         filename = tmp_path / "test_safety.h5"
+        writer = None
         
         with pytest.raises(ValueError):
-            with CRESWriter(str(filename)) as writer:
+            with CRESWriter(str(filename)) as w:
+                writer = w
                 raise ValueError("Intentional Crash")
         
+        assert writer is not None
         assert writer.file.id.valid == 0
