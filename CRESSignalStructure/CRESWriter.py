@@ -16,7 +16,7 @@ from CRESSignalStructure.Particle import Particle
 from CRESSignalStructure.CircularWaveguide import CircularWaveguide
 from CRESSignalStructure.BaseTrap import BaseTrap
 from CRESSignalStructure.BaseField import BaseField
-from CRESSignalStructure.RealFields import HarmonicField, BathtubField, CoilField
+from CRESSignalStructure.RealFields import HarmonicField, BathtubField
 
 class CRESWriter:
     def __init__(self, filename: str, mode: str = 'w'):
