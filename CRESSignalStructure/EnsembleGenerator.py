@@ -148,20 +148,19 @@ def generate_uniform_ensemble(output_file,
         e_min, e_max = ranges.get('energy', (18500.0, 18600.0))
         p_min, p_max = ranges.get('pitch', (np.radians(88), np.radians(89.99)))
         z_min, z_max = ranges.get('z', (0.0, 0.0))
-        
 
-        _, r_max = ranges.get('r', (0.0, 0.001))
-
-
+        r_min, r_max = ranges.get('r', (0.0, 0.001))
+        theta_min, theta_max = ranges.get('theta', (0.0, 2*np.pi))
 
         ke = np.random.uniform(e_min, e_max)
         pitch = np.random.uniform(p_min, p_max)
         z = np.random.uniform(z_min, z_max)
 
-        u_rho = np.random.uniform(0,1)
-        r = r_max * np.sqrt(u_rho)
+        # Sample radius with uniform area density in the annulus [r_min, r_max]
+        u_rho = np.random.uniform(0, 1)
+        r = np.sqrt((r_max**2 - r_min**2) * u_rho + r_min**2)
 
-        theta = np.random.uniform(0, 2*np.pi)
+        theta = np.random.uniform(theta_min, theta_max)
 
         pos = np.array([r * np.cos(theta), r * np.sin(theta), z])
         
