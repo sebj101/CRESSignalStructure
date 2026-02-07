@@ -131,9 +131,9 @@ class CRESWriter:
         if hasattr(self._trap, 'background') and isinstance(self._trap.background, np.ndarray):
             attrs['B_bkg [Tesla]'] = abs(self._trap.background[2])
         elif hasattr(self._trap, 'GetB0'):
-             attrs['B_bkg [Tesla]'] = self._trap.GetB0()
+            attrs['B_bkg [Tesla]'] = self._trap.GetB0()
         else:
-             attrs['B_bkg [Tesla]'] = B_local
+            attrs['B_bkg [Tesla]'] = B_local
 
         attrs['Cyclotron frequency [Hertz]'] = f_cyc
         attrs['Downmixed cyclotron frequency [Hertz]'] = abs(f_cyc - f_lo)
