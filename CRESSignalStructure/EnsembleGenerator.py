@@ -6,7 +6,6 @@ Supports Multiprocessing and simultaneous Time-Series / FFT output.
 """
 import numpy as np
 import multiprocessing as mp
-import scipy.constants as sc
 import scipy.fft
 from contextlib import ExitStack
 import time
