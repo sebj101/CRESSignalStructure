@@ -12,7 +12,6 @@ from CRESSignalStructure.EnsembleGenerator import generate_uniform_ensemble
 from CRESSignalStructure.RealFields import HarmonicField
 from CRESSignalStructure.CircularWaveguide import CircularWaveguide
 from CRESSignalStructure.Particle import Particle
-from CRESSignalStructure.CRESWriter import CRESWriter
 
 
 class TestEnsembleGenerator:
