@@ -53,12 +53,17 @@ class CRESWriter:
     def _get_trap_params(self):
         """Helper to extract parameters trap parameters."""
         params = {'i_coil [Amps]': np.nan, 'r_coil [metres]': np.nan}
-        
+
         if isinstance(self._trap, HarmonicField):
             params['i_coil [Amps]'] = self._trap.coil.current
             params['r_coil [metres]'] = self._trap.coil.radius
 
-            
+        elif isinstance(self._trap, BathtubField):
+            params['i_coil [Amps]'] = self._trap.coil1.current
+            params['r_coil [metres]'] = self._trap.coil1.radius
+            params['z_coil1 [metres]'] = self._trap.coil1.z
+            params['z_coil2 [metres]'] = self._trap.coil2.z
+
         return params
 
     def write_event(self, particle: Particle, 
@@ -149,6 +154,11 @@ class CRESWriter:
         trap_params = self._get_trap_params()
         attrs['i_coil [Amps]'] = trap_params['i_coil [Amps]']
         attrs['r_coil [metres]'] = trap_params['r_coil [metres]']
+
+        if 'z_coil1 [metres]' in trap_params:
+            attrs['z_coil1 [metres]'] = trap_params['z_coil1 [metres]']
+        if 'z_coil2 [metres]' in trap_params:
+            attrs['z_coil2 [metres]'] = trap_params['z_coil2 [metres]']
         
         # WG Params
         # Handle cases where Waveguide might be a mock or different object
