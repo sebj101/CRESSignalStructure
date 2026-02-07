@@ -114,7 +114,7 @@ def _process_results(results_iterator, n_events, writer, fft_writer, start_time,
         
         # Error Handling
         if len(result) == 2 and isinstance(result[1], Exception):
-            print(f"⚠️ Event {result[0]} failed: {result[1]}")
+            print(f"WARNING: Event {result[0]} failed: {result[1]}")
             continue
 
         # Unpack
