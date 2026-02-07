@@ -2,7 +2,6 @@
 Integration tests for EnsembleGenerator.py
 Verifies that parameter sampling and file generation work as expected.
 """
-import os
 import pytest
 import numpy as np
 import h5py
