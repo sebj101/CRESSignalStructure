@@ -5,7 +5,6 @@ Verifies that parameter sampling and file generation work as expected.
 import pytest
 import numpy as np
 import h5py
-import tempfile
 from CRESSignalStructure.EnsembleGenerator import generate_uniform_ensemble
 from CRESSignalStructure.RealFields import HarmonicField
 from CRESSignalStructure.CircularWaveguide import CircularWaveguide
