@@ -88,7 +88,7 @@ def generate_ensemble(output_file,
         
         # --- Multiprocessing (Fast) ---
         if use_multiprocessing:
-            num_cores = mp.cpu_count()
+            num_cores = min(mp.cpu_count() or 4, 4)  # Limit to 4 cores for stability, adjust as needed
             if verbose: print(f"Starting generation of {n_events} events on {num_cores} cores...")
             
             # Create pool
