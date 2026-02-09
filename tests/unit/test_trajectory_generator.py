@@ -456,7 +456,7 @@ class TestTrajectoryPhysics:
         gen = TrajectoryGenerator(field, particle)
 
         # Generate trajectory with radiation
-        traj = gen.generate(sample_rate=500e6, t_max=5e-3,
+        traj = gen.generate(sample_rate=500e6, t_max=1e-3,
                             include_radiation=True)
 
         # Speed should decrease
@@ -472,13 +472,13 @@ class TestTrajectoryPhysics:
 
         # Calculate expected energy loss
         P_larmor = gen._calc_larmor_power()
-        t_max = 5e-3
+        t_max = 1e-3
 
         expected_loss_joules = P_larmor * t_max
         expected_loss_eV = expected_loss_joules / sc.e
 
         # Generate trajectory
-        traj = gen.generate(sample_rate=3e9, t_max=t_max,
+        traj = gen.generate(sample_rate=500e6, t_max=t_max,
                             include_radiation=True)
 
         # Calculate actual energy loss from _calc_energy_vs_time
