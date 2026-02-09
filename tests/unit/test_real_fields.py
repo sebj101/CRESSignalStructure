@@ -3,7 +3,6 @@ Unit tests for RealFields classes (CoilField, BathtubField, HarmonicField)
 """
 
 import numpy as np
-import pytest
 import scipy.constants as sc
 from CRESSignalStructure.RealFields import CoilField, BathtubField, HarmonicField
 from CRESSignalStructure.Particle import Particle
@@ -388,7 +387,8 @@ class TestBathtubFieldZMax:
 
         ke = 18600.0
         pitch_angle = 89.0 * np.pi / 180.0
-        particle = Particle(ke=ke, startPos=np.zeros(3), pitchAngle=pitch_angle)
+        particle = Particle(ke=ke, startPos=np.zeros(3),
+                            pitchAngle=pitch_angle)
 
         zmax = field.CalcZMax(particle)
 
@@ -402,12 +402,14 @@ class TestBathtubFieldZMax:
         field = BathtubField(0.1, 100.0, -0.2, 0.2)
 
         ke = 18600.0
-        pitch_angles = [89.5, 89.0, 88.0, 87.0]  # Degrees (decreasing from 90°)
+        # Degrees (decreasing from 90°)
+        pitch_angles = [89.5, 89.0, 88.0, 87.0]
 
         zmaxs = []
         for angle_deg in pitch_angles:
             angle_rad = angle_deg * np.pi / 180.0
-            particle = Particle(ke=ke, startPos=np.zeros(3), pitchAngle=angle_rad)
+            particle = Particle(ke=ke, startPos=np.zeros(3),
+                                pitchAngle=angle_rad)
             zmaxs.append(field.CalcZMax(particle))
 
         # Smaller pitch angle -> more axial velocity -> larger zmax
@@ -498,7 +500,8 @@ class TestHarmonicFieldZMax:
 
         ke = 18600.0
         pitch_angle = 89.0 * np.pi / 180.0
-        particle = Particle(ke=ke, startPos=np.zeros(3), pitchAngle=pitch_angle)
+        particle = Particle(ke=ke, startPos=np.zeros(3),
+                            pitchAngle=pitch_angle)
 
         zmax = field.CalcZMax(particle)
 

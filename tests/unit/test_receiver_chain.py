@@ -4,7 +4,6 @@ Unit tests for ReceiverChain class
 
 import numpy as np
 import pytest
-import scipy.constants as sc
 from CRESSignalStructure.ReceiverChain import ReceiverChain
 
 
@@ -252,7 +251,8 @@ class TestLowpassFilter:
         high_freq_idx = np.argmin(np.abs(freqs - high_freq))
 
         # High frequency should be attenuated
-        assert np.abs(fft_after[high_freq_idx]) < np.abs(fft_before[high_freq_idx])
+        assert np.abs(fft_after[high_freq_idx]) < np.abs(
+            fft_before[high_freq_idx])
 
 
 class TestDigitizationPipeline:
@@ -264,7 +264,8 @@ class TestDigitizationPipeline:
 
         duration = 1e-6
         oversample_factor = 5
-        time = np.linspace(0, duration, int(oversample_factor * 1e9 * duration))
+        time = np.linspace(0, duration, int(
+            oversample_factor * 1e9 * duration))
         signal = np.cos(2 * np.pi * 26.1e9 * time)
 
         time_dig, signal_dig = rc.digitize(time, signal, oversample_factor)
@@ -297,7 +298,8 @@ class TestDigitizationPipeline:
 
         duration = 1e-6
         oversample_factor = 5
-        time = np.linspace(0, duration, int(oversample_factor * 1e9 * duration))
+        time = np.linspace(0, duration, int(
+            oversample_factor * 1e9 * duration))
         # Use a test signal with known frequency content
         signal = np.cos(2 * np.pi * 26.1e9 * time)
 
@@ -339,7 +341,8 @@ class TestDigitizationPipeline:
 
         duration = 10e-6
         oversample_factor = 5
-        time = np.linspace(0, duration, int(oversample_factor * sample_rate * duration))
+        time = np.linspace(0, duration, int(
+            oversample_factor * sample_rate * duration))
         signal = np.cos(2 * np.pi * signal_frequency * time)
 
         time_dig, signal_dig = rc.digitize(time, signal, oversample_factor)
@@ -436,6 +439,7 @@ class TestSetters:
         with pytest.raises(ValueError, match="receiver_gain must be finite"):
             rc.set_receiver_gain(np.inf)
 
+
 class TestEdgeCases:
     """Tests for edge cases and boundary conditions"""
 
@@ -446,7 +450,8 @@ class TestEdgeCases:
         # Need at least ~50 points for the filter (padlen=21 requires more)
         duration = 100e-9  # 100 ns
         oversample_factor = 5
-        time = np.linspace(0, duration, int(oversample_factor * 1e9 * duration))
+        time = np.linspace(0, duration, int(
+            oversample_factor * 1e9 * duration))
         signal = np.cos(2 * np.pi * 26.1e9 * time)
 
         # Should not raise error
@@ -461,7 +466,8 @@ class TestEdgeCases:
 
         duration = 1e-6
         oversample_factor = 5
-        time = np.linspace(0, duration, int(oversample_factor * sample_rate * duration))
+        time = np.linspace(0, duration, int(
+            oversample_factor * sample_rate * duration))
         # Signal at exactly LO frequency -> should produce DC
         signal = np.cos(2 * np.pi * lo_frequency * time)
 
@@ -480,7 +486,8 @@ class TestEdgeCases:
 
         duration = 10e-6
         oversample_factor = 5
-        time = np.linspace(0, duration, int(oversample_factor * sample_rate * duration))
+        time = np.linspace(0, duration, int(
+            oversample_factor * sample_rate * duration))
         signal = np.cos(2 * np.pi * signal_frequency * time)
 
         time_dig, signal_dig = rc.digitize(time, signal, oversample_factor)
@@ -534,7 +541,8 @@ class TestSignalProcessingAccuracy:
         mid_end = 2 * len(if1) // 3
         phase1 = np.angle(np.mean(if1[mid_start:mid_end]))
         phase2 = np.angle(np.mean(if2[mid_start:mid_end]))
-        phase_diff = np.angle(np.exp(1j * (phase2 - phase1)))  # Wrap to [-π, π]
+        phase_diff = np.angle(
+            np.exp(1j * (phase2 - phase1)))  # Wrap to [-π, π]
 
         # Should be close to π/4
         assert np.isclose(np.abs(phase_diff), np.pi/4, atol=0.15)

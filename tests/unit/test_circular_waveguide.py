@@ -5,7 +5,7 @@ Unit tests for CircularWaveguide class
 import numpy as np
 import pytest
 import scipy.constants as sc
-from scipy.special import j1, jvp
+from scipy.special import j1
 from CRESSignalStructure.CircularWaveguide import CircularWaveguide
 
 
@@ -505,7 +505,8 @@ class TestImpedanceCalculations:
         omega = 100 * omega_c
 
         Z = wg.CalcTE11Impedance(omega)
-        Z0 = np.sqrt(sc.mu_0 / sc.epsilon_0)  # Free space impedance (~377 Ohms)
+        # Free space impedance (~377 Ohms)
+        Z0 = np.sqrt(sc.mu_0 / sc.epsilon_0)
 
         # At high frequency, waveguide impedance should approach Z0
         assert np.isclose(Z, Z0, rtol=0.01)
@@ -534,7 +535,6 @@ class TestNormalisationFactor:
         wg = CircularWaveguide(0.01)
         norm = wg.CalcNormalisationFactor()
         assert np.isfinite(norm)
-
 
 
 class TestArrayInputs:
