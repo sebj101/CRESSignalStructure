@@ -199,7 +199,8 @@ class TrajectoryGenerator:
         self.field = field
         self.particle = particle
 
-    def generate(self, sample_rate: float, t_max: float) -> Trajectory:
+    def generate(self, sample_rate: float, t_max: float,
+                 include_radiation: bool = False) -> Trajectory:
         """
         Generate complete trajectory with position, velocity, and acceleration
 
@@ -209,6 +210,8 @@ class TrajectoryGenerator:
             Sample rate in Hz (must satisfy Nyquist criterion for cyclotron frequency)
         t_max : float
             Maximum time in seconds
+        include_radiation : bool, optional
+            Whether to include radiative energy loss (default False)
 
         Returns
         -------
@@ -223,9 +226,17 @@ class TrajectoryGenerator:
         # Validate parameters
         self._validate_parameters(sample_rate, t_max)
 
-        t, pos = self._calc_position(sample_rate, t_max)
-        vel = self._calc_velocity(t, pos, sample_rate)
-        acc = self._calc_acceleration(pos, vel, sample_rate)
+        # Calculate position (with or without radiation)
+        if include_radiation:
+            t, pos = self._calc_position_with_radiation(sample_rate, t_max)
+            E_t = self._calc_energy_vs_time(t)
+        else:
+            t, pos = self._calc_position(sample_rate, t_max)
+            E_t = None
+
+        # Calculate velocity and acceleration (passing energy if applicable)
+        vel = self._calc_velocity(t, pos, sample_rate, E_t)
+        acc = self._calc_acceleration(pos, vel, sample_rate, E_t)
 
         return Trajectory(t, pos, vel, acc, self.field, self.particle)
 
@@ -300,6 +311,68 @@ class TrajectoryGenerator:
         P_avg = trapezoid(P_local, t_analytic) / T_axial
 
         return P_avg
+
+    def _calc_energy_vs_time(self, t: NDArray) -> NDArray:
+        """
+        Calculate kinetic energy as function of time including radiative losses
+
+        To first order: E(t) = E_0 - P * t
+
+        Parameters
+        ----------
+        t : NDArray
+            Time array in seconds
+
+        Returns
+        -------
+        NDArray
+            Kinetic energy in eV at each time point
+        """
+        P_larmor = self._calc_larmor_power()  # Watts
+        E_initial = self.particle.GetEnergy()  # eV
+        P_eV_per_sec = P_larmor / sc.e
+
+        # Linear energy loss (first-order approximation)
+        E_t = E_initial - P_eV_per_sec * t
+
+        # Ensure energy doesn't go negative
+        E_t = np.maximum(E_t, 1.0)
+
+        return E_t
+
+    def _calc_gamma_vs_time(self, E_t: NDArray) -> NDArray:
+        """
+        Calculate gamma factor as function of energy
+
+        Parameters
+        ----------
+        E_t : NDArray
+            Kinetic energy in eV at each time point
+
+        Returns
+        -------
+        NDArray
+            Gamma factor at each time point
+        """
+        m = self.particle.GetMass()
+        return 1.0 + E_t * sc.e / (m * sc.c**2)
+
+    def _calc_speed_vs_time(self, gamma_t: NDArray) -> NDArray:
+        """
+        Calculate particle speed as function of gamma
+
+        Parameters
+        ----------
+        gamma_t : NDArray
+            Gamma factor at each time point
+
+        Returns
+        -------
+        NDArray
+            Speed in m/s at each time point
+        """
+        beta_t = np.sqrt(1 - 1 / gamma_t**2)
+        return sc.c * beta_t
 
     def _validate_parameters(self, sample_rate: float, t_max: float) -> None:
         """
@@ -380,6 +453,48 @@ class TrajectoryGenerator:
         # Stack into position array
         pos = np.column_stack([x, y, z])
 
+        return t, pos
+
+    def _calc_position_with_radiation(self, sample_rate: float, t_max: float) -> tuple[NDArray, NDArray]:
+        """
+        Calculate position with radiative energy loss corrections
+
+        Applies first-order corrections to the axial motion based on
+        the decreasing particle energy over time.
+
+        Parameters
+        ----------
+        sample_rate : float
+            Sample rate in Hz
+        t_max : float
+            Maximum time in seconds
+
+        Returns
+        -------
+        tuple[NDArray, NDArray]
+            Time array (N,) and position array (N, 3)
+        """
+        # Get base trajectory (constant energy)
+        t, z_base = self._calc_axial_motion(sample_rate, t_max)
+
+        # Calculate energy loss
+        E_t = self._calc_energy_vs_time(t)
+        E_0 = self.particle.GetEnergy()
+
+        # First-order correction: axial amplitude scales with sqrt(energy)
+        energy_ratio = np.sqrt(E_t / E_0)
+
+        z_corrected = z_base * energy_ratio
+
+        phi = self._calc_azimuthal_motion(t, z_corrected)
+
+        p_start = self.particle.GetPosition()
+        rho = np.sqrt(p_start[0]**2 + p_start[1]**2)
+        x = rho * np.cos(phi)
+        y = rho * np.sin(phi)
+
+        # Stack into position array
+        pos = np.column_stack([x, y, z_corrected])
         return t, pos
 
     def _calc_axial_motion(self, sample_rate: float, t_max: float) -> tuple[NDArray, NDArray]:
@@ -488,12 +603,13 @@ class TrajectoryGenerator:
 
         return phi
 
-    def _calc_velocity(self, t: NDArray, pos: NDArray, sample_rate: float) -> NDArray:
+    def _calc_velocity(self, t: NDArray, pos: NDArray, sample_rate: float,
+                      E_t: NDArray = None) -> NDArray:
         """
         Calculate velocity as a function of time
 
         The velocity has three components:
-        - Cyclotron motion at frequency ω_c in the x-y plane
+        - Cyclotron motion at frequency omega_c in the x-y plane
         - Axial motion in the z direction
         Both depend on the time-varying pitch angle as the electron moves
         through the non-uniform field.
@@ -501,11 +617,13 @@ class TrajectoryGenerator:
         Parameters
         ----------
         t : NDArray
-            Time array in seconds
+            Time array in seconds (N,)
         pos : NDArray
             Position array (N, 3)
         sample_rate : float
             Sample rate in Hz
+        E_t : NDArray, optional
+            Kinetic energy in eV at each time point. If None, uses constant energy.
 
         Returns
         -------
@@ -522,15 +640,22 @@ class TrajectoryGenerator:
         B_vals = self.field.evaluate_field_magnitude(
             p_start[0], p_start[1], z_pos)
 
-        # Calculate cyclotron phase by integrating ω_c
-        omega_c = sc.e * B_vals / \
-            (self.particle.GetGamma() * self.particle.GetMass())
+        # Calculate time-dependent or constant gamma and speed
+        if E_t is not None:
+            gamma_t = self._calc_gamma_vs_time(E_t)
+            speed_t = self._calc_speed_vs_time(gamma_t)
+        else:
+            gamma_t = self.particle.GetGamma()
+            speed_t = self.particle.GetSpeed()
+
+        # Calculate cyclotron phase by integrating omega_c
+        omega_c = sc.e * B_vals / (gamma_t * self.particle.GetMass())
         psi = cumulative_simpson(omega_c, x=t, initial=0.0)
 
         # Calculate time-varying pitch angle from adiabatic invariant
         # sin²θ(t) * B(t) = sin²θ_0 * B_0
         field_0 = self.field.evaluate_field_magnitude(
-            p_start[0], p_start[1], 0.0)
+            p_start[0], p_start[1], p_start[2])
         sin_theta_squared = np.sin(
             self.particle.GetPitchAngle())**2 * field_0 / B_vals
 
@@ -543,15 +668,15 @@ class TrajectoryGenerator:
         z_diff = np.gradient(z_pos, t)
         moving_positive = z_diff > 0.0
 
-        # Velocity components
-        speed = self.particle.GetSpeed()
-        vel_x = speed * np.cos(psi) * sin_theta
-        vel_y = speed * np.sin(psi) * sin_theta
-        vel_z = np.where(moving_positive, cos_theta, -cos_theta) * speed
+        # Velocity components (use time-dependent speed if available)
+        vel_x = speed_t * np.cos(psi) * sin_theta
+        vel_y = speed_t * np.sin(psi) * sin_theta
+        vel_z = np.where(moving_positive, cos_theta, -cos_theta) * speed_t
 
         return np.column_stack([vel_x, vel_y, vel_z])
 
-    def _calc_acceleration(self, pos: NDArray, vel: NDArray, sample_rate: float) -> NDArray:
+    def _calc_acceleration(self, pos: NDArray, vel: NDArray, sample_rate: float,
+                          E_t: NDArray = None) -> NDArray:
         """
         Calculate acceleration using hybrid approach
 
@@ -568,6 +693,8 @@ class TrajectoryGenerator:
             Velocity array (N, 3)
         sample_rate : float
             Sample rate in Hz
+        E_t : NDArray, optional
+            Kinetic energy in eV at each time point. If None, uses constant energy.
 
         Returns
         -------
@@ -590,12 +717,21 @@ class TrajectoryGenerator:
         # Physical constants
         charge = self.particle.GetCharge()
         mass = self.particle.GetMass()
-        gamma = self.particle.GetGamma()
+
+        # Calculate time-dependent or constant gamma
+        if E_t is not None:
+            gamma_t = self._calc_gamma_vs_time(E_t)
+        else:
+            gamma_t = self.particle.GetGamma()
 
         # Calculate Lorentz force: a_perp = (q/(γm)) × (v × B)
         # This gives accurate perpendicular (cyclotron) acceleration
         v_cross_B = np.cross(vel, B)
-        a_lorentz = (charge / (gamma * mass)) * v_cross_B
+        if E_t is not None:
+            # Use time-dependent gamma (need to broadcast for element-wise division)
+            a_lorentz = (charge / (gamma_t[:, np.newaxis] * mass)) * v_cross_B
+        else:
+            a_lorentz = (charge / (gamma_t * mass)) * v_cross_B
 
         # Calculate parallel velocity component
         v_parallel = np.sum(vel * B_hat, axis=1, keepdims=True) * B_hat

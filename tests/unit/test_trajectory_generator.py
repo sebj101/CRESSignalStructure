@@ -75,7 +75,8 @@ class TestTrajectoryContainer:
         expected_rate = 1.0 / (t[1] - t[0])
         calculated_rate = traj.get_sample_rate()
 
-        np.testing.assert_almost_equal(calculated_rate, expected_rate, decimal=3)
+        np.testing.assert_almost_equal(
+            calculated_rate, expected_rate, decimal=3)
 
     def test_get_sample_rate_requires_multiple_points(self):
         """Test that get_sample_rate needs at least 2 points"""
@@ -249,8 +250,8 @@ class TestTrajectoryGeneratorValidation:
         coil_current = 2 * trap_depth * coil_radius / sc.mu_0
         background_field = 1.0  # 1 T
         field = HarmonicField(
-            radius=coil_radius, 
-            current=coil_current, 
+            radius=coil_radius,
+            current=coil_current,
             background=background_field
         )
         particle = Particle(ke=18600.0, startPos=np.zeros(3))
@@ -326,8 +327,8 @@ class TestTrajectoryPhysics:
         coil_current = 2 * trap_depth * coil_radius / sc.mu_0
         background_field = 1.0  # 1 T
         field = HarmonicField(
-            radius=coil_radius, 
-            current=coil_current, 
+            radius=coil_radius,
+            current=coil_current,
             background=background_field
         )
         particle = Particle(
@@ -422,7 +423,8 @@ class TestTrajectoryPhysics:
 
         # Get B field at each point
         pos = traj.position
-        B_vals = field.evaluate_field_magnitude(pos[:, 0], pos[:, 1], pos[:, 2])
+        B_vals = field.evaluate_field_magnitude(
+            pos[:, 0], pos[:, 1], pos[:, 2])
 
         # Calculate adiabatic invariant
         invariant = v_perp_squared / B_vals
@@ -432,6 +434,73 @@ class TestTrajectoryPhysics:
         std_invariant = np.std(invariant)
 
         assert std_invariant / mean_invariant < 0.01
+
+    def test_no_radiation_energy_constant(self, standard_setup):
+        """Test that energy remains constant when radiation is disabled"""
+        field, particle = standard_setup
+        gen = TrajectoryGenerator(field, particle)
+
+        traj = gen.generate(sample_rate=500e6, t_max=1e-3,
+                            include_radiation=False)
+
+        # Calculate speed at different times
+        speed_initial = np.linalg.norm(traj.velocity[0])
+        speed_final = np.linalg.norm(traj.velocity[-1])
+
+        # Speed should remain constant (within numerical precision)
+        np.testing.assert_allclose(speed_initial, speed_final, rtol=1e-5)
+
+    def test_radiation_decreases_speed(self, standard_setup):
+        """Test that speed decreases when radiation is enabled"""
+        field, particle = standard_setup
+        gen = TrajectoryGenerator(field, particle)
+
+        # Generate trajectory with radiation
+        traj = gen.generate(sample_rate=500e6, t_max=5e-3,
+                            include_radiation=True)
+
+        # Speed should decrease
+        speed_initial = np.linalg.norm(traj.velocity[0])
+        speed_final = np.linalg.norm(traj.velocity[-1])
+
+        assert speed_final < speed_initial
+
+    def test_energy_loss_matches_power_times_time(self, standard_setup):
+        """Test that energy loss equals Larmor power times time"""
+        field, particle = standard_setup
+        gen = TrajectoryGenerator(field, particle)
+
+        # Calculate expected energy loss
+        P_larmor = gen._calc_larmor_power()
+        t_max = 5e-3
+
+        expected_loss_joules = P_larmor * t_max
+        expected_loss_eV = expected_loss_joules / sc.e
+
+        # Generate trajectory
+        traj = gen.generate(sample_rate=3e9, t_max=t_max,
+                            include_radiation=True)
+
+        # Calculate actual energy loss from _calc_energy_vs_time
+        E_t = gen._calc_energy_vs_time(traj.time)
+        actual_loss_eV = E_t[0] - E_t[-1]
+
+        # Should match exactly (both use same calculation)
+        np.testing.assert_allclose(actual_loss_eV, expected_loss_eV, rtol=1e-8)
+
+    def test_radiation_flag_default_false(self, standard_setup):
+        """Test that include_radiation defaults to False"""
+        field, particle = standard_setup
+        gen = TrajectoryGenerator(field, particle)
+
+        # Generate trajectory without specifying radiation flag
+        traj = gen.generate(sample_rate=500e6, t_max=1e-3)
+
+        # Should behave as if radiation is off (constant speed)
+        speed_initial = np.linalg.norm(traj.velocity[0])
+        speed_final = np.linalg.norm(traj.velocity[-1])
+
+        np.testing.assert_allclose(speed_initial, speed_final, rtol=1e-5)
 
 
 class TestTrajectoryEdgeCases:
@@ -525,8 +594,8 @@ class TestTrajectoryEdgeCases:
         trap_depth = 4e-3
         I_coil = 2 * trap_depth * R_coil / sc.mu_0
         field = HarmonicField(
-            radius=R_coil, 
-            current=I_coil, 
+            radius=R_coil,
+            current=I_coil,
             background=1.0
         )
 
