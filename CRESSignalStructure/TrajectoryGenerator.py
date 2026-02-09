@@ -272,7 +272,8 @@ class TrajectoryGenerator:
             m = self.particle.GetMass()
             gamma = self.particle.GetGamma()
 
-            prefactor = q**4 / (6 * np.pi * sc.epsilon_0 * m**2 * sc.c**3 * gamma**2)
+            prefactor = q**4 / (6 * np.pi * sc.epsilon_0 *
+                                m**2 * sc.c**3 * gamma**2)
             return prefactor * B**2 * v_perp**2
 
         # General case: average over one axial period
@@ -303,7 +304,8 @@ class TrajectoryGenerator:
         gamma = self.particle.GetGamma()
 
         # Relativistic Larmor power at each point along trajectory
-        prefactor = q**4 / (6 * np.pi * sc.epsilon_0 * m**2 * sc.c**3 * gamma**2)
+        prefactor = q**4 / (6 * np.pi * sc.epsilon_0 *
+                            m**2 * sc.c**3 * gamma**2)
         P_local = prefactor * B_vals**2 * v_perp**2
 
         # Time-averaged power over one axial period
@@ -520,7 +522,7 @@ class TrajectoryGenerator:
             Time array (N,) and z-position array (N,)
         """
         # Create uniformly-spaced time array
-        n_points = int(np.round(t_max * sample_rate))
+        n_points = int(np.round(t_max * sample_rate)) + 1
         t_vals = np.linspace(0, t_max, n_points)
 
         PERPENDICULAR_THRESHOLD = 1e-4 * np.pi / 180
@@ -604,7 +606,7 @@ class TrajectoryGenerator:
         return phi
 
     def _calc_velocity(self, t: NDArray, pos: NDArray, sample_rate: float,
-                      E_t: NDArray = None) -> NDArray:
+                       E_t: NDArray = None) -> NDArray:
         """
         Calculate velocity as a function of time
 
@@ -676,7 +678,7 @@ class TrajectoryGenerator:
         return np.column_stack([vel_x, vel_y, vel_z])
 
     def _calc_acceleration(self, pos: NDArray, vel: NDArray, sample_rate: float,
-                          E_t: NDArray = None) -> NDArray:
+                           E_t: NDArray = None) -> NDArray:
         """
         Calculate acceleration using hybrid approach
 
@@ -744,7 +746,8 @@ class TrajectoryGenerator:
         # The Lorentz force is perpendicular to B, so it has no parallel component
         # We need to add the parallel acceleration from the gradient
         # Project Lorentz acceleration onto perpendicular plane
-        a_lorentz_parallel = np.sum(a_lorentz * B_hat, axis=1, keepdims=True) * B_hat
+        a_lorentz_parallel = np.sum(
+            a_lorentz * B_hat, axis=1, keepdims=True) * B_hat
         a_lorentz_perp = a_lorentz - a_lorentz_parallel
 
         # Combine: use Lorentz for perpendicular, numerical for parallel
