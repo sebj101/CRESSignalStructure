@@ -85,7 +85,7 @@ def main():
     param_ranges = {
         'energy': (args.energy_min, args.energy_max), 
         'pitch': (np.radians(args.pitch_min), np.radians(args.pitch_max)),
-        'r': (0.0, 1e-4),   
+        'r': (0.0, 5e-3),   # Up to 5 mm radial offset
         'z': (0.0, 0.0),    # Center of trap
         'theta': (0.0, 2*np.pi)
     }
