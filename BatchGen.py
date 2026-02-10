@@ -48,7 +48,7 @@ def main():
     # 3. Define Physics
     print("Initialising Physics Model...")
     
-    TRAP_DEPTH =  0.032 # 32mT  #4e-3  # 4 mT
+    TRAP_DEPTH =  4e-3 # 32mT  #4e-3  # 4 mT
     B0 = 1.0           # 1 T
     R_COIL = 1.25e-2   # 1.25 cm
     I_COIL = 2 * TRAP_DEPTH * R_COIL / sc.mu_0
