@@ -2,6 +2,7 @@ from scipy.special import j1, jvp
 import numpy as np
 import scipy.constants as sc
 from numpy.typing import ArrayLike
+from scipy.integrate import dblquad
 
 
 class CircularWaveguide:
@@ -451,21 +452,29 @@ class CircularWaveguide:
 
     def CalcNormalisationFactor(self):
         """
-        Calculate the required normalisation factor for the waveguide
+        Calculate the required normalisation factor for the waveguide.
 
         Returns
         -------
         float
             Required normalisation factor
         """
+        kc = 1.841 / self.wgR
 
-        xArray = np.linspace(-self.wgR, self.wgR, 100)
-        yArray = np.linspace(-self.wgR, self.wgR, 100)
-        E1Integral = 0.0
-        for i in range(len(xArray)):
-            for j in range(len(yArray)):
-                E1Integral += np.linalg.norm(self.EFieldTE11Pos_1(np.array(
-                    [xArray[i], yArray[j], 0]), 1))**2 * (xArray[1] - xArray[0]) * (yArray[1] - yArray[0])
+        def integrand_rho_phi(phi, rho):
+            E_rho = self.EFieldTE11Rho_1(rho, phi, 1.0)
+            E_phi = self.EFieldTE11Phi_1(rho, phi, 1.0)
+            return (E_rho**2 + E_phi**2) * rho
+
+        E1Integral, error = dblquad(
+            integrand_rho_phi,
+            0.0,              # rho lower limit
+            self.wgR,         # rho upper limit
+            0.0,              # phi lower limit
+            2 * np.pi,        # phi upper limit
+            epsabs=1e-10,
+            epsrel=1e-8
+        )
 
         return 1 / np.sqrt(E1Integral)
 
