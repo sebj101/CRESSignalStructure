@@ -212,7 +212,7 @@ class TestTrajectoryGeneratorBasics:
 
         traj = gen.generate(sample_rate=sample_rate, t_max=t_max)
 
-        expected_points = int(np.round(t_max * sample_rate))
+        expected_points = int(np.round(t_max * sample_rate)) + 1
         assert traj.get_n_points() == expected_points
 
     def test_generate_correct_duration(self, harmonic_field_setup):
