@@ -16,7 +16,7 @@ Basic Usage
 ... )
 >>>
 >>> # Setup components
->>> field = HarmonicField(R_COIL=0.03, I_COIL=400, B_BKG=1.0)
+>>> field = HarmonicField(radius=0.03, current=400, background=1.0)
 >>> particle = Particle(18.6e3, np.array([0.01, 0, 0]), 89.5*np.pi/180)
 >>> antenna = IsotropicAntenna(position=np.array([0.02, 0, 0]))
 >>> receiver = ReceiverChain(sample_rate=200e6, lo_frequency=26e9)
@@ -40,7 +40,7 @@ Magnetic Fields:
     BathtubField - Bathtub magnetic field (two coils)
 
 Traps:
-    BaseTrap - Abstract base class for electron traps
+    BaseTrap - Abstract base class for analytic electron traps
     HarmonicTrap - Harmonic trap configuration
     BathtubTrap - Bathtub trap configuration
 
