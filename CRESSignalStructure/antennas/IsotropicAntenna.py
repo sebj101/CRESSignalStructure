@@ -9,8 +9,7 @@ directions and no polarization preference.
 """
 
 import numpy as np
-import scipy.constants as sc
-from numpy.typing import ArrayLike, NDArray
+from numpy.typing import NDArray
 from .BaseAntenna import BaseAntenna
 
 
@@ -55,7 +54,8 @@ class IsotropicAntenna(BaseAntenna):
             If parameters have invalid values
         """
         # Axes are arbitrary for an isotropic antenna
-        super().__init__(position, np.array([0.0, 0.0, 1.0]), np.array([1.0, 0.0, 0.0]))
+        super().__init__(position, np.array(
+            [0.0, 0.0, 1.0]), np.array([1.0, 0.0, 0.0]))
 
         # Validate impedance
         if not isinstance(impedance, (int, float, complex)):
@@ -200,7 +200,7 @@ class IsotropicAntenna(BaseAntenna):
         complex
             Antenna impedance in Ohms (resistance + j*reactance)
         """
-        frequency = self._validate_frequency(frequency)
+        _ = self._validate_frequency(frequency)
         return self._impedance
 
     def GetGain(self, theta: float, phi: float) -> float:
@@ -221,7 +221,7 @@ class IsotropicAntenna(BaseAntenna):
         float
             Dimensionless gain (always 1.0 for isotropic antenna)
         """
-        theta, phi = self._validate_angles(theta, phi)
+        _, _ = self._validate_angles(theta, phi)
         return 1.0
 
     def GetEffectiveLengthMagnitude(self) -> float:
