@@ -209,7 +209,7 @@ class TestLowpassFilter:
         rc = ReceiverChain(1e9, 26e9)
 
         signal = np.random.randn(1000) + 1j * np.random.randn(1000)
-        filtered = rc._lowpass_filter(signal)
+        filtered = rc._lowpass_filter(signal, dt=1.0 / 5e9)
 
         assert len(filtered) == len(signal)
 
@@ -218,7 +218,7 @@ class TestLowpassFilter:
         rc = ReceiverChain(1e9, 26e9)
 
         signal = np.random.randn(1000) + 1j * np.random.randn(1000)
-        filtered = rc._lowpass_filter(signal)
+        filtered = rc._lowpass_filter(signal, dt=1.0 / 5e9)
 
         assert np.iscomplexobj(filtered)
 
@@ -240,7 +240,7 @@ class TestLowpassFilter:
         signal = (np.exp(2j * np.pi * low_freq * time) +
                   0.5 * np.exp(2j * np.pi * high_freq * time))
 
-        filtered = rc._lowpass_filter(signal)
+        filtered = rc._lowpass_filter(signal, dt=(time[1]-time[0]))
 
         # FFT to check frequency content
         fft_before = np.fft.fft(signal)
@@ -568,7 +568,7 @@ class TestSignalProcessingAccuracy:
         signal = np.random.randn(10000) + 1j * np.random.randn(10000)
         signal = signal - np.mean(signal)  # Ensure zero mean
 
-        filtered = rc._lowpass_filter(signal)
+        filtered = rc._lowpass_filter(signal, dt=1.0 / 5e9)
 
         # Mean should remain close to zero
         assert np.abs(np.mean(filtered)) < 0.1
