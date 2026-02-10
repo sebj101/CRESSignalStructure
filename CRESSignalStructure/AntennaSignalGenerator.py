@@ -329,13 +329,13 @@ class AntennaSignalGenerator:
         # Sample rate for E-field calculation
         adc_rate = self.__receiver_chain.get_sample_rate()
         signal_sample_rate = adc_rate * self.__oversampling_factor
-
+        dt = 1.0 / signal_sample_rate
         # Number of points at oversampled rate
         duration = t_obs_end - t_obs_start
-        n_points = int(np.ceil(duration * signal_sample_rate))
+        n_points = int(np.floor(duration * signal_sample_rate))
 
         # Create time array
-        t_obs = np.linspace(t_obs_start, t_obs_end, n_points)
+        t_obs = t_obs_start + np.arange(n_points) * dt
 
         ret_quantities = self._calculate_retarded_quantities(t_obs, spline)
         E_field = self._calculate_E_field(ret_quantities)
