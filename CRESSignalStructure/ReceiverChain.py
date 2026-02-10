@@ -154,7 +154,7 @@ class ReceiverChain:
         if_signal = signal * lo_signal
         return if_signal
 
-    def _lowpass_filter(self, if_signal: NDArray) -> NDArray:
+    def _lowpass_filter(self, if_signal: NDArray, dt: float) -> NDArray:
         """
         Apply low-pass filter to remove upper sideband after mixing
 
@@ -165,6 +165,8 @@ class ReceiverChain:
         ----------
         if_signal : NDArray
             Complex IF signal to filter
+        dt : float
+            Float representing time spacing of signal in seconds
 
         Returns
         -------
@@ -173,9 +175,7 @@ class ReceiverChain:
         """
 
         cutoff = self._sample_rate / 2.
-        # We originally generate the signal at 5 times the sample rate so use
-        # half that number for the Nyquist frequency
-        nyquist_freq = cutoff * 5.
+        nyquist_freq = 1.0 / dt / 2.0
         normalised_cutoff = cutoff / nyquist_freq
         filter_coeffs = butter(6, normalised_cutoff, btype='low', output='sos')
         return sosfiltfilt(filter_coeffs, if_signal)
@@ -233,7 +233,7 @@ class ReceiverChain:
             raise ValueError("Oversample rate must be finite")
 
         if_signal = self._downmix(time, signal)
-        if_signal = self._lowpass_filter(if_signal)
+        if_signal = self._lowpass_filter(if_signal, time[1] - time[0])
         if_signal = self._apply_gain(if_signal)
 
         # Resample to ADC sample rate with integer decimation
