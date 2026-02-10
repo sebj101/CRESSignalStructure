@@ -277,7 +277,10 @@ class CircularWaveguide:
         kc = 1.841 / self.wgR
         conditions = [rho > self.wgR, rho == 0.0, rho <= self.wgR]
         choices = [
-            0.0, -A * np.sin(phi) / kc, (-A / (kc * rho)) * j1(kc * rho) * np.sin(phi)]
+            0.0,
+            -A * np.sin(phi) / kc,
+            -A * self._SafeJ1OverRho(kc * rho) * np.sin(phi)
+        ]
         return np.select(conditions, choices)
 
     def HFieldTE11Rho_2(self, rho: ArrayLike, phi: ArrayLike, omega: float,
