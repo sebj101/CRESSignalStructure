@@ -174,7 +174,6 @@ class AntennaSignalGenerator:
         -------
         dict
             Dictionary containing:
-            - 'r_ret': Position at retarded time, shape (N, 3)
             - 'v_ret': Velocity at retarded time, shape (N, 3)
             - 'a_ret': Acceleration at retarded time, shape (N, 3)
             - 't_ret': Retarded times, shape (N,)
