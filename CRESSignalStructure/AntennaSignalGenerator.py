@@ -64,6 +64,13 @@ class AntennaSignalGenerator:
         if not isinstance(receiver_chain, ReceiverChain):
             raise TypeError("receiver_chain must be a ReceiverChain object")
 
+        if not isinstance(oversampling_factor, int):
+            raise TypeError("Oversample factor must be an int")
+        if not np.isfinite(oversampling_factor):
+            raise ValueError("Oversample factor must be finite")
+        if oversampling_factor < 1:
+            raise ValueError('Oversample factor must be positive')
+
         # Check what the trajectory sampling frequency is vs the digitizer frequency
         traj_sample_freq = trajectory.get_sample_rate()
         dig_sample_freq = receiver_chain.get_sample_rate()
@@ -71,8 +78,6 @@ class AntennaSignalGenerator:
             raise ValueError(f'Trajectory sample rate {traj_sample_freq:.2e} Hz'
                              'must not be less than the digitizer sample rate '
                              f'of {dig_sample_freq:.2e} Hz')
-        if oversampling_factor < 1:
-            raise ValueError('Oversample factor must be positive')
 
         self.__trajectory = trajectory
         self.__antenna = antenna
