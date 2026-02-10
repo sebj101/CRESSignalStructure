@@ -225,11 +225,15 @@ class ReceiverChain:
         if len(time) < 2:
             raise ValueError("Need at least 2 time points")
 
-        # Downmix to IF
+        if not isinstance(oversample_factor, int):
+            raise TypeError("Oversample rate must be an int")
+        if oversample_factor < 1:
+            raise ValueError("Oversample factor must be positive")
+        if not np.isfinite(oversample_factor):
+            raise ValueError("Oversample rate must be finite")
+
         if_signal = self._downmix(time, signal)
-        # Apply low-pass filter to remove upper sideband
         if_signal = self._lowpass_filter(if_signal)
-        # Apply receiver gain
         if_signal = self._apply_gain(if_signal)
 
         # Resample to ADC sample rate with integer decimation
