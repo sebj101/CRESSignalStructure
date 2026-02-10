@@ -24,6 +24,14 @@ class BaseAntenna(ABC):
         self._pos = self._validate_position(pos)
         self._z_ax = self._validate_direction(z_ax)
         self._x_ax = self._validate_direction(x_ax)
+
+        # Make x-axis orthogonal to z-axis (Gram–Schmidt) and normalize
+        x_vec_proj = self._x_ax - np.dot(self._x_ax, self._z_ax) * self._z_ax
+        x_norm = np.linalg.norm(x_vec_proj)
+        if x_norm == 0.0:
+            raise ValueError("x_ax must not be parallel to z_ax.")
+        self._x_ax = x_vec_proj / x_norm
+
         self._y_ax = np.cross(self._z_ax, self._x_ax)
 
     @abstractmethod
@@ -317,5 +325,3 @@ class BaseAntenna(ABC):
             raise ValueError("Direction vector must have non-zero length")
 
         return direction / norm
-
-
