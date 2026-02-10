@@ -71,13 +71,14 @@ class AntennaSignalGenerator:
         if oversampling_factor < 1:
             raise ValueError('Oversample factor must be positive')
 
-        # Check what the trajectory sampling frequency is vs the digitizer frequency
+        # Check what the trajectory sampling frequency is vs the digitizer
+        # frequency multiplied by the oversample factor
         traj_sample_freq = trajectory.get_sample_rate()
         dig_sample_freq = receiver_chain.get_sample_rate()
-        if traj_sample_freq <= dig_sample_freq:
+        if traj_sample_freq <= dig_sample_freq * oversampling_factor:
             raise ValueError(f'Trajectory sample rate {traj_sample_freq:.2e} Hz'
-                             'must not be less than the digitizer sample rate '
-                             f'of {dig_sample_freq:.2e} Hz')
+                             'must not be less than the oversampled digitizer '
+                             f'sample rate of {dig_sample_freq * oversampling_factor:.2e} Hz')
 
         self.__trajectory = trajectory
         self.__antenna = antenna
