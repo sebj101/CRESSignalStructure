@@ -9,7 +9,6 @@ local oscillator mixing and analog-to-digital conversion.
 
 import numpy as np
 from numpy.typing import NDArray
-import scipy.constants as sc
 from scipy.signal import butter, sosfiltfilt
 
 
@@ -61,7 +60,7 @@ class ReceiverChain:
         Examples
         --------
         >>> # Create digitizer with 200 MHz sample rate, 26 GHz LO, 60 dB gain
-        >>> digitizer = Digitizer(
+        >>> digitizer = ReceiverChain(
         ...     sample_rate=200e6,
         ...     lo_frequency=26e9,
         ...     receiver_gain=10**(60/20)
