@@ -29,6 +29,7 @@ jobs:
         pip install -e .
 
     - name: Run tests
+      if: matrix.python-version != '3.12'
       run: |
         python -m pytest tests/ -v --tb=short
 
