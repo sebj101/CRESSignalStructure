@@ -8,6 +8,8 @@ from an electron trajectory as detected by an antenna, including proper
 treatment of retarded time effects and Liénard-Wiechert fields.
 """
 
+from __future__ import annotations
+
 import numpy as np
 from numpy.typing import NDArray
 import scipy.constants as sc
