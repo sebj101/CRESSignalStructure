@@ -58,6 +58,30 @@ class BaseField(ABC):
         b_x, b_y, b_z = self.evaluate_field(x, y, z)
         return np.sqrt(b_x**2 + b_y**2 + b_z**2)
 
+    def evaluate_field_gradient(self, rho: ArrayLike, z: ArrayLike, eps: float = 1e-8):
+        """
+        Compute field gradient with respect to radial coordinate, rho
+
+        Parameters
+        ----------
+        rho, z : ArrayLike
+            Positions in cylindrical coordinates to evaluate at (in metres)
+        eps : float
+            Step size for calculation of finite differences
+
+        Returns
+        -------
+        NDArray :
+            Radial gradient component in T/m
+        """
+        rho = np.array(rho)
+        z = np.asarray(z)
+
+        # Azimuthally symmetric so just interpret rho as x coordinate
+        grad = (self.evaluate_field_magnitude(rho + eps, 0, z) -
+                self.evaluate_field_magnitude(rho - eps, 0, z)) / (2 * eps)
+        return grad
+
     @abstractmethod
     def CalcZMax(self, particle: Particle) -> float:
         """
@@ -120,9 +144,8 @@ class BaseField(ABC):
 
         # Initially calculate the axial period
         Ta = 1 / (self.CalcOmegaAxial(particle) / (2 * np.pi))
-        t_vals = np.linspace(0.0, Ta, n_t_points)
-
         t, z = self.calc_t_vs_z(particle)
+        t_vals = np.linspace(0.0, t[-1], n_t_points, endpoint=True)
         t_to_z = interp1d(t, z, kind='cubic')
         z = t_to_z(t_vals)
         pStart = particle.GetPosition()
@@ -145,22 +168,23 @@ class BaseField(ABC):
             Axial frequency in radians/s
         """
         pa = particle.GetPitchAngle()
-        ke = particle.GetEnergy() * sc.e
+        gamma = particle.GetGamma()
+        p0 = gamma * particle.GetMass() * particle.GetSpeed()
         pStart = particle.GetPosition()
 
         centralField = self.evaluate_field_magnitude(pStart[0], pStart[1], 0.)
-
         zMax = self.CalcZMax(particle)
 
         # Equivalent magnetic moment
-        muMag = ke * np.sin(pa)**2 / centralField
+        muMag = gamma * particle.GetMass() * (np.sin(pa) * particle.GetSpeed())**2 / \
+            (2 * centralField)
 
         # Calculate the integrand at each point
-        integrationPoints = np.linspace(0, zMax, 2000, endpoint=False)
-        integrand = 1.0 / np.sqrt((2 / particle.GetMass()) * (ke - muMag *
-                                  self.evaluate_field_magnitude(pStart[0], pStart[1], integrationPoints)))
+        integrationPoints = np.linspace(0, zMax, 900000, endpoint=False)
+        integrand = gamma * particle.GetMass() / np.sqrt(p0**2 - 2 * gamma * particle.GetMass()
+                                                         * muMag * self.evaluate_field_magnitude(pStart[0], pStart[1], integrationPoints))
 
-        integral = 2 * np.trapezoid(integrand, integrationPoints) / np.pi
+        integral = float(2 * simpson(integrand, integrationPoints) / np.pi)
         return 1 / integral
 
     def calc_t_vs_z(self, particle: Particle) -> tuple[NDArray, NDArray]:
@@ -181,20 +205,22 @@ class BaseField(ABC):
         """
 
         pa = particle.GetPitchAngle()
-        ke = particle.GetEnergy() * sc.e
+        gamma = particle.GetGamma()
+        p0 = gamma * particle.GetMass() * particle.GetSpeed()
         pStart = particle.GetPosition()
 
         centralField = self.evaluate_field_magnitude(pStart[0], pStart[1], 0.)
         zMax = self.CalcZMax(particle)
-        muMag = ke * np.sin(pa)**2 / centralField
+        muMag = gamma * particle.GetMass() * (np.sin(pa) * particle.GetSpeed())**2 / \
+            (2 * centralField)
 
         def t_integrand(z):
-            result = np.sqrt(particle.GetMass() / 2) / np.sqrt(ke - muMag *
-                                                               self.evaluate_field_magnitude(pStart[0], pStart[1], z))
+            result = gamma * particle.GetMass() / np.sqrt(p0**2 - 2 * gamma * particle.GetMass()
+                                                          * muMag * self.evaluate_field_magnitude(pStart[0], pStart[1], z))
             return result
 
         # For axially symmetric traps, we should only need to do one integration
-        zVals1 = np.linspace(0.0, 0.999 * zMax, 100)
+        zVals1 = np.linspace(0.0, 0.999 * zMax, 1000)
         tVals1 = cumulative_simpson(t_integrand(zVals1), x=zVals1, initial=0.0)
         zVals2 = np.flip(zVals1[:-1])
         tVals2 = 2 * tVals1[-1] - np.flip(tVals1[:-1])

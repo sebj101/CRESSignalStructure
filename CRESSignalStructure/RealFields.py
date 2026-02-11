@@ -42,9 +42,9 @@ class CoilField(BaseField):
 
     def evaluate_field(self, x: ArrayLike, y: ArrayLike, z: ArrayLike) -> tuple:
         # Convert inputs to numpy arrays
-        x = np.asarray(x)
-        y = np.asarray(y)
-        z = np.asarray(z)
+        x = np.asarray(x, dtype=float)
+        y = np.asarray(y, dtype=float)
+        z = np.asarray(z, dtype=float)
 
         x, y, z = np.broadcast_arrays(x, y, z)
 
@@ -82,7 +82,7 @@ class CoilField(BaseField):
             gamma = alpha - 4 * rad_norm
 
             b_r = b_central * (int_e * ((1.0 + rad_norm**2 + z_norm**2) / gamma)
-                               - int_k) / root_alpha_pi * (z_rel / rad)
+                               - int_k) / root_alpha_pi * (z_rel / rad_off)
             b_z_off = b_central * (int_e * ((1.0 - rad_norm**2 - z_norm**2) / gamma)
                                    + int_k) / root_alpha_pi
 

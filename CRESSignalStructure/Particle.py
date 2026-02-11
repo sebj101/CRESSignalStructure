@@ -116,3 +116,9 @@ class Particle:
         Get the energy of the particle in eV
         """
         return self.__ke
+
+    def GetCharge(self):
+        """
+        Get the charge of the particle in Coulombs
+        """
+        return self.__q
