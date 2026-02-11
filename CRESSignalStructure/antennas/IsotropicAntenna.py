@@ -92,10 +92,20 @@ class IsotropicAntenna(BaseAntenna):
         -------
         NDArray
             (N, 3) array of unit θ̂ vectors
+
+        Raises
+        ------
+        ValueError
+            If any position equals the antenna position
         """
         pos = np.atleast_2d(pos)
         r = pos - self._pos                                          # (N, 3)
-        r_hat = r / np.linalg.norm(r, axis=1, keepdims=True)        # (N, 3)
+        r_mag = np.linalg.norm(r, axis=1, keepdims=True)            # (N, 1)
+
+        if np.any(r_mag == 0.0):
+            raise ValueError("Position cannot equal antenna position")
+
+        r_hat = r / r_mag                                            # (N, 3)
         cos_theta = np.dot(r_hat, self._z_ax)                       # (N,)
 
         # v = sin(θ)·θ̂
@@ -121,10 +131,20 @@ class IsotropicAntenna(BaseAntenna):
         -------
         NDArray
             (N, 3) array of unit φ̂ vectors
+
+        Raises
+        ------
+        ValueError
+            If any position equals the antenna position
         """
         pos = np.atleast_2d(pos)
         r = pos - self._pos                                          # (N, 3)
-        r_hat = r / np.linalg.norm(r, axis=1, keepdims=True)        # (N, 3)
+        r_mag = np.linalg.norm(r, axis=1, keepdims=True)            # (N, 1)
+
+        if np.any(r_mag == 0.0):
+            raise ValueError("Position cannot equal antenna position")
+
+        r_hat = r / r_mag                                            # (N, 3)
 
         # cross(ẑ, r̂) = sin(θ)·φ̂
         v = np.cross(self._z_ax, r_hat)                              # (N, 3)
@@ -153,13 +173,23 @@ class IsotropicAntenna(BaseAntenna):
         -------
         NDArray
             (N, 3) array of effective length vectors in meters
+
+        Raises
+        ------
+        ValueError
+            If any position equals the antenna position
         """
         self._validate_frequency(frequency)
         pos = np.atleast_2d(pos)
 
         # Direction from antenna toward each position
         r = pos - self._pos
-        k_hat = r / np.linalg.norm(r, axis=1, keepdims=True)  # (N, 3)
+        r_mag = np.linalg.norm(r, axis=1, keepdims=True)  # (N, 1)
+
+        if np.any(r_mag == 0.0):
+            raise ValueError("Position cannot equal antenna position")
+
+        k_hat = r / r_mag  # (N, 3)
 
         # Choose a perpendicular direction per k_hat.
         # Not close to z-axis: cross(z, k) = [-k_y, k_x, 0]

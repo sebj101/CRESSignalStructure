@@ -93,12 +93,24 @@ class ShortDipoleAntenna(BaseAntenna):
         -------
         NDArray
             (N, 3) array of E_theta vectors
+
+        Raises
+        ------
+        ValueError
+            If any position equals the antenna position
         """
         pos = np.atleast_2d(pos)
-        r = pos - self._pos                                          # (N, 3)
-        r_hat = r / np.linalg.norm(r, axis=1, keepdims=True)        # (N, 3)
-        cos_theta = np.dot(r_hat, self._z_ax)                       # (N,)
-        return cos_theta[:, np.newaxis] * r_hat - self._z_ax         # (N, 3)
+        r = pos - self._pos   # (N, 3)
+        r_mag = np.linalg.norm(r, axis=1, keepdims=True)
+
+        if np.any(r_mag == 0.0):
+            raise ValueError("Position cannot equal antenna position")
+
+        r_hat = r / r_mag
+        cos_theta = np.dot(r_hat, self._z_ax)
+        E_theta = cos_theta[:, np.newaxis] * r_hat - self._z_ax
+
+        return E_theta
 
     def GetEPhi(self, pos: NDArray) -> NDArray:
         """
@@ -310,10 +322,20 @@ class HalfWaveDipoleAntenna(BaseAntenna):
         -------
         NDArray
             (N, 3) array of E_theta vectors
+
+        Raises
+        ------
+        ValueError
+            If any position equals the antenna position
         """
         pos = np.atleast_2d(pos)
         r = pos - self._pos                                          # (N, 3)
-        r_hat = r / np.linalg.norm(r, axis=1, keepdims=True)        # (N, 3)
+        r_mag = np.linalg.norm(r, axis=1, keepdims=True)            # (N, 1)
+
+        if np.any(r_mag == 0.0):
+            raise ValueError("Position cannot equal antenna position")
+
+        r_hat = r / r_mag                                            # (N, 3)
         cos_theta = np.dot(r_hat, self._z_ax)                       # (N,)
 
         v = cos_theta[:, np.newaxis] * r_hat - self._z_ax            # (N, 3)
