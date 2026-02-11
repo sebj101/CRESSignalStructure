@@ -122,3 +122,25 @@ class Particle:
         Get the charge of the particle in Coulombs
         """
         return self.__q
+
+
+class Electron(Particle):
+    """
+    Class representing an electron with fixed charge and mass
+    """
+
+    def __init__(self, ke: float, startPos: np.ndarray, pitchAngle: float = np.pi/2) -> None:
+        """
+        Constructor for Electron class
+
+        Parameters
+        ----------
+        ke : float
+            Initial kinetic energy in eV
+        startPos : np.ndarray
+            3-vector representing the initial position of the electron
+        pitchAngle : float
+            Pitch angle of the electron in radians
+        """
+        super().__init__(ke=ke, startPos=startPos, pitchAngle=pitchAngle,
+                         q=-sc.e, mass=sc.m_e)
