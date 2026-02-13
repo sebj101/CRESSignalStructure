@@ -11,15 +11,18 @@ BaseAntenna : Abstract base class for all antennas
 IsotropicAntenna : Ideal omnidirectional antenna with uniform gain
 ShortDipoleAntenna : Short dipole antenna (length << wavelength)
 HalfWaveDipoleAntenna : Half-wave dipole antenna (length ≈ λ/2)
+HFSSAntenna : Antenna model driven by HFSS simulation exports
 """
 
 from .BaseAntenna import BaseAntenna
 from .IsotropicAntenna import IsotropicAntenna
 from .DipoleAntennas import ShortDipoleAntenna, HalfWaveDipoleAntenna
+from .HFSSAntenna import HFSSAntenna
 
 __all__ = [
     'BaseAntenna',
     'IsotropicAntenna',
     'ShortDipoleAntenna',
     'HalfWaveDipoleAntenna',
+    'HFSSAntenna',
 ]
