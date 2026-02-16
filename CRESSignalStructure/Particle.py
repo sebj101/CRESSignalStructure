@@ -4,8 +4,12 @@ Particle.py
 File containing particle class for easy calculation of particle kinematics 
 """
 
+import logging
+
 import numpy as np
 import scipy.constants as sc
+
+logger = logging.getLogger(__name__)
 
 
 class Particle:
@@ -68,6 +72,12 @@ class Particle:
         self.__q = q
         self.__mass = mass
         self.__pitchAngle = pitchAngle
+
+        logger.debug(
+            "Particle created: ke=%.3f eV, pitch_angle=%.4f rad, "
+            "position=%s, gamma=%.6f",
+            ke, pitchAngle, startPos, self.GetGamma()
+        )
 
     def GetGamma(self):
         """

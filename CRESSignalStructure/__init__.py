@@ -146,3 +146,8 @@ __all__ = [
 # Version info
 __version__ = '0.1.0'
 __author__ = 'Seb Jones'
+
+# Library-level logging: do not add any handlers other than NullHandler.
+# Applications using this library are responsible for configuring logging.
+import logging
+logging.getLogger(__name__).addHandler(logging.NullHandler())
