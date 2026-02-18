@@ -7,12 +7,15 @@ The far-field pattern (E-field components and gain) is loaded from CSV files
 exported by HFSS and used to evaluate effective length, gain, and impedance.
 """
 
+import logging
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 from scipy.interpolate import RegularGridInterpolator, interp1d
 import scipy.constants as sc
 
 from .BaseAntenna import BaseAntenna
+
+logger = logging.getLogger(__name__)
 from .HFSSDataParser import HFSSDataParser, EFieldData, GainData, ImpedanceData
 
 
@@ -96,6 +99,11 @@ class HFSSAntenna(BaseAntenna):
                                      kind='cubic', fill_value='extrapolate')
         self._z_im_interp = interp1d(z_data.frequency, z_data.impedance.imag,
                                      kind='cubic', fill_value='extrapolate')
+
+        logger.info("Created HFSSAntenna at pos=%s, pattern_frequency=%.5e Hz, "
+                    "efield='%s', gain='%s', impedance='%s'",
+                    self._pos, self._pattern_frequency,
+                    efield_path, gain_path, impedance_path)
 
     # ------------------------------------------------------------------ #
     # BaseAntenna abstract methods                                         #
@@ -230,12 +238,10 @@ class HFSSAntenna(BaseAntenna):
         frequency = self._validate_frequency(frequency)
 
         if not (self._z_freq[0] <= frequency <= self._z_freq[-1]):
-            import warnings
-            warnings.warn(
-                f"Requested frequency {frequency/1e9:.4f} GHz is outside the "
-                f"simulated range [{self._z_freq[0]/1e9:.4f}, "
-                f"{self._z_freq[-1]/1e9:.4f}] GHz. Extrapolating.",
-                UserWarning, stacklevel=2)
+            logger.warning(
+                "Requested frequency %.4f GHz is outside the simulated range "
+                "[%.4f, %.4f] GHz. Extrapolating.",
+                frequency / 1e9, self._z_freq[0] / 1e9, self._z_freq[-1] / 1e9)
 
         re = float(self._z_re_interp(frequency))
         im = float(self._z_im_interp(frequency))

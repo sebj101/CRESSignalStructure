@@ -7,10 +7,13 @@ This module provides concrete implementations of the BaseAntenna class
 for short dipole and half-wave dipole antennas.
 """
 
+import logging
 import numpy as np
 import scipy.constants as sc
 from numpy.typing import ArrayLike, NDArray
 from .BaseAntenna import BaseAntenna
+
+logger = logging.getLogger(__name__)
 
 
 class ShortDipoleAntenna(BaseAntenna):
@@ -75,6 +78,10 @@ class ShortDipoleAntenna(BaseAntenna):
         if not np.isfinite(resistance):
             raise ValueError("Resistance must be finite")
         self._resistance = float(resistance)
+
+        logger.info("Created ShortDipoleAntenna at pos=%s, orientation=%s, "
+                    "length=%.4e m, resistance=%.4e Ohm",
+                    self._pos, self._z_ax, self._length, self._resistance)
 
     def GetETheta(self, pos: NDArray) -> NDArray:
         """
@@ -301,6 +308,10 @@ class HalfWaveDipoleAntenna(BaseAntenna):
             if not np.isfinite(wire_radius):
                 raise ValueError("Wire radius must be finite")
             self._wire_radius = float(wire_radius)
+
+        logger.info("Created HalfWaveDipoleAntenna at pos=%s, orientation=%s, "
+                    "resonant_frequency=%.5e Hz, length=%.4e m",
+                    self._pos, self._z_ax, self._f0, self._length)
 
     def GetETheta(self, pos: NDArray) -> NDArray:
         """

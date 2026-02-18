@@ -8,8 +8,11 @@ that can detect cyclotron radiation from trapped electrons.
 """
 
 from abc import ABC, abstractmethod
+import logging
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
+
+logger = logging.getLogger(__name__)
 
 
 class BaseAntenna(ABC):
@@ -33,6 +36,9 @@ class BaseAntenna(ABC):
         self._x_ax = x_vec_proj / x_norm
 
         self._y_ax = np.cross(self._z_ax, self._x_ax)
+
+        logger.debug("Initialised %s at pos=%s, z_ax=%s, x_ax=%s",
+                     type(self).__name__, self._pos, self._z_ax, self._x_ax)
 
     @abstractmethod
     def GetETheta(self, pos: NDArray) -> NDArray:

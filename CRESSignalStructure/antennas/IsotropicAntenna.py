@@ -8,9 +8,12 @@ for an isotropic antenna - a theoretical antenna with uniform gain in all
 directions and no polarization preference.
 """
 
+import logging
 import numpy as np
 from numpy.typing import NDArray
 from .BaseAntenna import BaseAntenna
+
+logger = logging.getLogger(__name__)
 
 
 class IsotropicAntenna(BaseAntenna):
@@ -75,6 +78,10 @@ class IsotropicAntenna(BaseAntenna):
         if not np.isfinite(effective_length):
             raise ValueError("Effective length must be finite")
         self._effective_length = float(effective_length)
+
+        logger.info("Created IsotropicAntenna at pos=%s, impedance=%s Ohm, "
+                    "effective_length=%.4e m", self._pos, self._impedance,
+                    self._effective_length)
 
     def GetETheta(self, pos: NDArray) -> NDArray:
         """
@@ -288,3 +295,4 @@ class IsotropicAntenna(BaseAntenna):
         if not np.isfinite(effective_length):
             raise ValueError("Effective length must be finite")
         self._effective_length = float(effective_length)
+        logger.debug("Updated effective_length to %.4e m", self._effective_length)
