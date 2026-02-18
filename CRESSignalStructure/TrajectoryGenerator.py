@@ -580,17 +580,14 @@ class TrajectoryGenerator:
         # Get radial field gradient
         field_grads = self.field.evaluate_field_gradient(rho, z)
 
-        # Calculate cyclotron frequency as function of position
-        omega_c = sc.e * field_mags / \
-            (self.particle.GetGamma() * self.particle.GetMass())
-
-        # Calculate magnetic moment (adiabatic invariant)
+        # Calculate magnetic moment (adiabatic invariant): μ = γmv_⊥²/(2B)
         mu_mag = (self.particle.GetGamma() * self.particle.GetMass() *
                   (np.sin(self.particle.GetPitchAngle()) * self.particle.GetSpeed())**2 /
                   (2 * field_0))
 
-        # Calculate grad-B drift velocity
-        v_grad_B = ((mu_mag / (self.particle.GetMass() * omega_c * field_mags)) *
+        # Calculate grad-B drift velocity: v_∇B = (μ/qB²)(B × ∇⊥B)
+        # Azimuthal component of B × ∇⊥B ≈ B_z * ∂B/∂ρ
+        v_grad_B = ((mu_mag / (self.particle.GetCharge() * field_mags**2)) *
                     field_grads * field_vec_z)
 
         # Calculate initial azimuthal angle
