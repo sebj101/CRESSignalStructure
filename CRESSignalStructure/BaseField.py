@@ -187,16 +187,17 @@ class BaseField(ABC):
         integral = float(2 * simpson(integrand, integrationPoints) / np.pi)
         return 1 / integral
 
-    def calc_t_vs_z(self, particle: Particle) -> tuple[NDArray, NDArray]:
+    def calc_t_vs_z(self, particle: Particle,
+                    axial_period: float = None) -> tuple[NDArray, NDArray]:
         """
         Calculate the time versus the z position of an electron in a trap
 
         Parameters
         ----------
-        trap : BaseField
-            The trapping field
         particle : Particle
             The particle being trapped
+        axial_period : float
+            Optional axial period argument in seconds (default = None)
 
         Returns
         -------
@@ -214,18 +215,34 @@ class BaseField(ABC):
         muMag = gamma * particle.GetMass() * (np.sin(pa) * particle.GetSpeed())**2 / \
             (2 * centralField)
 
+        if axial_period is None:
+            axial_period = 2 * np.pi / self.CalcOmegaAxial(particle)
+
+        quarter_period = axial_period / 4
+        half_period = axial_period / 2
+
         def t_integrand(z):
             result = gamma * particle.GetMass() / np.sqrt(p0**2 - 2 * gamma * particle.GetMass()
                                                           * muMag * self.evaluate_field_magnitude(pStart[0], pStart[1], z))
             return result
 
-        # For axially symmetric traps, we should only need to do one integration
+        # For axially symmetric traps, we only need to integrate one quarter
         zVals1 = np.linspace(0.0, 0.999 * zMax, 1000)
         tVals1 = cumulative_simpson(t_integrand(zVals1), x=zVals1, initial=0.0)
+
+        # Return trip by symmetry, using true quarter period as the midpoint
         zVals2 = np.flip(zVals1[:-1])
-        tVals2 = 2 * tVals1[-1] - np.flip(tVals1[:-1])
-        tVals3 = tVals2[-1] + np.concatenate((tVals1[1:], tVals2))
-        zVals3 = -np.concatenate((zVals1[1:], zVals2))
-        tVals = np.concatenate((tVals1, tVals2, tVals3))
-        zVals = np.concatenate((zVals1, zVals2, zVals3))
+        tVals2 = 2 * quarter_period - np.flip(tVals1[:-1])
+
+        # First half (positive z): 0 → zMax → 0, with turning point
+        zFirstHalf = np.concatenate((zVals1, [zMax], zVals2))
+        tFirstHalf = np.concatenate((tVals1, [quarter_period], tVals2))
+
+        # Second half (negative z): 0 → -zMax → 0, offset by T/2
+        zSecondHalf = -np.concatenate((zVals1[1:], [zMax], zVals2))
+        tSecondHalf = half_period + \
+            np.concatenate((tVals1[1:], [quarter_period], tVals2))
+
+        tVals = np.concatenate((tFirstHalf, tSecondHalf))
+        zVals = np.concatenate((zFirstHalf, zSecondHalf))
         return tVals, zVals
