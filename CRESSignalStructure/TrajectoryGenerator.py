@@ -533,13 +533,12 @@ class TrajectoryGenerator:
             return t_vals, z_pos
 
         else:
-            # Get analytic t vs z relationship
-            t_analytic, z_analytic = self.field.calc_t_vs_z(self.particle)
-            Ta = t_analytic[-1]  # Axial period
-
+            axial_period = 2 * np.pi / self.field.CalcOmegaAxial(self.particle)
+            t_analytic, z_analytic = self.field.calc_t_vs_z(self.particle,
+                                                            axial_period)
             t_to_z = interp1d(t_analytic, z_analytic, kind='cubic')
             # Interpolate, accounting for periodicity
-            z_pos = t_to_z(np.mod(t_vals, Ta))
+            z_pos = t_to_z(np.mod(t_vals, axial_period))
 
             return t_vals, z_pos
 
