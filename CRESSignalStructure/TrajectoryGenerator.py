@@ -418,6 +418,32 @@ class TrajectoryGenerator:
                 f"Increase t_max or sample_rate"
             )
 
+    def _calc_rho_from_z(self, z: NDArray) -> NDArray:
+        """
+        Calculate cylindrical radius along a field line using flux conservation
+
+        For azimuthally symmetric fields: rho(z) = rho_0 * sqrt(B_0 / B(z))
+
+        Parameters
+        ----------
+        z : NDArray
+            Axial positions in meters
+
+        Returns
+        -------
+        NDArray
+            Cylindrical radius at each z position in meters
+        """
+        p_start = self.particle.GetPosition()
+        rho_0 = np.sqrt(p_start[0]**2 + p_start[1]**2)
+
+        B_0 = self.field.evaluate_field_magnitude(
+            p_start[0], p_start[1], p_start[2])
+        B_z = self.field.evaluate_field_magnitude(
+            p_start[0], p_start[1], z)
+
+        return rho_0 * np.sqrt(B_0 / B_z)
+
     def _calc_position(self, sample_rate: float, t_max: float) -> tuple[NDArray, NDArray]:
         """
         Calculate position [x, y, z] as a function of time
@@ -441,12 +467,11 @@ class TrajectoryGenerator:
         # Get axial position as function of time
         t, z = self._calc_axial_motion(sample_rate, t_max)
 
-        # Get azimuthal angle as function of time
-        phi = self._calc_azimuthal_motion(t, z)
+        # Calculate radial position along field line
+        rho = self._calc_rho_from_z(z)
 
-        # Calculate radial position (constant for now)
-        p_start = self.particle.GetPosition()
-        rho = np.sqrt(p_start[0]**2 + p_start[1]**2)
+        # Get azimuthal angle as function of time
+        phi = self._calc_azimuthal_motion(t, z, rho)
 
         # Convert to Cartesian coordinates
         x = rho * np.cos(phi)
@@ -488,10 +513,11 @@ class TrajectoryGenerator:
 
         z_corrected = z_base * energy_ratio
 
-        phi = self._calc_azimuthal_motion(t, z_corrected)
+        # Calculate radial position along field line
+        rho = self._calc_rho_from_z(z_corrected)
 
-        p_start = self.particle.GetPosition()
-        rho = np.sqrt(p_start[0]**2 + p_start[1]**2)
+        phi = self._calc_azimuthal_motion(t, z_corrected, rho)
+
         x = rho * np.cos(phi)
         y = rho * np.sin(phi)
 
@@ -542,7 +568,8 @@ class TrajectoryGenerator:
 
             return t_vals, z_pos
 
-    def _calc_azimuthal_motion(self, t: NDArray, z: NDArray) -> NDArray:
+    def _calc_azimuthal_motion(self, t: NDArray, z: NDArray,
+                               rho: NDArray) -> NDArray:
         """
         Calculate azimuthal angle φ(t) including grad-B drift
 
@@ -556,25 +583,24 @@ class TrajectoryGenerator:
             Time array in seconds
         z : NDArray
             Axial position array in meters
+        rho : NDArray
+            Cylindrical radius at each z position in meters
 
         Returns
         -------
         NDArray
             Azimuthal angle in radians
         """
-        # Get particle position and calculate cylindrical radius
         p_start = self.particle.GetPosition()
-        rho = np.sqrt(p_start[0]**2 + p_start[1]**2)
 
-        # Get magnetic field values along trajectory
-        field_mags = self.field.evaluate_field_magnitude(
-            p_start[0], p_start[1], z)
+        # Evaluate fields using actual rho along trajectory
+        # (azimuthally symmetric, so use rho as x with y=0)
+        field_mags = self.field.evaluate_field_magnitude(rho, 0.0, z)
         field_0 = self.field.evaluate_field_magnitude(
-            p_start[0], p_start[1], 0.0)
+            p_start[0], p_start[1], p_start[2])
 
         # Get B-field z-component (dominant component)
-        _, _, field_vec_z = self.field.evaluate_field(
-            p_start[0], p_start[1], z)
+        _, _, field_vec_z = self.field.evaluate_field(rho, 0.0, z)
 
         # Get radial field gradient
         field_grads = self.field.evaluate_field_gradient(rho, z)
@@ -593,8 +619,8 @@ class TrajectoryGenerator:
         phi_i = np.arctan2(p_start[1], p_start[0])
 
         # Integrate to get azimuthal position
-        # If rho is too small, avoid division by zero
-        if rho < 1e-10:
+        # If rho is too small everywhere, avoid division by zero
+        if np.all(rho < 1e-10):
             return np.full_like(t, phi_i)
 
         phi = cumulative_simpson(v_grad_B / rho, x=t, initial=phi_i)
@@ -628,15 +654,13 @@ class TrajectoryGenerator:
         NDArray
             Velocity array (N, 3)
         """
-        # Get z positions
+        # Get positions along trajectory
+        x_pos = pos[:, 0]
+        y_pos = pos[:, 1]
         z_pos = pos[:, 2]
 
-        # Get initial position
         p_start = self.particle.GetPosition()
-
-        # Calculate magnetic field magnitude along trajectory
-        B_vals = self.field.evaluate_field_magnitude(
-            p_start[0], p_start[1], z_pos)
+        B_vals = self.field.evaluate_field_magnitude(x_pos, y_pos, z_pos)
 
         # Calculate time-dependent or constant gamma and speed
         if E_t is not None:
