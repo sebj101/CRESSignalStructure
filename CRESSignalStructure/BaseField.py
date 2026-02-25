@@ -82,6 +82,40 @@ class BaseField(ABC):
                 self.evaluate_field_magnitude(rho - eps, 0, z)) / (2 * eps)
         return grad
 
+    def calc_rho_along_field_line(self, rho_0: float,
+                                     z: ArrayLike) -> NDArray:
+        """
+        Calculate cylindrical radius along a field line using flux conservation
+
+        For azimuthally symmetric fields: rho(z) = rho_0 * sqrt(B_0 / B(z))
+
+        Parameters
+        ----------
+        rho_0 : float
+            Cylindrical radius at z = 0 in metres
+        z : ArrayLike
+            Axial position(s) in metres
+
+        Returns
+        -------
+        NDArray
+            Cylindrical radius at each z position in metres
+
+        Raises
+        ------
+        ValueError
+            If rho_0 is negative
+        """
+        if rho_0 < 0:
+            raise ValueError("Initial radius rho_0 must be non-negative")
+
+        if rho_0 == 0.0:
+            return np.zeros_like(np.asarray(z, dtype=float))
+
+        B_0 = self.evaluate_field_magnitude(rho_0, 0.0, 0.0)
+        B_z = self.evaluate_field_magnitude(rho_0, 0.0, z)
+        return rho_0 * np.sqrt(B_0 / B_z)
+
     @abstractmethod
     def CalcZMax(self, particle: Particle) -> float:
         """

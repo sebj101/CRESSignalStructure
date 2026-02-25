@@ -422,8 +422,6 @@ class TrajectoryGenerator:
         """
         Calculate cylindrical radius along a field line using flux conservation
 
-        For azimuthally symmetric fields: rho(z) = rho_0 * sqrt(B_0 / B(z))
-
         Parameters
         ----------
         z : NDArray
@@ -436,13 +434,7 @@ class TrajectoryGenerator:
         """
         p_start = self.particle.GetPosition()
         rho_0 = np.sqrt(p_start[0]**2 + p_start[1]**2)
-
-        B_0 = self.field.evaluate_field_magnitude(
-            p_start[0], p_start[1], p_start[2])
-        B_z = self.field.evaluate_field_magnitude(
-            p_start[0], p_start[1], z)
-
-        return rho_0 * np.sqrt(B_0 / B_z)
+        return self.field.calc_rho_along_field_line(rho_0, z)
 
     def _calc_position(self, sample_rate: float, t_max: float) -> tuple[NDArray, NDArray]:
         """
