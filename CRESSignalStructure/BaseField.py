@@ -183,7 +183,9 @@ class BaseField(ABC):
         t_to_z = interp1d(t, z, kind='cubic')
         z = t_to_z(t_vals)
         pStart = particle.GetPosition()
-        return t_vals, self.evaluate_field_magnitude(pStart[0], pStart[1], z)
+        rho_0 = np.sqrt(pStart[0]**2 + pStart[1]**2)
+        rho = self.calc_rho_along_field_line(rho_0, z)
+        return t_vals, self.evaluate_field_magnitude(rho, 0.0, z)
 
     def CalcOmegaAxial(self, particle: Particle) -> float:
         """
@@ -205,6 +207,7 @@ class BaseField(ABC):
         gamma = particle.GetGamma()
         p0 = gamma * particle.GetMass() * particle.GetSpeed()
         pStart = particle.GetPosition()
+        rho_0 = np.sqrt(pStart[0]**2 + pStart[1]**2)
 
         centralField = self.evaluate_field_magnitude(pStart[0], pStart[1], 0.)
         zMax = self.CalcZMax(particle)
@@ -213,10 +216,17 @@ class BaseField(ABC):
         muMag = gamma * particle.GetMass() * (np.sin(pa) * particle.GetSpeed())**2 / \
             (2 * centralField)
 
-        # Calculate the integrand at each point
+        # Calculate the integrand at each point along the field line
         integrationPoints = np.linspace(0, zMax, 900000, endpoint=False)
-        integrand = gamma * particle.GetMass() / np.sqrt(p0**2 - 2 * gamma * particle.GetMass()
-                                                         * muMag * self.evaluate_field_magnitude(pStart[0], pStart[1], integrationPoints))
+        rho = self.calc_rho_along_field_line(rho_0, integrationPoints)
+
+        B_mag = self.evaluate_field_magnitude(rho, 0.0, integrationPoints)
+        _, _, B_z = self.evaluate_field(rho, 0.0, integrationPoints)
+
+        # dt/dz = γm |B| / (p_∥ |B_z|), where p_∥ = sqrt(p0² - 2γm μ B)
+        p_parallel = np.sqrt(p0**2 - 2 * gamma * particle.GetMass()
+                             * muMag * B_mag)
+        integrand = gamma * particle.GetMass() * B_mag / (p_parallel * np.abs(B_z))
 
         integral = float(2 * simpson(integrand, integrationPoints) / np.pi)
         return 1 / integral
@@ -243,6 +253,7 @@ class BaseField(ABC):
         gamma = particle.GetGamma()
         p0 = gamma * particle.GetMass() * particle.GetSpeed()
         pStart = particle.GetPosition()
+        rho_0 = np.sqrt(pStart[0]**2 + pStart[1]**2)
 
         centralField = self.evaluate_field_magnitude(pStart[0], pStart[1], 0.)
         zMax = self.CalcZMax(particle)
@@ -256,9 +267,12 @@ class BaseField(ABC):
         half_period = axial_period / 2
 
         def t_integrand(z):
-            result = gamma * particle.GetMass() / np.sqrt(p0**2 - 2 * gamma * particle.GetMass()
-                                                          * muMag * self.evaluate_field_magnitude(pStart[0], pStart[1], z))
-            return result
+            rho = self.calc_rho_along_field_line(rho_0, z)
+            B_mag = self.evaluate_field_magnitude(rho, 0.0, z)
+            _, _, B_z_comp = self.evaluate_field(rho, 0.0, z)
+            p_parallel = np.sqrt(p0**2 - 2 * gamma * particle.GetMass()
+                                 * muMag * B_mag)
+            return gamma * particle.GetMass() * B_mag / (p_parallel * np.abs(B_z_comp))
 
         # For axially symmetric traps, we only need to integrate one quarter
         zVals1 = np.linspace(0.0, 0.999 * zMax, 1000)

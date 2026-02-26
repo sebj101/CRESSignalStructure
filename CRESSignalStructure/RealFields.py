@@ -99,14 +99,14 @@ class CoilField(BaseField):
     def CalcZMax(self, particle: Particle) -> float:
         pa = particle.GetPitchAngle()
         pStart = particle.GetPosition()
+        rho_0 = np.sqrt(pStart[0]**2 + pStart[1]**2)
 
         centralField = self.evaluate_field_magnitude(pStart[0], pStart[1], 0.)
         muCentre = centralField / (np.sin(pa)**2)
 
         def zMaxEqn(z):
-            result = 1.0 - muCentre / \
-                self.evaluate_field_magnitude(pStart[0], pStart[1], z)
-            return result
+            rho = self.calc_rho_along_field_line(rho_0, z)
+            return 1.0 - muCentre / self.evaluate_field_magnitude(rho, 0.0, z)
 
         # Determine where the bounds of the equation solver should be
         upperZBound = 1.0
@@ -153,14 +153,14 @@ class BathtubField(BaseField):
     def CalcZMax(self, particle: Particle) -> float:
         pa = particle.GetPitchAngle()
         pStart = particle.GetPosition()
+        rho_0 = np.sqrt(pStart[0]**2 + pStart[1]**2)
 
         centralField = self.evaluate_field_magnitude(pStart[0], pStart[1], 0.)
         muCentre = centralField / (np.sin(pa)**2)
 
         def zMaxEqn(z):
-            result = 1.0 - muCentre / \
-                self.evaluate_field_magnitude(pStart[0], pStart[1], z)
-            return result
+            rho = self.calc_rho_along_field_line(rho_0, z)
+            return 1.0 - muCentre / self.evaluate_field_magnitude(rho, 0.0, z)
 
         # Determine where the bounds of the equation solver should be
         upperZBound = np.max([self.coil1.z, self.coil2.z])
@@ -197,14 +197,14 @@ class HarmonicField(BaseField):
     def CalcZMax(self, particle: Particle) -> float:
         pa = particle.GetPitchAngle()
         pStart = particle.GetPosition()
+        rho_0 = np.sqrt(pStart[0]**2 + pStart[1]**2)
 
         centralField = self.evaluate_field_magnitude(pStart[0], pStart[1], 0.)
         muCentre = centralField / (np.sin(pa)**2)
 
         def zMaxEqn(z):
-            result = 1.0 - muCentre / \
-                self.evaluate_field_magnitude(pStart[0], pStart[1], z)
-            return result
+            rho = self.calc_rho_along_field_line(rho_0, z)
+            return 1.0 - muCentre / self.evaluate_field_magnitude(rho, 0.0, z)
 
         # Determine where the bounds of the equation solver should be
         upperZBound = 1.0
