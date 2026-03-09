@@ -554,7 +554,15 @@ class TrajectoryGenerator:
             axial_period = 2 * np.pi / self.field.CalcOmegaAxial(self.particle)
             t_analytic, z_analytic = self.field.calc_t_vs_z(self.particle,
                                                             axial_period)
-            t_to_z = interp1d(t_analytic, z_analytic, kind='cubic')
+
+            # Remove duplicate time values to avoid interpolation errors
+            # This can occur with near-perpendicular pitch angles where numerical
+            # precision issues create duplicate or near-duplicate time values
+            unique_indices = np.concatenate(([True], np.diff(t_analytic) > 0))
+            t_analytic_unique = t_analytic[unique_indices]
+            z_analytic_unique = z_analytic[unique_indices]
+
+            t_to_z = interp1d(t_analytic_unique, z_analytic_unique, kind='cubic')
             # Interpolate, accounting for periodicity
             z_pos = t_to_z(np.mod(t_vals, axial_period))
 

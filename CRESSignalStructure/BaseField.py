@@ -83,7 +83,7 @@ class BaseField(ABC):
         return grad
 
     def calc_rho_along_field_line(self, rho_0: float,
-                                     z: ArrayLike) -> NDArray:
+                                  z: ArrayLike) -> NDArray:
         """
         Calculate cylindrical radius along a field line using flux conservation
 
@@ -187,16 +187,17 @@ class BaseField(ABC):
         rho = self.calc_rho_along_field_line(rho_0, z)
         return t_vals, self.evaluate_field_magnitude(rho, 0.0, z)
 
-    def CalcOmegaAxial(self, particle: Particle) -> float:
+    def CalcOmegaAxial(self, particle: Particle,
+                       n_points: int = 50000) -> float:
         """
         Calculate the angular axial frequency of trapped particle motion
 
         Parameters
         ----------
-        trap: BaseField
-            The trapping magnetic field
         particle : Particle
             The particle being trapped
+        n_points : int
+            Number of integration points to use    
 
         Returns
         -------
@@ -216,23 +217,28 @@ class BaseField(ABC):
         muMag = gamma * particle.GetMass() * (np.sin(pa) * particle.GetSpeed())**2 / \
             (2 * centralField)
 
-        # Calculate the integrand at each point along the field line
-        integrationPoints = np.linspace(0, zMax, 900000, endpoint=False)
-        rho = self.calc_rho_along_field_line(rho_0, integrationPoints)
+        # Use the substitution z = zMax * sin^2(u) to avoid singularities
+        u_points = np.linspace(0, np.pi/2, n_points, endpoint=True)
+        z = zMax * np.sin(u_points)**2
+        dz_du = 2 * zMax * np.sin(u_points) * np.cos(u_points)
 
-        B_mag = self.evaluate_field_magnitude(rho, 0.0, integrationPoints)
-        _, _, B_z = self.evaluate_field(rho, 0.0, integrationPoints)
+        rho = self.calc_rho_along_field_line(rho_0, z)
+        B_mag = self.evaluate_field_magnitude(rho, 0.0, z)
+        _, _, B_z = self.evaluate_field(rho, 0.0, z)
 
         # dt/dz = γm |B| / (p_∥ |B_z|), where p_∥ = sqrt(p0² - 2γm μ B)
-        p_parallel = np.sqrt(p0**2 - 2 * gamma * particle.GetMass()
-                             * muMag * B_mag)
-        integrand = gamma * particle.GetMass() * B_mag / (p_parallel * np.abs(B_z))
+        p_parallel = np.sqrt(np.maximum(
+            p0**2 - 2 * gamma * particle.GetMass() * muMag * B_mag, 0.0))
+        with np.errstate(divide='ignore', invalid='ignore'):
+            integrand = gamma * particle.GetMass() * B_mag / (p_parallel * np.abs(B_z)) * dz_du
+        integrand = np.where(np.isfinite(integrand), integrand, 0.0)
 
-        integral = float(2 * simpson(integrand, integrationPoints) / np.pi)
+        integral = float(2 * simpson(integrand, u_points) / np.pi)
         return 1 / integral
 
     def calc_t_vs_z(self, particle: Particle,
-                    axial_period: float = None) -> tuple[NDArray, NDArray]:
+                    axial_period: float = None,
+                    n_points: int = 10000) -> tuple[NDArray, NDArray]:
         """
         Calculate the time versus the z position of an electron in a trap
 
@@ -242,6 +248,8 @@ class BaseField(ABC):
             The particle being trapped
         axial_period : float
             Optional axial period argument in seconds (default = None)
+        n_points : int
+            Number of integration points per quarter-period
 
         Returns
         -------
@@ -266,30 +274,38 @@ class BaseField(ABC):
         quarter_period = axial_period / 4
         half_period = axial_period / 2
 
-        def t_integrand(z):
-            rho = self.calc_rho_along_field_line(rho_0, z)
-            B_mag = self.evaluate_field_magnitude(rho, 0.0, z)
-            _, _, B_z_comp = self.evaluate_field(rho, 0.0, z)
-            p_parallel = np.sqrt(p0**2 - 2 * gamma * particle.GetMass()
-                                 * muMag * B_mag)
-            return gamma * particle.GetMass() * B_mag / (p_parallel * np.abs(B_z_comp))
+        # Use the substitution z = zMax * sin(u)^2
+        u_points = np.linspace(0, np.pi / 2, n_points)
+        z1 = zMax * np.sin(u_points)**2
+        dz_du = 2 * zMax * np.sin(u_points) * np.cos(u_points)
+
+        rho = self.calc_rho_along_field_line(rho_0, z1)
+        B_mag = self.evaluate_field_magnitude(rho, 0.0, z1)
+        _, _, B_z_comp = self.evaluate_field(rho, 0.0, z1)
+        p_parallel = np.sqrt(np.maximum(
+            p0**2 - 2 * gamma * particle.GetMass() * muMag * B_mag, 0.0))
+
+        with np.errstate(divide='ignore', invalid='ignore'):
+            integrand_u = gamma * particle.GetMass() * B_mag / (p_parallel *
+                                                                np.abs(B_z_comp)) * dz_du
+        integrand_u = np.where(np.isfinite(integrand_u), integrand_u, 0.0)
 
         # For axially symmetric traps, we only need to integrate one quarter
-        zVals1 = np.linspace(0.0, 0.999 * zMax, 1000)
-        tVals1 = cumulative_simpson(t_integrand(zVals1), x=zVals1, initial=0.0)
+        tVals1 = cumulative_simpson(integrand_u, x=u_points, initial=0.0)
+        tVals1[-1] = quarter_period
 
         # Return trip by symmetry, using true quarter period as the midpoint
-        zVals2 = np.flip(zVals1[:-1])
+        zVals2 = np.flip(z1[:-1])
         tVals2 = 2 * quarter_period - np.flip(tVals1[:-1])
 
-        # First half (positive z): 0 → zMax → 0, with turning point
-        zFirstHalf = np.concatenate((zVals1, [zMax], zVals2))
-        tFirstHalf = np.concatenate((tVals1, [quarter_period], tVals2))
+        # First half (positive z): 0 -> zMax -> 0, with turning point
+        zFirstHalf = np.concatenate((z1, zVals2))
+        tFirstHalf = np.concatenate((tVals1, tVals2))
 
-        # Second half (negative z): 0 → -zMax → 0, offset by T/2
-        zSecondHalf = -np.concatenate((zVals1[1:], [zMax], zVals2))
+        # Second half (negative z): 0 -> -zMax -> 0, offset by T/2
+        zSecondHalf = -np.concatenate((z1[1:], zVals2))
         tSecondHalf = half_period + \
-            np.concatenate((tVals1[1:], [quarter_period], tVals2))
+            np.concatenate((tVals1[1:], tVals2))
 
         tVals = np.concatenate((tFirstHalf, tSecondHalf))
         zVals = np.concatenate((zFirstHalf, zSecondHalf))
