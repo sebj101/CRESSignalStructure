@@ -128,5 +128,5 @@ class BaseSpectrumCalculator(ABC):
         a = self.GetPeakAmp(order)
         return np.abs(a)**2 * self.GetPowerNorm()
 
-    def GetParticle(self):
+    def GetParticle(self) -> Particle:
         return self.__particle

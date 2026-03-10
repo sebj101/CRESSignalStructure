@@ -34,10 +34,10 @@ class CoilField(BaseField):
         self.current = current
         self.z = Z
 
-    def __central_field(self):
+    def __central_field(self) -> float:
         return self.current * sc.mu_0 / self.radius / 2.0
 
-    def __on_axis_field(self, z):
+    def __on_axis_field(self, z) -> float:
         return (sc.mu_0 * self.current * self.radius**2 / 2.0 / (self.radius**2 + (z - self.z)**2)**(1.5))
 
     def evaluate_field(self, x: ArrayLike, y: ArrayLike, z: ArrayLike) -> tuple:
