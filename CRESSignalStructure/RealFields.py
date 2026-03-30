@@ -10,7 +10,7 @@ from scipy.special import ellipk, ellipe
 from scipy.optimize import brentq
 import scipy.constants as sc
 import numpy as np
-from numpy.typing import ArrayLike, NDArray
+from numpy.typing import ArrayLike
 
 
 class CoilField(BaseField):

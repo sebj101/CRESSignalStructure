@@ -49,7 +49,7 @@ class BaseTrap(ABC):
             raise ValueError("Velocity must be positive")
 
         if np.any(v >= sc.c):
-            raise ValueError(f"Velocity exceeds speed of light")
+            raise ValueError("Velocity exceeds speed of light")
 
         if not np.all(np.isfinite(v)):
             raise ValueError("Velocity must be finite")

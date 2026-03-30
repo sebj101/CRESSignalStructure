@@ -177,7 +177,6 @@ class BaseField(ABC):
             raise ValueError("Require at least 2 time points")
 
         # Initially calculate the axial period
-        Ta = 1 / (self.CalcOmegaAxial(particle) / (2 * np.pi))
         t, z = self.calc_t_vs_z(particle)
         t_vals = np.linspace(0.0, t[-1], n_t_points, endpoint=True)
         t_to_z = interp1d(t, z, kind='cubic')

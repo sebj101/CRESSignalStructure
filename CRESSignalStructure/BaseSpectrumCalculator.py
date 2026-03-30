@@ -88,10 +88,10 @@ class BaseSpectrumCalculator(ABC):
                          0]**2 + self.__particle.GetPosition()[1]**2)
 
         prefactor = 0.0
-        if issubclass(type(self.__trap), BaseTrap) == True:
+        if issubclass(type(self.__trap), BaseTrap):
             prefactor = self.__waveguide.CalcTE11Impedance(self.__trap.CalcOmega0(self.__particle.GetSpeed(
             ), self.__particle.GetPitchAngle())) * (sc.e * self.__particle.GetSpeed())**2 / (8 * np.pi * alpha)
-        elif issubclass(type(self.__trap), BaseField) == True:
+        elif issubclass(type(self.__trap), BaseField):
             prefactor = self.__waveguide.CalcTE11Impedance(self.__trap.CalcOmega0(
                 self.__particle)) * (sc.e * self.__particle.GetSpeed())**2 / (8 * np.pi * alpha)
         else:

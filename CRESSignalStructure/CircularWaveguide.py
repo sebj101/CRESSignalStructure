@@ -462,7 +462,6 @@ class CircularWaveguide:
         float
             Required normalisation factor
         """
-        kc = 1.841 / self.wgR
 
         def integrand_rho_phi(phi, rho):
             E_rho = self.EFieldTE11Rho_1(rho, phi, 1.0)
