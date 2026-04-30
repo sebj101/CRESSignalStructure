@@ -23,18 +23,19 @@ class TestTrajectoryContainer:
         position = np.random.randn(n_points, 3) * 0.01
         velocity = np.random.randn(n_points, 3) * 1e5
         acceleration = np.random.randn(n_points, 3) * 1e10
+        phase = np.linspace(0, 1e6, n_points)
 
         # Create simple field and particle
         field = HarmonicField(radius=0.05, current=100.0, background=1.0)
         particle = Particle(ke=18600.0, startPos=np.zeros(3))
 
-        return time, position, velocity, acceleration, field, particle
+        return time, position, velocity, acceleration, phase, field, particle
 
     def test_trajectory_construction(self, simple_trajectory_data):
         """Test basic trajectory construction"""
-        t, pos, vel, acc, field, particle = simple_trajectory_data
+        t, pos, vel, acc, psi, field, particle = simple_trajectory_data
 
-        traj = Trajectory(t, pos, vel, acc, field, particle)
+        traj = Trajectory(t, pos, vel, acc, psi, field, particle)
 
         assert np.array_equal(traj.time, t)
         assert np.array_equal(traj.position, pos)
@@ -45,32 +46,32 @@ class TestTrajectoryContainer:
 
     def test_trajectory_shape_validation(self, simple_trajectory_data):
         """Test that trajectory validates array shapes"""
-        t, pos, vel, acc, field, particle = simple_trajectory_data
+        t, pos, vel, acc, psi, field, particle = simple_trajectory_data
 
         # Wrong position shape
         with pytest.raises(ValueError, match="Position must have shape"):
-            Trajectory(t, pos[:, :2], vel, acc, field, particle)
+            Trajectory(t, pos[:, :2], vel, acc, psi, field, particle)
 
         # Wrong velocity shape
         with pytest.raises(ValueError, match="Velocity must have shape"):
-            Trajectory(t, pos, vel[:-1], acc, field, particle)
+            Trajectory(t, pos, vel[:-1], acc, psi, field, particle)
 
         # Wrong acceleration shape
         with pytest.raises(ValueError, match="Acceleration must have shape"):
-            Trajectory(t, pos, vel, np.zeros((len(t), 2)), field, particle)
+            Trajectory(t, pos, vel, np.zeros((len(t), 2)), psi, field, particle)
 
     def test_trajectory_time_must_be_1d(self, simple_trajectory_data):
         """Test that time array must be 1D"""
-        t, pos, vel, acc, field, particle = simple_trajectory_data
+        t, pos, vel, acc, psi, field, particle = simple_trajectory_data
 
         t_2d = t.reshape(-1, 1)
         with pytest.raises(ValueError, match="Time must be a 1D array"):
-            Trajectory(t_2d, pos, vel, acc, field, particle)
+            Trajectory(t_2d, pos, vel, acc, psi, field, particle)
 
     def test_get_sample_rate(self, simple_trajectory_data):
         """Test sample rate calculation"""
-        t, pos, vel, acc, field, particle = simple_trajectory_data
-        traj = Trajectory(t, pos, vel, acc, field, particle)
+        t, pos, vel, acc, psi, field, particle = simple_trajectory_data
+        traj = Trajectory(t, pos, vel, acc, psi, field, particle)
 
         expected_rate = 1.0 / (t[1] - t[0])
         calculated_rate = traj.get_sample_rate()
@@ -88,16 +89,17 @@ class TestTrajectoryContainer:
         pos = np.zeros((1, 3))
         vel = np.zeros((1, 3))
         acc = np.zeros((1, 3))
+        psi = np.array([0.0])
 
-        traj = Trajectory(t, pos, vel, acc, field, particle)
+        traj = Trajectory(t, pos, vel, acc, psi, field, particle)
 
         with pytest.raises(ValueError, match="Need at least 2 time points"):
             traj.get_sample_rate()
 
     def test_get_relative_position(self, simple_trajectory_data):
         """Test relative position calculation"""
-        t, pos, vel, acc, field, particle = simple_trajectory_data
-        traj = Trajectory(t, pos, vel, acc, field, particle)
+        t, pos, vel, acc, psi, field, particle = simple_trajectory_data
+        traj = Trajectory(t, pos, vel, acc, psi, field, particle)
 
         reference = np.array([0.01, 0.02, 0.03])
         rel_pos = traj.get_relative_position(reference)
@@ -107,16 +109,16 @@ class TestTrajectoryContainer:
 
     def test_get_relative_position_validates_reference(self, simple_trajectory_data):
         """Test that get_relative_position validates reference shape"""
-        t, pos, vel, acc, field, particle = simple_trajectory_data
-        traj = Trajectory(t, pos, vel, acc, field, particle)
+        t, pos, vel, acc, psi, field, particle = simple_trajectory_data
+        traj = Trajectory(t, pos, vel, acc, psi, field, particle)
 
         with pytest.raises(ValueError, match="Reference position must be a 3-vector"):
             traj.get_relative_position(np.array([1.0, 2.0]))
 
     def test_get_beta(self, simple_trajectory_data):
         """Test normalized velocity calculation"""
-        t, pos, vel, acc, field, particle = simple_trajectory_data
-        traj = Trajectory(t, pos, vel, acc, field, particle)
+        t, pos, vel, acc, psi, field, particle = simple_trajectory_data
+        traj = Trajectory(t, pos, vel, acc, psi, field, particle)
 
         beta = traj.get_beta()
         expected = vel / sc.c
@@ -125,8 +127,8 @@ class TestTrajectoryContainer:
 
     def test_get_beta_dot(self, simple_trajectory_data):
         """Test normalized acceleration calculation"""
-        t, pos, vel, acc, field, particle = simple_trajectory_data
-        traj = Trajectory(t, pos, vel, acc, field, particle)
+        t, pos, vel, acc, psi, field, particle = simple_trajectory_data
+        traj = Trajectory(t, pos, vel, acc, psi, field, particle)
 
         beta_dot = traj.get_beta_dot()
         expected = acc / sc.c
@@ -135,8 +137,8 @@ class TestTrajectoryContainer:
 
     def test_get_duration(self, simple_trajectory_data):
         """Test trajectory duration calculation"""
-        t, pos, vel, acc, field, particle = simple_trajectory_data
-        traj = Trajectory(t, pos, vel, acc, field, particle)
+        t, pos, vel, acc, psi, field, particle = simple_trajectory_data
+        traj = Trajectory(t, pos, vel, acc, psi, field, particle)
 
         duration = traj.get_duration()
         expected = t[-1] - t[0]
@@ -145,8 +147,8 @@ class TestTrajectoryContainer:
 
     def test_get_n_points(self, simple_trajectory_data):
         """Test number of points getter"""
-        t, pos, vel, acc, field, particle = simple_trajectory_data
-        traj = Trajectory(t, pos, vel, acc, field, particle)
+        t, pos, vel, acc, psi, field, particle = simple_trajectory_data
+        traj = Trajectory(t, pos, vel, acc, psi, field, particle)
 
         assert traj.get_n_points() == len(t)
 

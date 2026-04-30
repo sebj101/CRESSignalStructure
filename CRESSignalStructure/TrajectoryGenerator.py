@@ -10,7 +10,7 @@ import numpy as np
 from numpy.typing import NDArray
 import scipy.constants as sc
 from scipy.integrate import cumulative_simpson, trapezoid
-from scipy.interpolate import interp1d
+from scipy.interpolate import CubicSpline, interp1d
 
 from CRESSignalStructure.BaseField import BaseField
 from CRESSignalStructure.Particle import Particle
@@ -36,12 +36,14 @@ class Trajectory:
         Acceleration array in m/s^2, shape (N, 3) with columns [ax, ay, az]
     field : BaseField
         Magnetic field configuration used to generate trajectory
+    phase : NDArray
+        Cyclotron phase of the electron, shape (N,)
     particle : Particle
         Particle object with mass, charge, and initial conditions
     """
 
     def __init__(self, time: NDArray, position: NDArray,
-                 velocity: NDArray, acceleration: NDArray,
+                 velocity: NDArray, acceleration: NDArray, phase: NDArray,
                  field: BaseField, particle: Particle):
         """
         Initialize Trajectory object
@@ -56,6 +58,8 @@ class Trajectory:
             Velocity array in m/s, shape (N, 3)
         acceleration : NDArray
             Acceleration array in m/s^2, shape (N, 3)
+        phase : NDArray
+            Cyclotron phase array in radians, shape (N,)
         field : BaseField
             Magnetic field configuration
         particle : Particle
@@ -85,6 +89,7 @@ class Trajectory:
         self.position = position
         self.velocity = velocity
         self.acceleration = acceleration
+        self.phase = phase
         self.field = field
         self.particle = particle
 
@@ -168,6 +173,75 @@ class Trajectory:
         """
         return len(self.time)
 
+    def reconstruct_kinematics(self, pos: NDArray, psi: NDArray,
+                               t: NDArray) -> tuple[NDArray, NDArray]:
+        """
+        Reconstruct velocity and acceleration from position and cyclotron phase
+
+        Uses the adiabatic invariant to derive the local pitch angle from the
+        magnetic field at each position, then constructs velocity from the
+        cyclotron phase and acceleration from the Lorentz force plus the
+        numerical gradient of the parallel velocity component.
+
+        Parameters
+        ----------
+        pos : NDArray
+            Position array in meters, shape (N, 3)
+        psi : NDArray
+            Cyclotron phase in radians, shape (N,)
+        t : NDArray
+            Time array in seconds, shape (N,). May be non-uniformly spaced.
+
+        Returns
+        -------
+        tuple[NDArray, NDArray]
+            vel : Velocity array in m/s, shape (N, 3)
+            acc : Acceleration array in m/s^2, shape (N, 3)
+        """
+        x, y, z = pos[:, 0], pos[:, 1], pos[:, 2]
+
+        B_vals = self.field.evaluate_field_magnitude(x, y, z)
+        p_start = self.particle.GetPosition()
+        B_0 = self.field.evaluate_field_magnitude(
+            p_start[0], p_start[1], p_start[2])
+
+        # Adiabatic invariant: sin²θ · B = const
+        sin_theta_sq = np.clip(
+            np.sin(self.particle.GetPitchAngle())**2 * B_0 / B_vals, 0.0, 1.0)
+        sin_theta = np.sqrt(sin_theta_sq)
+        cos_theta = np.sqrt(1.0 - sin_theta_sq)
+
+        # Interpolate speed and gamma from stored trajectory to handle both
+        # constant-energy and radiating cases transparently
+        stored_speed = np.linalg.norm(self.velocity, axis=1)
+        speed = CubicSpline(self.time, stored_speed)(t)
+        beta_sq = np.clip((speed / sc.c)**2, 0.0, 1.0)
+        gamma = 1.0 / np.sqrt(1.0 - beta_sq)
+
+        sign_z = np.where(np.gradient(z, t) > 0.0, 1.0, -1.0)
+
+        vel = np.column_stack([
+            speed * np.cos(psi) * sin_theta,
+            speed * np.sin(psi) * sin_theta,
+            sign_z * cos_theta * speed,
+        ])
+
+        # Acceleration: Lorentz (perpendicular) + numerical gradient (parallel)
+        B_x, B_y, B_z = self.field.evaluate_field(x, y, z)
+        B = np.column_stack([B_x, B_y, B_z])
+        B_hat = B / np.linalg.norm(B, axis=1, keepdims=True)
+
+        a_lorentz = (self.particle.GetCharge() /
+                     (gamma[:, np.newaxis] * self.particle.GetMass()) *
+                     np.cross(vel, B))
+        a_lorentz_perp = (a_lorentz -
+                          np.sum(a_lorentz * B_hat, axis=1, keepdims=True) * B_hat)
+
+        v_parallel = np.sum(vel * B_hat, axis=1, keepdims=True) * B_hat
+        a_parallel = np.gradient(v_parallel, t, axis=0)
+
+        return vel, a_lorentz_perp + a_parallel
+
 
 class TrajectoryGenerator:
     """
@@ -176,8 +250,8 @@ class TrajectoryGenerator:
     This class computes the full 3D trajectory of an electron in a magnetic
     trap, including:
     - Axial (z) motion due to the magnetic mirror force
-    - Azimuthal (φ) motion including grad-B drift
-    - Cyclotron (ψ) motion at the local cyclotron frequency
+    - Azimuthal motion including grad-B drift
+    - Cyclotron motion at the local cyclotron frequency
     - Time-dependent velocity and acceleration
 
     The calculation properly accounts for relativistic effects and the
@@ -235,10 +309,11 @@ class TrajectoryGenerator:
             E_t = None
 
         # Calculate velocity and acceleration (passing energy if applicable)
-        vel = self._calc_velocity(t, pos, sample_rate, E_t)
+        psi = self._calc_cylotron_phase(t, pos, E_t)
+        vel = self._calc_velocity(t, pos, psi, E_t)
         acc = self._calc_acceleration(pos, vel, sample_rate, E_t)
 
-        return Trajectory(t, pos, vel, acc, self.field, self.particle)
+        return Trajectory(t, pos, vel, acc, psi, self.field, self.particle)
 
     def _calc_larmor_power(self) -> float:
         """
@@ -258,7 +333,6 @@ class TrajectoryGenerator:
         """
         PERPENDICULAR_THRESHOLD = 1e-4 * np.pi / 180
 
-        # Get particle's starting position
         p_start = self.particle.GetPosition()
 
         # Special case: nearly perpendicular pitch angle (no axial motion)
@@ -562,7 +636,8 @@ class TrajectoryGenerator:
             t_analytic_unique = t_analytic[unique_indices]
             z_analytic_unique = z_analytic[unique_indices]
 
-            t_to_z = interp1d(t_analytic_unique, z_analytic_unique, kind='cubic')
+            t_to_z = interp1d(t_analytic_unique,
+                              z_analytic_unique, kind='cubic')
             # Interpolate, accounting for periodicity
             z_pos = t_to_z(np.mod(t_vals, axial_period))
 
@@ -627,8 +702,45 @@ class TrajectoryGenerator:
 
         return phi
 
-    def _calc_velocity(self, t: NDArray, pos: NDArray, sample_rate: float,
-                       E_t: NDArray = None) -> NDArray:
+    def _calc_cylotron_phase(self, t: NDArray, pos: NDArray,
+                             E_t: NDArray | None = None) -> NDArray:
+        """
+        Calculate the cyclotron phase a function of time by integrating the 
+        magnetic field along the electron's path
+
+        Parameters
+        ----------
+        t : NDArray
+            Time array in seconds (N,)
+        pos : NDArray
+            Position array (N, 3)
+        E_t : NDArray, optional
+            Kinetic energy in eV at each time point. If None, uses constant 
+            energy.
+
+        Returns
+        -------
+        NDArray
+            Array of shape (N,) containing the phases
+        """
+        x_pos = pos[:, 0]
+        y_pos = pos[:, 1]
+        z_pos = pos[:, 2]
+
+        B_vals = self.field.evaluate_field_magnitude(x_pos, y_pos, z_pos)
+
+        # Calculate time-dependent or constant gamma
+        if E_t is not None:
+            gamma_t = self._calc_gamma_vs_time(E_t)
+        else:
+            gamma_t = self.particle.GetGamma()
+
+        omega_c = sc.e * B_vals / (gamma_t * self.particle.GetMass())
+        psi = cumulative_simpson(omega_c, x=t, initial=0.0)
+        return psi
+
+    def _calc_velocity(self, t: NDArray, pos: NDArray, psi: NDArray,
+                       E_t: NDArray | None = None) -> NDArray:
         """
         Calculate velocity as a function of time
 
@@ -644,8 +756,8 @@ class TrajectoryGenerator:
             Time array in seconds (N,)
         pos : NDArray
             Position array (N, 3)
-        sample_rate : float
-            Sample rate in Hz
+        psi : NDArray
+            Cyclotron phase in radians (N,)
         E_t : NDArray, optional
             Kinetic energy in eV at each time point. If None, uses constant energy.
 
@@ -654,7 +766,6 @@ class TrajectoryGenerator:
         NDArray
             Velocity array (N, 3)
         """
-        # Get positions along trajectory
         x_pos = pos[:, 0]
         y_pos = pos[:, 1]
         z_pos = pos[:, 2]
@@ -667,12 +778,7 @@ class TrajectoryGenerator:
             gamma_t = self._calc_gamma_vs_time(E_t)
             speed_t = self._calc_speed_vs_time(gamma_t)
         else:
-            gamma_t = self.particle.GetGamma()
             speed_t = self.particle.GetSpeed()
-
-        # Calculate cyclotron phase by integrating omega_c
-        omega_c = sc.e * B_vals / (gamma_t * self.particle.GetMass())
-        psi = cumulative_simpson(omega_c, x=t, initial=0.0)
 
         # Calculate time-varying pitch angle from adiabatic invariant
         # sin²θ(t) * B(t) = sin²θ_0 * B_0
@@ -698,7 +804,7 @@ class TrajectoryGenerator:
         return np.column_stack([vel_x, vel_y, vel_z])
 
     def _calc_acceleration(self, pos: NDArray, vel: NDArray, sample_rate: float,
-                           E_t: NDArray = None) -> NDArray:
+                           E_t: NDArray | None = None) -> NDArray:
         """
         Calculate acceleration using hybrid approach
 
