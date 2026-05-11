@@ -71,18 +71,16 @@ Spectrum Calculators:
 """
 
 # Particle
-from .Particle import Particle
+from .Particle import Particle, Electron
 
 # Magnetic fields
-from .BaseField import BaseField
 from .RealFields import HarmonicField, BathtubField
 
 # Traps
-from .BaseTrap import BaseTrap
 from .QTNMTraps import HarmonicTrap, BathtubTrap
 
 # Antennas
-from .antennas import BaseAntenna, IsotropicAntenna, ShortDipoleAntenna, HalfWaveDipoleAntenna
+from .antennas import IsotropicAntenna, ShortDipoleAntenna, HalfWaveDipoleAntenna
 
 # Trajectories
 from .TrajectoryGenerator import Trajectory, TrajectoryGenerator
@@ -98,7 +96,6 @@ from .AntennaSignalGenerator import AntennaSignalGenerator
 from .SignalGenerator import SignalGenerator
 
 # Spectrum calculators
-from .BaseSpectrumCalculator import BaseSpectrumCalculator
 from .PowerSpectrumCalculator import PowerSpectrumCalculator
 from .NumericalSpectrumCalculator import NumericalSpectrumCalculator
 
@@ -106,19 +103,17 @@ from .NumericalSpectrumCalculator import NumericalSpectrumCalculator
 __all__ = [
     # Particle
     'Particle',
+    'Electron',
 
     # Fields
-    'BaseField',
     'HarmonicField',
     'BathtubField',
 
     # Traps
-    'BaseTrap',
     'HarmonicTrap',
     'BathtubTrap',
 
     # Antennas
-    'BaseAntenna',
     'IsotropicAntenna',
     'ShortDipoleAntenna',
     'HalfWaveDipoleAntenna',
@@ -138,7 +133,6 @@ __all__ = [
     'SignalGenerator',
 
     # Spectrum calculators
-    'BaseSpectrumCalculator',
     'PowerSpectrumCalculator',
     'NumericalSpectrumCalculator',
 ]
