@@ -239,7 +239,6 @@ CRESSignalStructure/
 ├── tests/                              # Tests
 │   ├── unit/                           # Unit tests
 │   └── integration/                    # Integration tests
-├── *.ipynb                             # Example notebooks
 ├── pyproject.toml                      # Project configuration
 └── README.md                           # This file
 ```
