@@ -215,27 +215,28 @@ pytest --cov=CRESSignalStructure
 CRESSignalStructure/
 ├── CRESSignalStructure/                # Main package directory
 │   ├── __init__.py
-│   ├── BaseTrap.py                     # Abstract trap base class
-│   ├── QTNMTraps.py                    # Harmonic and bathtub trap implementations
-│   ├── BaseField.py                    # Abstract field base class
-│   ├── RealFields.py                   # Field implementations
-│   ├── Particle.py                     # Particle and Electron classes
-│   ├── CircularWaveguide.py            # Waveguide calculations
-│   ├── BaseSpectrumCalculator.py       # Abstract spectrum calculator base class
-│   ├── PowerSpectrumCalculator.py      # Analytical spectrum calculator
-│   ├── NumericalSpectrumCalculator.py  # Numerical spectrum calculator
-│   ├── TrajectoryGenerator.py          # Trajectory generation with grad-B drift
-│   ├── ReceiverChain.py                # Signal processing chain
-│   ├── SignalGenerator.py              # Frequency-domain signal generation
 │   ├── AntennaSignalGenerator.py       # Antenna-based signal generation
+│   ├── BaseField.py                    # Abstract field base class
+│   ├── BaseSpectrumCalculator.py       # Abstract spectrum calculator base class
+│   ├── BaseTrap.py                     # Abstract trap base class
+│   ├── CircularWaveguide.py            # Waveguide calculations
 │   ├── CRESWriter.py                   # HDF5 file I/O
 │   ├── EnsembleGenerator.py            # Batch simulation orchestration
+│   ├── NumericalSpectrumCalculator.py  # Numerical spectrum calculator
+│   ├── Particle.py                     # Particle and Electron classes
+│   ├── PowerSpectrumCalculator.py      # Analytical spectrum calculator
+│   ├── QTNMTraps.py                    # Harmonic and bathtub trap implementations
+│   ├── RealFields.py                   # Field implementations
+│   ├── ReceiverChain.py                # Signal processing chain
+│   ├── SignalGenerator.py              # Frequency-domain signal generation
+│   ├── TrajectoryGenerator.py          # Trajectory generation with grad-B drift
 │   └── antennas/                       # Antenna models
 │       ├── __init__.py
 │       ├── BaseAntenna.py              # Abstract antenna base class
 │       ├── IsotropicAntenna.py         # Isotropic antenna
 │       └── DipoleAntennas.py           # Dipole antenna implementations
-├── tests/                              # Unit tests
+├── examples/                           
+├── tests/                              # Tests
 │   ├── unit/                           # Unit tests
 │   └── integration/                    # Integration tests
 ├── *.ipynb                             # Example notebooks
