@@ -8,7 +8,7 @@ fields.
 from abc import ABC, abstractmethod
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
-from CRESSignalStructure.Particle import Particle
+from .Particle import Particle
 from scipy.integrate import simpson, cumulative_simpson
 import scipy.constants as sc
 from scipy.interpolate import interp1d

@@ -12,8 +12,8 @@ import scipy.constants as sc
 from scipy.integrate import cumulative_simpson, trapezoid
 from scipy.interpolate import CubicSpline, interp1d
 
-from CRESSignalStructure.BaseField import BaseField
-from CRESSignalStructure.Particle import Particle
+from .BaseField import BaseField
+from .Particle import Particle
 
 
 class Trajectory:

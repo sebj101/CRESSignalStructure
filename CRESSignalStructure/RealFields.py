@@ -4,8 +4,8 @@ RealFields.py
 Contains real magnetic fields derived from the BaseField class
 """
 
-from CRESSignalStructure.BaseField import BaseField
-from CRESSignalStructure.Particle import Particle
+from .BaseField import BaseField
+from .Particle import Particle
 from scipy.special import ellipk, ellipe
 from scipy.optimize import brentq
 import scipy.constants as sc

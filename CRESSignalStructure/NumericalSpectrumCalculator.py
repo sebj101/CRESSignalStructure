@@ -7,10 +7,11 @@ field maps
 S. Jones 17-10-25
 """
 
-from CRESSignalStructure.RealFields import BaseField, HarmonicField, BathtubField
-from CRESSignalStructure.Particle import Particle
-from CRESSignalStructure.CircularWaveguide import CircularWaveguide
-from CRESSignalStructure.BaseSpectrumCalculator import BaseSpectrumCalculator
+from .BaseField import BaseField
+from .RealFields import HarmonicField, BathtubField
+from .Particle import Particle
+from .CircularWaveguide import CircularWaveguide
+from .BaseSpectrumCalculator import BaseSpectrumCalculator
 import numpy as np
 import scipy.constants as sc
 from scipy.optimize import brentq

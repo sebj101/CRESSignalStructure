@@ -8,10 +8,10 @@ S. Jones
 """
 from abc import ABC, abstractmethod
 from numpy.typing import NDArray, ArrayLike
-from CRESSignalStructure.Particle import Particle
-from CRESSignalStructure.CircularWaveguide import CircularWaveguide
-from CRESSignalStructure.BaseTrap import BaseTrap
-from CRESSignalStructure.BaseField import BaseField
+from .Particle import Particle
+from .CircularWaveguide import CircularWaveguide
+from .BaseTrap import BaseTrap
+from .BaseField import BaseField
 from scipy.special import jvp, j1
 import numpy as np
 from scipy.integrate import quad

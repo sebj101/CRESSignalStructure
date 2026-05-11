@@ -11,10 +11,10 @@ from contextlib import ExitStack
 import time
 
 # Internal Imports
-from CRESSignalStructure.Particle import Particle
-from CRESSignalStructure.SignalGenerator import SignalGenerator
-from CRESSignalStructure.NumericalSpectrumCalculator import NumericalSpectrumCalculator
-from CRESSignalStructure.CRESWriter import CRESWriter
+from .Particle import Particle
+from .SignalGenerator import SignalGenerator
+from .NumericalSpectrumCalculator import NumericalSpectrumCalculator
+from .CRESWriter import CRESWriter
 
 def _worker_generate_event(args):
     """

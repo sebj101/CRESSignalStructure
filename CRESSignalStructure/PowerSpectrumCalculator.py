@@ -6,11 +6,11 @@ Class to calculate power spectrum for CRES signals
 S. Jones 29-07-25
 """
 
-from CRESSignalStructure.BaseTrap import BaseTrap
-from CRESSignalStructure.CircularWaveguide import CircularWaveguide
-from CRESSignalStructure.QTNMTraps import HarmonicTrap, BathtubTrap
-from CRESSignalStructure.Particle import Particle
-from CRESSignalStructure.BaseSpectrumCalculator import BaseSpectrumCalculator
+from .BaseTrap import BaseTrap
+from .CircularWaveguide import CircularWaveguide
+from .QTNMTraps import HarmonicTrap, BathtubTrap
+from .Particle import Particle
+from .BaseSpectrumCalculator import BaseSpectrumCalculator
 import numpy as np
 import scipy.constants as sc
 from scipy.special import jv

@@ -12,11 +12,11 @@ import scipy.constants as sc
 from typing import Dict, Any, Union
 
 # Internal Imports
-from CRESSignalStructure.Particle import Particle
-from CRESSignalStructure.CircularWaveguide import CircularWaveguide
-from CRESSignalStructure.BaseTrap import BaseTrap
-from CRESSignalStructure.BaseField import BaseField
-from CRESSignalStructure.RealFields import HarmonicField, BathtubField
+from .Particle import Particle
+from .CircularWaveguide import CircularWaveguide
+from .BaseTrap import BaseTrap
+from .BaseField import BaseField
+from .RealFields import HarmonicField, BathtubField
 
 class CRESWriter:
     def __init__(self, filename: str, mode: str = 'w'):

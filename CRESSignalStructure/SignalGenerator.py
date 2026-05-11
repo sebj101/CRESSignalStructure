@@ -9,7 +9,7 @@ signal generation of CRES signals. This includes simulation of:
 - Signal chirp
 """
 
-from CRESSignalStructure.BaseSpectrumCalculator import BaseSpectrumCalculator
+from .BaseSpectrumCalculator import BaseSpectrumCalculator
 import numpy as np
 from numpy.typing import NDArray
 from scipy.signal import butter, sosfilt
