@@ -128,5 +128,32 @@ class BaseSpectrumCalculator(ABC):
         a = self.GetPeakAmp(order)
         return np.abs(a)**2 * self.GetPowerNorm()
 
+    def apply_phase_shifts(self, amps: NDArray, orders: ArrayLike,
+                           phi_c: float, phi_a: float,
+                           negativeFreqs: bool = False) -> NDArray:
+        """
+        Apply initial cyclotron and axial phase shifts to complex amplitudes
+
+        Parameters
+        ----------
+        amps : NDArray
+            Complex peak amplitudes to apply phases to
+        orders : ArrayLike
+            Sideband orders corresponding to each amplitude
+        phi_c : float
+            Initial cyclotron phase in radians, applied equally to all orders
+        phi_a : float
+            Initial axial phase in radians, applied as n*phi_a for order n
+        negativeFreqs : bool
+            If True, applies conjugate phase (for negative frequency components)
+
+        Returns
+        -------
+        NDArray
+            Phase-shifted complex amplitudes
+        """
+        sign = -1 if negativeFreqs else 1
+        return amps * np.exp(sign * 1j * (phi_c + np.asarray(orders) * phi_a))
+
     def GetParticle(self) -> Particle:
         return self.__particle

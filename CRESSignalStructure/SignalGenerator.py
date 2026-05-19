@@ -48,7 +48,8 @@ class SignalGenerator:
             acq_time, "Acquisition time")
         self.__spec_calc = spectrum_calc
 
-    def GenerateSignal(self, max_order: int) -> tuple[NDArray, NDArray]:
+    def GenerateSignal(self, max_order: int, phi_c: float = 0.0,
+                       phi_a: float = 0.0) -> tuple[NDArray, NDArray]:
         """
         Main method orchestrating signal generation
 
@@ -56,11 +57,15 @@ class SignalGenerator:
         ----------
         max_order : int
             Maximum order of sideband to calculate
+        phi_c : float
+            Initial cyclotron phase in radians (default 0.0)
+        phi_a : float
+            Initial axial phase in radians (default 0.0)
 
         Returns
         -------
-        NDArray 
-            A 1D array of complex numbers representing the time series signal in 
+        NDArray
+            A 1D array of complex numbers representing the time series signal in
             units of volts, assuming a 50 Ohm impedance
         """
         if not isinstance(max_order, int):
@@ -74,14 +79,16 @@ class SignalGenerator:
         times_fast_sample = np.linspace(
             0, N_SAMPLES / FAST_SAMPLE_FREQ, N_SAMPLES)
 
-        # Get the fourier amplitudes and frequencies
+        # Get the fourier amplitudes and frequencies, applying initial phases
         orders = np.arange(-max_order, max_order+1, 1)
         fourier_freqs = self.__spec_calc.GetPeakFrequency(orders, False)
         fourier_freqs = np.append(
             fourier_freqs, self.__spec_calc.GetPeakFrequency(orders, True))
-        fourier_amps = self.__spec_calc.GetPeakAmp(orders, False)
+        fourier_amps = self.__spec_calc.apply_phase_shifts(
+            self.__spec_calc.GetPeakAmp(orders, False), orders, phi_c, phi_a, False)
         fourier_amps = np.append(
-            fourier_amps, self.__spec_calc.GetPeakAmp(orders, True))
+            fourier_amps, self.__spec_calc.apply_phase_shifts(
+                self.__spec_calc.GetPeakAmp(orders, True), orders, phi_c, phi_a, True))
 
         # Calculate the chirp rate
         beta = self.__spec_calc.GetParticle().GetBeta()
