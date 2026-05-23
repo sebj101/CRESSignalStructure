@@ -17,6 +17,7 @@ from CRESSignalStructure.CircularWaveguide import CircularWaveguide
 from CRESSignalStructure.BaseTrap import BaseTrap
 from CRESSignalStructure.BaseField import BaseField
 from CRESSignalStructure.RealFields import HarmonicField, BathtubField
+from CRESSignalStructure.NumericalSpectrumCalculator import calc_omega_axial
 
 class CRESWriter:
     def __init__(self, filename: str, mode: str = 'w'):
@@ -142,6 +143,10 @@ class CRESWriter:
 
         attrs['Cyclotron frequency [Hertz]'] = f_cyc
         attrs['Downmixed cyclotron frequency [Hertz]'] = abs(f_cyc - f_lo)
+        try:
+            attrs['Axial frequency [Hertz]'] = calc_omega_axial(self._trap, particle) / (2 * np.pi)
+        except Exception:
+            attrs['Axial frequency [Hertz]'] = np.nan
         attrs['Energy [eV]'] = particle.GetEnergy()
         attrs['LO frequency [Hertz]'] = f_lo
         attrs['Pitch angle [degrees]'] = np.degrees(pitch)

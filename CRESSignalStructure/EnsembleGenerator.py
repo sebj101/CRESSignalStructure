@@ -55,14 +55,15 @@ def _worker_generate_event(args):
     except Exception as e:
         return (index, e)
 
-def generate_ensemble(output_file, 
-                      n_events, 
-                      particle_generator, 
-                      trap, 
-                      waveguide, 
+def generate_ensemble(output_file,
+                      n_events,
+                      particle_generator,
+                      trap,
+                      waveguide,
                       sim_config,
-                      fft_output_file=None, 
+                      fft_output_file=None,
                       use_multiprocessing=True,
+                      max_workers=None,
                       verbose=True):
     """
     Main driver for ensemble generation.
@@ -88,7 +89,8 @@ def generate_ensemble(output_file,
         
         # --- Multiprocessing (Fast) ---
         if use_multiprocessing:
-            num_cores = min(mp.cpu_count() or 4, 4)  # Limit to 4 cores for stability, adjust as needed
+            default_cores = max((mp.cpu_count() or 4) - 1, 1)
+            num_cores = min(max_workers, default_cores) if max_workers is not None else default_cores
             if verbose: print(f"Starting generation of {n_events} events on {num_cores} cores...")
             
             # Create pool
@@ -134,14 +136,15 @@ def _process_results(results_iterator, n_events, writer, fft_writer, start_time,
 
 
 # --- Helper Wrapper for Uniform Sampling ---
-def generate_uniform_ensemble(output_file, 
-                              n_events, 
-                              trap, 
-                              waveguide, 
-                              sim_config, 
+def generate_uniform_ensemble(output_file,
+                              n_events,
+                              trap,
+                              waveguide,
+                              sim_config,
                               ranges,
-                              fft_output_file=None, 
-                              use_multiprocessing=True, 
+                              fft_output_file=None,
+                              use_multiprocessing=True,
+                              max_workers=None,
                               verbose=True):
     
     def uniform_particle_generator(i):
@@ -149,7 +152,7 @@ def generate_uniform_ensemble(output_file,
         p_min, p_max = ranges.get('pitch', (np.radians(88), np.radians(89.99)))
         z_min, z_max = ranges.get('z', (0.0, 0.0))
 
-        r_min, r_max = ranges.get('r', (0.0, 0.001))
+        r_min, r_max = ranges.get('r', (0.0, 0.005))
         theta_min, theta_max = ranges.get('theta', (0.0, 2*np.pi))
 
         ke = np.random.uniform(e_min, e_max)
@@ -175,5 +178,6 @@ def generate_uniform_ensemble(output_file,
         sim_config=sim_config,
         fft_output_file=fft_output_file,
         use_multiprocessing=use_multiprocessing,
+        max_workers=max_workers,
         verbose=verbose
     )
