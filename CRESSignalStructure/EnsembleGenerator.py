@@ -34,9 +34,13 @@ def _worker_generate_event(args):
         )
 
         # 2. Draw per-event initial phases on [0, 2*pi)
-        # Reproducible: same phase_seed + index pair always gives the same draw.
+        # Reproducible: same (phase_seed, batch_idx, index) triple always gives
+        # the same draw. batch_idx lets a multi-file run (BatchGen --files > 1)
+        # produce disjoint events across files without the caller having to
+        # manually rotate seeds per file.
         phase_seed = config.get('phase_seed', 42)
-        rng = np.random.default_rng([phase_seed, index])
+        batch_idx = config.get('batch_idx', 0)
+        rng = np.random.default_rng([phase_seed, batch_idx, index])
         phi_c = float(rng.uniform(0.0, 2 * np.pi))
         phi_a = float(rng.uniform(0.0, 2 * np.pi))
 
@@ -157,20 +161,24 @@ def generate_uniform_ensemble(output_file,
                               use_multiprocessing=True,
                               max_workers=None,
                               verbose=True,
-                              particle_seed=None):
+                              particle_seed=None,
+                              batch_idx=0):
     """
     Generate an ensemble of events with particle parameters drawn uniformly
     from ``ranges``. When ``particle_seed`` is given (recommended), each event
-    index ``i`` is drawn from a fresh ``np.random.default_rng([particle_seed, i])``
-    so that the same ``(particle_seed, i)`` pair always produces the same
-    particle. When ``particle_seed`` is None, falls back to numpy's global RNG
-    (non-reproducible, legacy behaviour).
+    index ``i`` is drawn from a fresh
+    ``np.random.default_rng([particle_seed, batch_idx, i])`` so that the same
+    ``(particle_seed, batch_idx, i)`` triple always produces the same particle.
+    When ``particle_seed`` is None, falls back to numpy's global RNG
+    (non-reproducible, legacy behaviour). ``batch_idx`` is used by callers
+    (e.g. BatchGen.py) to differentiate files within a multi-file run so each
+    file gets a disjoint event sequence.
     """
 
     def _rng_for(i):
         if particle_seed is None:
             return np.random
-        return np.random.default_rng([particle_seed, i])
+        return np.random.default_rng([particle_seed, batch_idx, i])
 
     def uniform_particle_generator(i):
         e_min, e_max = ranges.get('energy', (18500.0, 18600.0))

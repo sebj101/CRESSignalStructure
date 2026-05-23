@@ -264,6 +264,11 @@ def main():
 
         print(f"\n[Batch {i+1}/{args.files}] Generating {batch_count} events...")
 
+        # Per-file sim_config: inject batch_idx so the worker RNG produces a
+        # disjoint event sequence per file (same phase_seed across the run,
+        # different batch_idx per file -> independent streams).
+        file_sim_config = {**sim_config, 'batch_idx': i}
+
         # Run Generator
         if args.bank_grid:
             indices = bank_indices_split[i]
@@ -280,7 +285,7 @@ def main():
                 particle_generator=grid_particle_generator,
                 trap=trap,
                 waveguide=wg,
-                sim_config=sim_config,
+                sim_config=file_sim_config,
                 fft_output_file=fft_path,
                 use_multiprocessing=args.mp,
                 max_workers=args.max_workers,
@@ -292,13 +297,14 @@ def main():
                 n_events=args.events,
                 trap=trap,
                 waveguide=wg,
-                sim_config=sim_config,
+                sim_config=file_sim_config,
                 ranges=param_ranges,
                 fft_output_file=fft_path,
                 use_multiprocessing=args.mp,
                 max_workers=args.max_workers,
                 verbose=True,
                 particle_seed=args.particle_seed,
+                batch_idx=i,
             )
 
     total_time = time.time() - total_start
