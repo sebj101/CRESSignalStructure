@@ -33,8 +33,19 @@ def _worker_generate_event(args):
             acq_time=config['acq_time']
         )
 
-        # 2. Generate Pure Signal (Time Domain), returns (times, signal)
-        t, sig_pure = sig_gen.GenerateSignal(max_order=config['max_order'])
+        # 2. Draw per-event initial phases on [0, 2*pi)
+        # Reproducible: same phase_seed + index pair always gives the same draw.
+        phase_seed = config.get('phase_seed', 42)
+        rng = np.random.default_rng([phase_seed, index])
+        phi_c = float(rng.uniform(0.0, 2 * np.pi))
+        phi_a = float(rng.uniform(0.0, 2 * np.pi))
+
+        # 3. Generate Pure Signal (Time Domain), returns (times, signal)
+        t, sig_pure = sig_gen.GenerateSignal(
+            max_order=config['max_order'],
+            phi_c=phi_c,
+            phi_a=phi_a,
+        )
 
         F_DIGITIZER = config.get('sample_rate', 1e9)
         
@@ -50,7 +61,7 @@ def _worker_generate_event(args):
         fft_power = np.abs(fft_complex)**2
         # ---------------------------------------------
 
-        return (index, particle, t, sig_pure, freqs, fft_power)
+        return (index, particle, t, sig_pure, freqs, fft_power, phi_c, phi_a)
 
     except Exception as e:
         return (index, e)
@@ -119,14 +130,14 @@ def _process_results(results_iterator, n_events, writer, fft_writer, start_time,
             continue
 
         # Unpack
-        idx, p, t, sig, freqs, fft_power = result
+        idx, p, t, sig, freqs, fft_power, phi_c, phi_a = result
 
         # Write Time Series
-        writer.write_event(p, t, sig)
-        
+        writer.write_event(p, t, sig, phi_c=phi_c, phi_a=phi_a)
+
         # Write FFT (if enabled)
         if fft_writer:
-            fft_writer.write_event(p, freqs, fft_power)
+            fft_writer.write_event(p, freqs, fft_power, phi_c=phi_c, phi_a=phi_a)
 
         # Progress Bar
         if verbose and (i+1) % 50 == 0:

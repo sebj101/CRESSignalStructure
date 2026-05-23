@@ -67,11 +67,17 @@ class CRESWriter:
 
         return params
 
-    def write_event(self, particle: Particle, 
-                    time_array: np.ndarray, 
-                    signal_array: np.ndarray):
+    def write_event(self, particle: Particle,
+                    time_array: np.ndarray,
+                    signal_array: np.ndarray,
+                    phi_c: float = None,
+                    phi_a: float = None):
         """
         Writes a single event with the exact legacy attribute structure.
+
+        Optional kwargs:
+            phi_c -- initial cyclotron phase in radians (stored as attr if given)
+            phi_a -- initial axial phase in radians (stored as attr if given)
         """
         if self.file is None:
             raise RuntimeError("CRESWriter must be used within a 'with' statement.")
@@ -160,6 +166,10 @@ class CRESWriter:
             attrs['Axial frequency [Hertz]'] = calc_omega_axial(self._trap, particle) / (2 * np.pi)
         except Exception:
             attrs['Axial frequency [Hertz]'] = np.nan
+        if phi_c is not None:
+            attrs['Cyclotron phase [rad]'] = phi_c
+        if phi_a is not None:
+            attrs['Axial phase [rad]'] = phi_a
         attrs['Energy [eV]'] = particle.GetEnergy()
         attrs['LO frequency [Hertz]'] = f_lo
         attrs['Pitch angle [degrees]'] = np.degrees(pitch)
