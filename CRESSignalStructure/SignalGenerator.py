@@ -12,7 +12,7 @@ signal generation of CRES signals. This includes simulation of:
 from .BaseSpectrumCalculator import BaseSpectrumCalculator
 import numpy as np
 from numpy.typing import NDArray
-from scipy.signal import butter, sosfilt
+from scipy.signal import butter, sosfiltfilt
 import scipy.constants as sc
 
 
@@ -107,8 +107,7 @@ class SignalGenerator:
         sos = butter(N=8, Wn=self.__sample_rate / 2, btype='low', output='sos',
                      fs=self.__sample_rate * FAST_SAMPLE_FACTOR)
         IMPEDANCE = 50.0  # Ohms
-        rf_signal_filtered = sosfilt(
-            sos, rf_signal_dm, zi=None) * np.sqrt(IMPEDANCE)
+        rf_signal_filtered = sosfiltfilt(sos, rf_signal_dm) * np.sqrt(IMPEDANCE)
 
         # Return reduced signal
         return times_fast_sample[::FAST_SAMPLE_FACTOR], rf_signal_filtered[::FAST_SAMPLE_FACTOR] * np.sqrt(self.__spec_calc.GetPowerNorm())
