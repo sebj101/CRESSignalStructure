@@ -11,7 +11,7 @@ BathtubTrap: Two-coil bathtub magnetic field providing trapping field
 """
 
 import numpy as np
-from CRESSignalStructure.BaseTrap import BaseTrap
+from .BaseTrap import BaseTrap
 import scipy.constants as sc
 from numpy.typing import ArrayLike, NDArray
 
@@ -260,19 +260,19 @@ class BathtubTrap(BaseTrap):
         v = self._ValidateVelocity(v)
         return self.__L1 / (v * np.cos(pitchAngle))
 
-    def GetB0(self):
+    def GetB0(self) -> float:
         """
         Getter for B0
         """
         return self.__B0
 
-    def GetL0(self):
+    def GetL0(self) -> float:
         """
         Getter for L0
         """
         return self.__L0
 
-    def GetL1(self):
+    def GetL1(self) -> float:
         """
         Getter for L1
         """

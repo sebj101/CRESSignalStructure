@@ -23,7 +23,7 @@ class BaseTrap(ABC):
 
     __gradB = 0.0
 
-    def _ValidatePitchAngle(self, pitchAngle):
+    def _ValidatePitchAngle(self, pitchAngle) -> NDArray[np.floating]:
         """Validate pitch angle parameter"""
         pitchAngle = np.asarray(pitchAngle)
 
@@ -38,7 +38,7 @@ class BaseTrap(ABC):
 
         return pitchAngle
 
-    def _ValidateVelocity(self, v):
+    def _ValidateVelocity(self, v) -> NDArray[np.floating]:
         """Validate speed parameter"""
         v = np.asarray(v)
 
@@ -49,7 +49,7 @@ class BaseTrap(ABC):
             raise ValueError("Velocity must be positive")
 
         if np.any(v >= sc.c):
-            raise ValueError(f"Velocity exceeds speed of light")
+            raise ValueError("Velocity exceeds speed of light")
 
         if not np.all(np.isfinite(v)):
             raise ValueError("Velocity must be finite")
@@ -93,7 +93,7 @@ class BaseTrap(ABC):
             Pitch angle in radians
         """
 
-    def GetGradB(self):
+    def GetGradB(self) -> float:
         """
         Getter for the gradient of the magnetic field
 
@@ -103,7 +103,7 @@ class BaseTrap(ABC):
         """
         return self.__gradB
 
-    def SetGradB(self, gradB: float):
+    def SetGradB(self, gradB: float) -> None:
         """
         Setter for the gradient of the magnetic field
 

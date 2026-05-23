@@ -7,14 +7,15 @@ field maps
 S. Jones 17-10-25
 """
 
-from CRESSignalStructure.RealFields import BaseField, HarmonicField, BathtubField
-from CRESSignalStructure.Particle import Particle
-from CRESSignalStructure.CircularWaveguide import CircularWaveguide
-from CRESSignalStructure.BaseSpectrumCalculator import BaseSpectrumCalculator
+from .BaseField import BaseField
+from .RealFields import HarmonicField, BathtubField
+from .Particle import Particle
+from .CircularWaveguide import CircularWaveguide
+from .BaseSpectrumCalculator import BaseSpectrumCalculator
 import numpy as np
 import scipy.constants as sc
 from scipy.optimize import brentq
-from scipy.integrate import simpson, cumulative_simpson, quad
+from scipy.integrate import simpson, cumulative_simpson
 from scipy.interpolate import interp1d
 from numpy.typing import ArrayLike, NDArray
 
@@ -252,7 +253,7 @@ class NumericalSpectrumCalculator(BaseSpectrumCalculator):
 
         f0 = calc_omega_0(self.__trap, self.__particle) / (2 * np.pi)
         fa = calc_omega_axial(self.__trap, self.__particle) / (2 * np.pi)
-        if negativeFreqs == True:
+        if negativeFreqs:
             return -f0 - order * fa
         else:
             return f0 + order * fa
@@ -311,7 +312,7 @@ class NumericalSpectrumCalculator(BaseSpectrumCalculator):
 
         # Integrate along time axis (axis=1) for each order
         amp = simpson(integrand, t, axis=1) / Ta
-        if negativeFreqs == True:
+        if negativeFreqs:
             return np.conjugate(amp)
         else:
             return amp

@@ -4,13 +4,13 @@ RealFields.py
 Contains real magnetic fields derived from the BaseField class
 """
 
-from CRESSignalStructure.BaseField import BaseField
-from CRESSignalStructure.Particle import Particle
+from .BaseField import BaseField
+from .Particle import Particle
 from scipy.special import ellipk, ellipe
 from scipy.optimize import brentq
 import scipy.constants as sc
 import numpy as np
-from numpy.typing import ArrayLike, NDArray
+from numpy.typing import ArrayLike
 
 
 class CoilField(BaseField):
@@ -34,17 +34,17 @@ class CoilField(BaseField):
         self.current = current
         self.z = Z
 
-    def __central_field(self):
+    def __central_field(self) -> float:
         return self.current * sc.mu_0 / self.radius / 2.0
 
-    def __on_axis_field(self, z):
+    def __on_axis_field(self, z) -> float:
         return (sc.mu_0 * self.current * self.radius**2 / 2.0 / (self.radius**2 + (z - self.z)**2)**(1.5))
 
     def evaluate_field(self, x: ArrayLike, y: ArrayLike, z: ArrayLike) -> tuple:
         # Convert inputs to numpy arrays
-        x = np.asarray(x)
-        y = np.asarray(y)
-        z = np.asarray(z)
+        x = np.asarray(x, dtype=float)
+        y = np.asarray(y, dtype=float)
+        z = np.asarray(z, dtype=float)
 
         x, y, z = np.broadcast_arrays(x, y, z)
 
@@ -82,7 +82,7 @@ class CoilField(BaseField):
             gamma = alpha - 4 * rad_norm
 
             b_r = b_central * (int_e * ((1.0 + rad_norm**2 + z_norm**2) / gamma)
-                               - int_k) / root_alpha_pi * (z_rel / rad)
+                               - int_k) / root_alpha_pi * (z_rel / rad_off)
             b_z_off = b_central * (int_e * ((1.0 - rad_norm**2 - z_norm**2) / gamma)
                                    + int_k) / root_alpha_pi
 
@@ -99,14 +99,14 @@ class CoilField(BaseField):
     def CalcZMax(self, particle: Particle) -> float:
         pa = particle.GetPitchAngle()
         pStart = particle.GetPosition()
+        rho_0 = np.sqrt(pStart[0]**2 + pStart[1]**2)
 
         centralField = self.evaluate_field_magnitude(pStart[0], pStart[1], 0.)
         muCentre = centralField / (np.sin(pa)**2)
 
         def zMaxEqn(z):
-            result = 1.0 - muCentre / \
-                self.evaluate_field_magnitude(pStart[0], pStart[1], z)
-            return result
+            rho = self.calc_rho_along_field_line(rho_0, z)
+            return 1.0 - muCentre / self.evaluate_field_magnitude(rho, 0.0, z)
 
         # Determine where the bounds of the equation solver should be
         upperZBound = 1.0
@@ -153,14 +153,14 @@ class BathtubField(BaseField):
     def CalcZMax(self, particle: Particle) -> float:
         pa = particle.GetPitchAngle()
         pStart = particle.GetPosition()
+        rho_0 = np.sqrt(pStart[0]**2 + pStart[1]**2)
 
         centralField = self.evaluate_field_magnitude(pStart[0], pStart[1], 0.)
         muCentre = centralField / (np.sin(pa)**2)
 
         def zMaxEqn(z):
-            result = 1.0 - muCentre / \
-                self.evaluate_field_magnitude(pStart[0], pStart[1], z)
-            return result
+            rho = self.calc_rho_along_field_line(rho_0, z)
+            return 1.0 - muCentre / self.evaluate_field_magnitude(rho, 0.0, z)
 
         # Determine where the bounds of the equation solver should be
         upperZBound = np.max([self.coil1.z, self.coil2.z])
@@ -197,14 +197,14 @@ class HarmonicField(BaseField):
     def CalcZMax(self, particle: Particle) -> float:
         pa = particle.GetPitchAngle()
         pStart = particle.GetPosition()
+        rho_0 = np.sqrt(pStart[0]**2 + pStart[1]**2)
 
         centralField = self.evaluate_field_magnitude(pStart[0], pStart[1], 0.)
         muCentre = centralField / (np.sin(pa)**2)
 
         def zMaxEqn(z):
-            result = 1.0 - muCentre / \
-                self.evaluate_field_magnitude(pStart[0], pStart[1], z)
-            return result
+            rho = self.calc_rho_along_field_line(rho_0, z)
+            return 1.0 - muCentre / self.evaluate_field_magnitude(rho, 0.0, z)
 
         # Determine where the bounds of the equation solver should be
         upperZBound = 1.0

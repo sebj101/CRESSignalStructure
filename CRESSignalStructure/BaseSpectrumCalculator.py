@@ -8,10 +8,10 @@ S. Jones
 """
 from abc import ABC, abstractmethod
 from numpy.typing import NDArray, ArrayLike
-from CRESSignalStructure.Particle import Particle
-from CRESSignalStructure.CircularWaveguide import CircularWaveguide
-from CRESSignalStructure.BaseTrap import BaseTrap
-from CRESSignalStructure.BaseField import BaseField
+from .Particle import Particle
+from .CircularWaveguide import CircularWaveguide
+from .BaseTrap import BaseTrap
+from .BaseField import BaseField
 from scipy.special import jvp, j1
 import numpy as np
 from scipy.integrate import quad
@@ -88,10 +88,10 @@ class BaseSpectrumCalculator(ABC):
                          0]**2 + self.__particle.GetPosition()[1]**2)
 
         prefactor = 0.0
-        if issubclass(type(self.__trap), BaseTrap) == True:
+        if issubclass(type(self.__trap), BaseTrap):
             prefactor = self.__waveguide.CalcTE11Impedance(self.__trap.CalcOmega0(self.__particle.GetSpeed(
             ), self.__particle.GetPitchAngle())) * (sc.e * self.__particle.GetSpeed())**2 / (8 * np.pi * alpha)
-        elif issubclass(type(self.__trap), BaseField) == True:
+        elif issubclass(type(self.__trap), BaseField):
             prefactor = self.__waveguide.CalcTE11Impedance(self.__trap.CalcOmega0(
                 self.__particle)) * (sc.e * self.__particle.GetSpeed())**2 / (8 * np.pi * alpha)
         else:
@@ -128,5 +128,32 @@ class BaseSpectrumCalculator(ABC):
         a = self.GetPeakAmp(order)
         return np.abs(a)**2 * self.GetPowerNorm()
 
-    def GetParticle(self):
+    def apply_phase_shifts(self, amps: NDArray, orders: ArrayLike,
+                           phi_c: float, phi_a: float,
+                           negativeFreqs: bool = False) -> NDArray:
+        """
+        Apply initial cyclotron and axial phase shifts to complex amplitudes
+
+        Parameters
+        ----------
+        amps : NDArray
+            Complex peak amplitudes to apply phases to
+        orders : ArrayLike
+            Sideband orders corresponding to each amplitude
+        phi_c : float
+            Initial cyclotron phase in radians, applied equally to all orders
+        phi_a : float
+            Initial axial phase in radians, applied as n*phi_a for order n
+        negativeFreqs : bool
+            If True, applies conjugate phase (for negative frequency components)
+
+        Returns
+        -------
+        NDArray
+            Phase-shifted complex amplitudes
+        """
+        sign = -1 if negativeFreqs else 1
+        return amps * np.exp(sign * 1j * (phi_c + np.asarray(orders) * phi_a))
+
+    def GetParticle(self) -> Particle:
         return self.__particle
