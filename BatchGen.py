@@ -23,7 +23,8 @@ from CRESSignalStructure.EnsembleGenerator import generate_uniform_ensemble, gen
 CONFIG_KEYS = [
     'energy_min', 'energy_max', 'pitch_min', 'pitch_max',
     'bank_grid', 'bank_r2_steps', 'bank_costheta_steps', 'bank_energy_steps', 'bank_seed',
-    'files', 'events', 'prefix', 'no_fft'
+    'files', 'events', 'prefix', 'no_fft',
+    'phase_seed', 'particle_seed',
 ]
 
 def _save_run_config(args, outdir):
@@ -77,6 +78,15 @@ def main():
     parser.add_argument("--bank-energy-steps", type=int, default=1, help="Number of steps in energy for 3D grid bank (default=1 for 2D)")
     parser.add_argument("--bank-seed", type=int, default=None, help="RNG seed for bank generation")
 
+    # Reproducibility seeds
+    parser.add_argument("--phase-seed", type=int, default=42,
+                        help="RNG seed for per-event initial phase draws (phi_c, phi_a). "
+                             "Default 42; reproducible per (phase_seed, event_index).")
+    parser.add_argument("--particle-seed", type=int, default=None,
+                        help="RNG seed for per-event particle parameter draws (energy, pitch, "
+                             "position). Default None falls back to numpy's global RNG "
+                             "(non-reproducible). Recommend setting an explicit value per run.")
+
     args = parser.parse_args()
 
     # 2. Setup Directory
@@ -129,6 +139,8 @@ def main():
     print(f"  - Total Files: {args.files}")
     print(f"  - Multiprocessing: {'Enabled' if args.mp else 'Disabled'}")
     print(f"  - FFT Generation: {'Disabled' if args.no_fft else 'Enabled'}")
+    print(f"  - Phase seed:    {args.phase_seed}")
+    print(f"  - Particle seed: {args.particle_seed if args.particle_seed is not None else 'None (non-reproducible)'}")
     print("=" * 40)
 
     # 5. Configuration Dictionary
@@ -136,7 +148,8 @@ def main():
         'sample_rate': F_DIGITIZER,
         'lo_freq': LO_FREQ,
         'acq_time': 40e-6,  # 40 microseconds
-        'max_order': 8      
+        'max_order': 8,
+        'phase_seed': args.phase_seed,
     }
 
     # 6. Parameter Ranges
@@ -284,7 +297,8 @@ def main():
                 fft_output_file=fft_path,
                 use_multiprocessing=args.mp,
                 max_workers=args.max_workers,
-                verbose=True
+                verbose=True,
+                particle_seed=args.particle_seed,
             )
 
     total_time = time.time() - total_start
