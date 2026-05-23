@@ -17,7 +17,7 @@ from .CircularWaveguide import CircularWaveguide
 from .BaseTrap import BaseTrap
 from .BaseField import BaseField
 from .RealFields import HarmonicField, BathtubField
-from .NumericalSpectrumCalculator import calc_omega_axial
+from .NumericalSpectrumCalculator import calc_omega_axial, calc_omega_0
 
 class CRESWriter:
     def __init__(self, filename: str, mode: str = 'w'):
@@ -143,6 +143,19 @@ class CRESWriter:
 
         attrs['Cyclotron frequency [Hertz]'] = f_cyc
         attrs['Downmixed cyclotron frequency [Hertz]'] = abs(f_cyc - f_lo)
+        # Orbit-averaged cyclotron frequency: <f_c> over one axial period of
+        # the bounce trajectory through B(z(t)). This is the carrier the FFT
+        # actually parks on (a phase-modulated tone sits at <f_inst>, not at
+        # f_c(z=0)). For pitch angles far from 90 deg the electron spends
+        # more time near the mirror points where B is higher, so <f_c> > f_c(0).
+        # Anchor sideband/template overlays on the Mean attrs, not on f_c(0).
+        try:
+            f_cyc_mean = calc_omega_0(self._trap, particle) / (2 * np.pi)
+            attrs['Mean cyclotron frequency [Hertz]'] = f_cyc_mean
+            attrs['Mean downmixed cyclotron frequency [Hertz]'] = abs(f_cyc_mean - f_lo)
+        except Exception:
+            attrs['Mean cyclotron frequency [Hertz]'] = np.nan
+            attrs['Mean downmixed cyclotron frequency [Hertz]'] = np.nan
         try:
             attrs['Axial frequency [Hertz]'] = calc_omega_axial(self._trap, particle) / (2 * np.pi)
         except Exception:
