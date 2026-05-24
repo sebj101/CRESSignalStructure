@@ -25,6 +25,7 @@ CONFIG_KEYS = [
     'bank_grid', 'bank_r2_steps', 'bank_costheta_steps', 'bank_energy_steps', 'bank_seed',
     'files', 'events', 'prefix', 'no_fft',
     'phase_seed', 'particle_seed',
+    'acq_time',
 ]
 
 def _save_run_config(args, outdir):
@@ -70,6 +71,7 @@ def main():
     parser.add_argument("--mp", action="store_true", help="Enable Multiprocessing")
     parser.add_argument("--max-workers", type=int, default=None, help="Cap number of CPU cores used (default: all available minus one)")
     parser.add_argument("--no-fft", action="store_true", help="Disable FFT generation (Signal only)")
+    parser.add_argument("--acq-time", type=float, default=40e-6, help="Acquisition time per event in seconds (default 40e-6 = 40 us)")
 
     # Template Bank (Grid) Options
     parser.add_argument("--bank-grid", action="store_true", help="Generate a grid (template bank) in r^2 and cos(theta)")
@@ -139,6 +141,7 @@ def main():
     print(f"  - Total Files: {args.files}")
     print(f"  - Multiprocessing: {'Enabled' if args.mp else 'Disabled'}")
     print(f"  - FFT Generation: {'Disabled' if args.no_fft else 'Enabled'}")
+    print(f"  - Acq Time: {args.acq_time * 1e6:.2f} us ({int(args.acq_time * 1e9)} samples at 1 GHz)")
     print(f"  - Phase seed:    {args.phase_seed}")
     print(f"  - Particle seed: {args.particle_seed if args.particle_seed is not None else 'None (non-reproducible)'}")
     print("=" * 40)
@@ -147,7 +150,7 @@ def main():
     sim_config = {
         'sample_rate': F_DIGITIZER,
         'lo_freq': LO_FREQ,
-        'acq_time': 40e-6,  # 40 microseconds
+        'acq_time': args.acq_time,
         'max_order': 8,
         'phase_seed': args.phase_seed,
     }
