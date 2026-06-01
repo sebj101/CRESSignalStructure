@@ -60,7 +60,12 @@ pip install -e ".[test]"
 Here's a simple example of calculating a CRES power spectrum:
 
 ```python
-from CRESSignalStructure import HarmonicTrap, CircularWaveguide, Particle, PowerSpectrumCalculator
+from CRESSignalStructure import (
+    HarmonicTrap, 
+    CircularWaveguide, 
+    Electron, 
+    SpectrumCalculator
+)
 
 # Create a harmonic trap with magnetic field parameters
 trap = HarmonicTrap(B0=1.0, L0=0.2)  # B0 in Tesla, L0 in m
@@ -70,14 +75,13 @@ waveguide = CircularWaveguide(radius=0.005)  # 5mm radius
 
 # Create an electron with specific energy and pitch angle
 particle = Particle(
-    mass=9.10938e-31,      # electron mass in kg
-    charge=-1.602176e-19,  # electron charge in C
-    kinetic_energy=18.6e3, # 18.6 keV
-    pitch_angle=1.5        # radians
+    ke=18.6e3,      # eV
+    startPos=np.array([1e-3, 0.0, 0.0]),  # metres
+    pitchAngle=89.9*np.pi/180.0  # radians
 )
 
 # Calculate power spectrum
-calculator = PowerSpectrumCalculator(trap, waveguide, particle)
+calculator = SpectrumCalculator(trap, waveguide, particle)
 
 # Get peak frequencies for the fundamental (order=0)
 freq = calculator.GetPeakFrequency(order=0)
@@ -156,11 +160,9 @@ The **CircularWaveguide** class models TE11 mode electromagnetic fields in circu
 - Characteristic impedance
 - Cutoff frequencies
 
-### Power Spectrum Calculators (for waveguide geometries)
+### Spectrum Calculator (for waveguide geometries)
 
-- **BaseSpectrumCalculator**: Abstract base class for spectrum calculations
-- **PowerSpectrumCalculator**: Analytical calculations for harmonic and bathtub traps
-- **NumericalSpectrumCalculator**: Numerical integration approach for arbitrary magnetic field configurations
+- **SpectrumCalculator**: Class for calculating power spectra in waveguides
 
 ### Antennas
 
@@ -217,18 +219,16 @@ CRESSignalStructure/
 │   ├── __init__.py
 │   ├── AntennaSignalGenerator.py       # Antenna-based signal generation
 │   ├── BaseField.py                    # Abstract field base class
-│   ├── BaseSpectrumCalculator.py       # Abstract spectrum calculator base class
 │   ├── BaseTrap.py                     # Abstract trap base class
 │   ├── CircularWaveguide.py            # Waveguide calculations
 │   ├── CRESWriter.py                   # HDF5 file I/O
 │   ├── EnsembleGenerator.py            # Batch simulation orchestration
-│   ├── NumericalSpectrumCalculator.py  # Numerical spectrum calculator
 │   ├── Particle.py                     # Particle and Electron classes
-│   ├── PowerSpectrumCalculator.py      # Analytical spectrum calculator
 │   ├── QTNMTraps.py                    # Harmonic and bathtub trap implementations
 │   ├── RealFields.py                   # Field implementations
 │   ├── ReceiverChain.py                # Signal processing chain
 │   ├── SignalGenerator.py              # Frequency-domain signal generation
+│   ├── SpectrumCalculator.py           # Waveguide spectrum calculator class
 │   ├── TrajectoryGenerator.py          # Trajectory generation with grad-B drift
 │   └── antennas/                       # Antenna models
 │       ├── __init__.py

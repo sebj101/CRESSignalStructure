@@ -192,6 +192,27 @@ class BaseField(ABC):
         rho = self.calc_rho_along_field_line(rho_0, z)
         return t_vals, self.evaluate_field_magnitude(rho, 0.0, z)
 
+    def cyclotron_phase_from_t(self, particle: Particle,
+                               n_t_points: int = 499) -> tuple[NDArray, NDArray]:
+        """
+        Calculate the cumulative cyclotron phase as a function of time over one axial period
+
+        Parameters
+        ----------
+        particle : Particle
+            The particle being trapped
+        n_t_points : int
+            Number of time points (default 499)
+
+        Returns
+        -------
+        tuple[NDArray, NDArray]
+            Time values in seconds, cumulative phase in radians
+        """
+        t, B = self.B_from_t(particle, n_t_points)
+        return t, cumulative_simpson(
+            sc.e * B / (particle.GetGamma() * particle.GetMass()), x=t, initial=0.0)
+
     def CalcOmegaAxial(self, particle: Particle,
                        n_points: int = 50000) -> float:
         """

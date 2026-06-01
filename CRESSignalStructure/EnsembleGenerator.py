@@ -13,7 +13,7 @@ import time
 # Internal Imports
 from .Particle import Particle
 from .SignalGenerator import SignalGenerator
-from .NumericalSpectrumCalculator import NumericalSpectrumCalculator
+from .SpectrumCalculator import SpectrumCalculator
 from .CRESWriter import CRESWriter
 
 def _worker_generate_event(args):
@@ -24,7 +24,7 @@ def _worker_generate_event(args):
 
     try:
         # 1. Setup Generators
-        spec_calc = NumericalSpectrumCalculator(trap, waveguide, particle)
+        spec_calc = SpectrumCalculator(trap, waveguide, particle)
         
         sig_gen = SignalGenerator(
             spectrum_calc=spec_calc, 

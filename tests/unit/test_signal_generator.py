@@ -7,7 +7,7 @@ import pytest
 import scipy.constants as sc
 from CRESSignalStructure import (
     SignalGenerator,
-    PowerSpectrumCalculator,
+    SpectrumCalculator,
     HarmonicTrap,
     BathtubTrap,
     CircularWaveguide,
@@ -26,7 +26,7 @@ def _make_harmonic_spec(pitch=PITCH, pos=POS):
     trap = HarmonicTrap(B0, L0)
     wg = CircularWaveguide(WG_RADIUS)
     particle = Electron(KE, pos, pitch)
-    return PowerSpectrumCalculator(trap, wg, particle), trap, particle
+    return SpectrumCalculator(trap, wg, particle), trap, particle
 
 
 class TestSignalGeneratorConstruction:
@@ -177,7 +177,7 @@ class TestSidebandSpacingAnalytical:
         trap = BathtubTrap(B0=1.0, L0=0.5, L1=0.05)
         wg = CircularWaveguide(WG_RADIUS)
         particle = Electron(KE, POS, PITCH)
-        spec = PowerSpectrumCalculator(trap, wg, particle)
+        spec = SpectrumCalculator(trap, wg, particle)
 
         f_axial = trap.CalcOmegaAxial(particle.GetSpeed(), PITCH) / (2 * np.pi)
         assert np.isclose(spec.GetPeakFrequency(1) - spec.GetPeakFrequency(0), f_axial)
@@ -195,7 +195,7 @@ class TestNinetyDegreeMainbandAnalytical:
         trap = HarmonicTrap(B0, L0)
         wg = CircularWaveguide(WG_RADIUS)
         particle_90 = Electron(KE, np.array([0.0, 0.0, 0.0]), np.pi / 2)
-        spec_90 = PowerSpectrumCalculator(trap, wg, particle_90)
+        spec_90 = SpectrumCalculator(trap, wg, particle_90)
 
         f_expected = sc.e * B0 / (2 * np.pi * sc.m_e * particle_90.GetGamma())
         assert np.isclose(spec_90.GetPeakFrequency(0), f_expected)
@@ -205,6 +205,6 @@ class TestNinetyDegreeMainbandAnalytical:
         trap = HarmonicTrap(B0, L0)
         wg = CircularWaveguide(WG_RADIUS)
         particle_90 = Electron(KE, np.array([0.0, 0.0, 0.0]), np.pi / 2)
-        spec_90 = PowerSpectrumCalculator(trap, wg, particle_90)
+        spec_90 = SpectrumCalculator(trap, wg, particle_90)
         for n in (-2, -1, 1, 2):
             assert np.isclose(np.abs(spec_90.GetPeakAmp(n)), 0.0, atol=1e-12)

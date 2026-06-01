@@ -15,7 +15,7 @@ import scipy.constants as sc
 from CRESSignalStructure.RealFields import HarmonicField
 from CRESSignalStructure.CircularWaveguide import CircularWaveguide
 from CRESSignalStructure.Particle import Particle
-from CRESSignalStructure.NumericalSpectrumCalculator import NumericalSpectrumCalculator
+from CRESSignalStructure.SpectrumCalculator import SpectrumCalculator
 from CRESSignalStructure.EnsembleGenerator import generate_uniform_ensemble
 
 def main():
@@ -63,7 +63,7 @@ def main():
     mean_energy = (args.energy_min + args.energy_max) / 2 
     
     ref_p = Particle(ke=mean_energy, startPos=np.zeros(3), pitchAngle=mean_pitch_rad)
-    calc = NumericalSpectrumCalculator(trap, wg, ref_p)
+    calc = SpectrumCalculator(trap, wg, ref_p)
     f_carrier = calc.GetPeakFrequency(0)
 
     LO_FREQ = f_carrier - (F_DIGITIZER / 4)

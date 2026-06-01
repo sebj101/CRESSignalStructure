@@ -65,9 +65,7 @@ Signal Generation:
     SignalGenerator - Generate signals from spectrum calculators (frequency domain)
 
 Spectrum Calculators:
-    BaseSpectrumCalculator - Abstract base for spectrum calculations
-    PowerSpectrumCalculator - Analytical power spectrum calculator
-    NumericalSpectrumCalculator - Numerical power spectrum calculator
+    SpectrumCalculator - Unified spectrum calculator (analytical and numerical)
 """
 
 # Particle
@@ -96,8 +94,7 @@ from .AntennaSignalGenerator import AntennaSignalGenerator
 from .SignalGenerator import SignalGenerator
 
 # Spectrum calculators
-from .PowerSpectrumCalculator import PowerSpectrumCalculator
-from .NumericalSpectrumCalculator import NumericalSpectrumCalculator
+from .SpectrumCalculator import SpectrumCalculator
 
 # Define public API
 __all__ = [
@@ -133,8 +130,7 @@ __all__ = [
     'SignalGenerator',
 
     # Spectrum calculators
-    'PowerSpectrumCalculator',
-    'NumericalSpectrumCalculator',
+    'SpectrumCalculator',
 ]
 
 # Version info

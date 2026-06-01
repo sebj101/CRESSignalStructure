@@ -2,11 +2,11 @@
 Integration tests for SignalGenerator class.
 
 These tests generate full time-domain signals and verify peak positions via FFT.
-They cover both analytical (PowerSpectrumCalculator) and numerical
-(NumericalSpectrumCalculator) spectrum calculators.
+They cover both analytical (BaseTrap) and numerical (BaseField) spectrum calculator
+paths via the unified SpectrumCalculator class.
 
-Note: tests using NumericalSpectrumCalculator are slower due to the numerical
-integration involved in computing the axial frequency and amplitudes.
+Note: tests using BaseField are slower due to the numerical integration involved
+in computing the axial frequency and amplitudes.
 """
 
 import numpy as np
@@ -14,15 +14,13 @@ import pytest
 import scipy.constants as sc
 from CRESSignalStructure import (
     SignalGenerator,
-    PowerSpectrumCalculator,
-    NumericalSpectrumCalculator,
+    SpectrumCalculator,
     HarmonicTrap,
     BathtubTrap,
     HarmonicField,
     CircularWaveguide,
     Electron,
 )
-from CRESSignalStructure.NumericalSpectrumCalculator import calc_omega_axial
 
 KE = 18600.0        # eV
 WG_RADIUS = 5e-3    # m
@@ -51,7 +49,7 @@ def _fft_peak_near(signal, sample_rate, f_centre, bandwidth):
 
 
 class TestSignalPeakFrequenciesAnalytical:
-    """Full-pipeline signal tests using PowerSpectrumCalculator (analytical traps)"""
+    """Full-pipeline signal tests using SpectrumCalculator (analytical traps)"""
 
     def test_ninety_degree_mainband_at_correct_if_frequency(self):
         """
@@ -62,7 +60,7 @@ class TestSignalPeakFrequenciesAnalytical:
         trap = HarmonicTrap(B0, L0)
         wg = CircularWaveguide(WG_RADIUS)
         particle = Electron(KE, np.array([0.0, 0.0, 0.0]), np.pi / 2)
-        spec = PowerSpectrumCalculator(trap, wg, particle)
+        spec = SpectrumCalculator(trap, wg, particle)
 
         f_0 = spec.GetPeakFrequency(0)
         lo_freq = f_0 - 200e6
@@ -82,7 +80,7 @@ class TestSignalPeakFrequenciesAnalytical:
         trap = HarmonicTrap(B0, L0)
         wg = CircularWaveguide(WG_RADIUS)
         particle = Electron(KE, np.array([1e-4, 0.0, 0.0]), PITCH_87)
-        spec = PowerSpectrumCalculator(trap, wg, particle)
+        spec = SpectrumCalculator(trap, wg, particle)
 
         f_0 = spec.GetPeakFrequency(0)
         f_axial = trap.CalcOmegaAxial(particle.GetSpeed(), PITCH_87) / (2 * np.pi)
@@ -103,7 +101,7 @@ class TestSignalPeakFrequenciesAnalytical:
         trap = BathtubTrap(B0=1.0, L0=0.5, L1=0.05)
         wg = CircularWaveguide(WG_RADIUS)
         particle = Electron(KE, np.array([1e-4, 0.0, 0.0]), PITCH_87)
-        spec = PowerSpectrumCalculator(trap, wg, particle)
+        spec = SpectrumCalculator(trap, wg, particle)
 
         f_0 = spec.GetPeakFrequency(0)
         f_axial = trap.CalcOmegaAxial(particle.GetSpeed(), PITCH_87) / (2 * np.pi)
@@ -134,9 +132,9 @@ class TestSignalPeakFrequenciesNumerical:
         trap = HarmonicField(R_COIL, I_COIL, BKG_FIELD)
         wg = CircularWaveguide(WG_RADIUS)
         particle = Electron(KE, np.array([0.0, 0.0, 0.0]), PITCH_87)
-        spec = NumericalSpectrumCalculator(trap, wg, particle)
+        spec = SpectrumCalculator(trap, wg, particle)
 
-        f_axial = calc_omega_axial(trap, particle) / (2 * np.pi)
+        f_axial = trap.CalcOmegaAxial(particle) / (2 * np.pi)
         f_0 = spec.GetPeakFrequency(0)
         lo_freq = f_0 - 200e6
 

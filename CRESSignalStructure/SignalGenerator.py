@@ -9,7 +9,7 @@ signal generation of CRES signals. This includes simulation of:
 - Signal chirp
 """
 
-from .BaseSpectrumCalculator import BaseSpectrumCalculator
+from .SpectrumCalculator import SpectrumCalculator
 import numpy as np
 from numpy.typing import NDArray
 from scipy.signal import butter, sosfiltfilt
@@ -17,15 +17,15 @@ import scipy.constants as sc
 
 
 class SignalGenerator:
-    def __init__(self, spectrum_calc: BaseSpectrumCalculator,
+    def __init__(self, spectrum_calc: SpectrumCalculator,
                  sample_rate: float, lo_freq: float, acq_time: float):
         """
         Constructor for SignalGenerator class
 
         Parameters
         ----------
-        spectrum_calc : BaseSpectrumCalculator
-            Instance of PowerSpectrumCalculator or NumericalSpectrumCalculator
+        spectrum_calc : SpectrumCalculator
+            Instance of SpectrumCalculator
         sample_rate : float
             Digitizer sample rate in Hertz
         lo_freq : float
