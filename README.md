@@ -156,7 +156,7 @@ The **CircularWaveguide** class models TE11 mode electromagnetic fields in circu
 - Characteristic impedance
 - Cutoff frequencies
 
-### Power Spectrum Calculators
+### Power Spectrum Calculators (for waveguide geometries)
 
 - **BaseSpectrumCalculator**: Abstract base class for spectrum calculations
 - **PowerSpectrumCalculator**: Analytical calculations for harmonic and bathtub traps
@@ -177,7 +177,7 @@ The antenna module provides classes for modelling different antenna types:
 
 ### Signal Generation
 
-- **SignalGenerator**: Generates time-domain signals from power spectrum calculators (frequency domain approach)
+- **SignalGenerator**: Generates time-domain signals from power spectrum calculators (frequency domain approach applicable for waveguides)
 - **AntennaSignalGenerator**: Generates signals from electron trajectories using antenna models with Lienard-Wiechert fields
 - **ReceiverChain**: Models signal processing chain (downmixing, amplification, digitization)
 
