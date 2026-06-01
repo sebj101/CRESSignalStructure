@@ -17,10 +17,10 @@ class TestParticleConstruction:
         pos = np.zeros(3)
         particle = Particle(ke=ke, startPos=pos)
 
-        assert particle.GetEnergy() == ke
-        assert np.array_equal(particle.GetPosition(), pos)
-        assert particle.GetMass() == sc.m_e
-        assert particle.GetPitchAngle() == np.pi / 2
+        assert particle.get_energy() == ke
+        assert np.array_equal(particle.get_position(), pos)
+        assert particle.get_mass() == sc.m_e
+        assert particle.get_pitch_angle() == np.pi / 2
 
     def test_custom_particle_parameters(self):
         """Test creating a particle with custom mass, charge, and pitch angle"""
@@ -32,10 +32,10 @@ class TestParticleConstruction:
 
         particle = Particle(ke=ke, startPos=pos, pitchAngle=pitch, q=charge, mass=mass)
 
-        assert particle.GetEnergy() == ke
-        assert np.array_equal(particle.GetPosition(), pos)
-        assert particle.GetMass() == mass
-        assert particle.GetPitchAngle() == pitch
+        assert particle.get_energy() == ke
+        assert np.array_equal(particle.get_position(), pos)
+        assert particle.get_mass() == mass
+        assert particle.get_pitch_angle() == pitch
 
     # Kinetic energy validation tests
     def test_negative_kinetic_energy_raises_error(self):
@@ -166,7 +166,7 @@ class TestParticleRelativisticCalculations:
         ke = 100.0  # 100 eV, very non-relativistic for electrons
         particle = Particle(ke=ke, startPos=np.array([0.0, 0.0, 0.0]))
 
-        gamma = particle.GetGamma()
+        gamma = particle.get_gamma()
         # For 100 eV electron, gamma should be very close to 1
         # ke = (gamma - 1) * mc^2, so gamma = 1 + ke/mc^2
         expected_gamma = 1 + (ke * sc.e) / (sc.m_e * sc.c**2)
@@ -179,7 +179,7 @@ class TestParticleRelativisticCalculations:
         ke = 511_000.0  # 511 keV = rest mass energy of electron
         particle = Particle(ke=ke, startPos=np.array([0.0, 0.0, 0.0]))
 
-        gamma = particle.GetGamma()
+        gamma = particle.get_gamma()
         # At ke = mc^2, gamma should be 2
         expected_gamma = 1 + (ke * sc.e) / (sc.m_e * sc.c**2)
 
@@ -192,7 +192,7 @@ class TestParticleRelativisticCalculations:
 
         for ke in energies:
             particle = Particle(ke=ke, startPos=np.array([0.0, 0.0, 0.0]))
-            assert particle.GetGamma() >= 1.0
+            assert particle.get_gamma() >= 1.0
 
     def test_beta_in_valid_range(self):
         """Test that beta is always in range [0, 1)"""
@@ -200,7 +200,7 @@ class TestParticleRelativisticCalculations:
 
         for ke in energies:
             particle = Particle(ke=ke, startPos=np.array([0.0, 0.0, 0.0]))
-            beta = particle.GetBeta()
+            beta = particle.get_beta()
             assert 0.0 <= beta < 1.0
 
     def test_beta_gamma_relation(self):
@@ -208,8 +208,8 @@ class TestParticleRelativisticCalculations:
         ke = 18600.0  # Typical CRES electron energy
         particle = Particle(ke=ke, startPos=np.array([0.0, 0.0, 0.0]))
 
-        gamma = particle.GetGamma()
-        beta = particle.GetBeta()
+        gamma = particle.get_gamma()
+        beta = particle.get_beta()
 
         # Check gamma = 1 / sqrt(1 - beta^2)
         expected_gamma = 1.0 / np.sqrt(1.0 - beta**2)
@@ -221,7 +221,7 @@ class TestParticleRelativisticCalculations:
 
         for ke in energies:
             particle = Particle(ke=ke, startPos=np.zeros(3))
-            speed = particle.GetSpeed()
+            speed = particle.get_speed()
             assert speed < sc.c
 
     def test_speed_calculation(self):
@@ -229,8 +229,8 @@ class TestParticleRelativisticCalculations:
         ke = 18600.0
         particle = Particle(ke=ke, startPos=np.zeros(3))
 
-        speed = particle.GetSpeed()
-        beta = particle.GetBeta()
+        speed = particle.get_speed()
+        beta = particle.get_beta()
         expected_speed = beta * sc.c
 
         assert abs(speed - expected_speed) < 1e-10
@@ -240,10 +240,10 @@ class TestParticleRelativisticCalculations:
         ke = 18600.0
         particle = Particle(ke=ke, startPos=np.zeros(3))
 
-        momentum = particle.GetMomentum()
-        gamma = particle.GetGamma()
-        mass = particle.GetMass()
-        speed = particle.GetSpeed()
+        momentum = particle.get_momentum()
+        gamma = particle.get_gamma()
+        mass = particle.get_mass()
+        speed = particle.get_speed()
 
         expected_momentum = gamma * mass * speed
         assert abs(momentum - expected_momentum) < 1e-20
@@ -254,15 +254,15 @@ class TestParticleRelativisticCalculations:
 
         for ke in energies:
             particle = Particle(ke=ke, startPos=np.zeros(3))
-            assert particle.GetMomentum() > 0
+            assert particle.get_momentum() > 0
 
     def test_high_energy_limit(self):
         """Test ultra-relativistic limit: beta approaches 1, speed approaches c"""
         ke = 1e9  # 1 GeV, highly relativistic for electrons
         particle = Particle(ke=ke, startPos=np.zeros(3))
 
-        beta = particle.GetBeta()
-        speed = particle.GetSpeed()
+        beta = particle.get_beta()
+        speed = particle.get_speed()
 
         # In ultra-relativistic limit, beta should be very close to 1
         assert beta > 0.999
@@ -276,31 +276,31 @@ class TestParticleGetters:
         """Test GetEnergy returns the kinetic energy"""
         ke = 18600.0
         particle = Particle(ke=ke, startPos=np.array([0.0, 0.0, 0.0]))
-        assert particle.GetEnergy() == ke
+        assert particle.get_energy() == ke
 
     def test_get_position(self):
         """Test GetPosition returns the position vector"""
         pos = np.array([1.5, -2.3, 4.7])
         particle = Particle(ke=1000.0, startPos=pos)
-        assert np.array_equal(particle.GetPosition(), pos)
+        assert np.array_equal(particle.get_position(), pos)
 
     def test_get_mass(self):
         """Test GetMass returns the mass"""
         mass = 2 * sc.m_e
         particle = Particle(ke=1000.0, startPos=np.array([0.0, 0.0, 0.0]), mass=mass)
-        assert particle.GetMass() == mass
+        assert particle.get_mass() == mass
 
     def test_get_pitch_angle(self):
         """Test GetPitchAngle returns the pitch angle"""
         pitch = np.pi / 3
         particle = Particle(ke=1000.0, startPos=np.array([0.0, 0.0, 0.0]), pitchAngle=pitch)
-        assert particle.GetPitchAngle() == pitch
+        assert particle.get_pitch_angle() == pitch
 
     def test_default_electron_parameters(self):
         """Test that default parameters match electron constants"""
         particle = Particle(ke=1000.0, startPos=np.array([0.0, 0.0, 0.0]))
-        assert particle.GetMass() == sc.m_e
-        assert particle.GetPitchAngle() == np.pi / 2
+        assert particle.get_mass() == sc.m_e
+        assert particle.get_pitch_angle() == np.pi / 2
 
 
 class TestParticlePhysicsConsistency:
@@ -312,9 +312,9 @@ class TestParticlePhysicsConsistency:
         particle = Particle(ke=ke, startPos=np.array([0.0, 0.0, 0.0]))
 
         # Total energy
-        E_total = (particle.GetGamma() * particle.GetMass() * sc.c**2) / sc.e  # in eV
-        momentum = particle.GetMomentum()
-        mass = particle.GetMass()
+        E_total = (particle.get_gamma() * particle.get_mass() * sc.c**2) / sc.e  # in eV
+        momentum = particle.get_momentum()
+        mass = particle.get_mass()
 
         # E^2 = (pc)^2 + (mc^2)^2
         E_squared = E_total**2 * sc.e**2  # Convert to Joules
@@ -331,10 +331,10 @@ class TestParticlePhysicsConsistency:
             particle = Particle(ke=ke, startPos=np.array([0.0, 0.0, 0.0]))
 
             # All calculations should complete without error
-            gamma = particle.GetGamma()
-            beta = particle.GetBeta()
-            speed = particle.GetSpeed()
-            momentum = particle.GetMomentum()
+            gamma = particle.get_gamma()
+            beta = particle.get_beta()
+            speed = particle.get_speed()
+            momentum = particle.get_momentum()
 
             # Basic sanity checks
             assert gamma >= 1.0

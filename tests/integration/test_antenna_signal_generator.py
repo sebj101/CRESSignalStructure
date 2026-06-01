@@ -54,7 +54,7 @@ def perpendicular_signal():
     """
     field    = _make_field()
     particle = _make_particle(np.pi / 2)
-    f_c      = field.CalcOmega0(particle) / (2 * np.pi)
+    f_c      = field.calc_omega_0(particle) / (2 * np.pi)
 
     traj     = TrajectoryGenerator(field, particle).generate(
                    sample_rate=TRAJ_RATE, t_max=10e-6)
@@ -93,7 +93,7 @@ class TestAntennaSignalGeneratorConstruction:
     def setup_method(self):
         field         = _make_field()
         particle      = _make_particle(np.pi / 2)
-        f_c           = field.CalcOmega0(particle) / (2 * np.pi)
+        f_c           = field.calc_omega_0(particle) / (2 * np.pi)
         self.traj     = TrajectoryGenerator(field, particle).generate(
                             sample_rate=TRAJ_RATE, t_max=0.1e-6)
         self.antenna  = IsotropicAntenna(ANTENNA_POS)
@@ -167,7 +167,7 @@ class TestSignalOutputStructure:
         """generate_signal(return_time=False) returns a single 1D array."""
         field    = _make_field()
         particle = _make_particle(np.pi / 2)
-        f_c      = field.CalcOmega0(particle) / (2 * np.pi)
+        f_c      = field.calc_omega_0(particle) / (2 * np.pi)
         traj     = TrajectoryGenerator(field, particle).generate(
                        sample_rate=TRAJ_RATE, t_max=1e-6)
         gen      = AntennaSignalGenerator(

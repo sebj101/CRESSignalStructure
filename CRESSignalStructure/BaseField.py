@@ -118,7 +118,7 @@ class BaseField(ABC):
         return rho_0 * np.sqrt(B_0 / B_z)
 
     @abstractmethod
-    def CalcZMax(self, particle: Particle) -> float:
+    def calc_z_max(self, particle: Particle) -> float:
         """
         Calculate the maximum axial position of the particle in the trap
 
@@ -133,14 +133,12 @@ class BaseField(ABC):
             The maximum axial displacement in metres
         """
 
-    def CalcOmega0(self, particle: Particle, n_t_points: int = 499) -> float:
+    def calc_omega_0(self, particle: Particle, n_t_points: int = 499) -> float:
         """
         Calculates the mean cyclotron frequency
 
         Parameters
         ----------
-        trap : BaseField
-            The trapping field
         particle : Particle
             The particle being trapped
         n_t_points : int
@@ -151,24 +149,22 @@ class BaseField(ABC):
         float
             The average cyclotron frequency in radians/s
         """
-        if particle.GetPitchAngle() == np.pi/2:
-            pos = particle.GetPosition()
+        if particle.get_pitch_angle() == np.pi/2:
+            pos = particle.get_position()
             B0 = self.evaluate_field_magnitude(pos[0], pos[1], pos[2])
-            return sc.e * B0 / (particle.GetGamma() * particle.GetMass())
+            return sc.e * B0 / (particle.get_gamma() * particle.get_mass())
         else:
-            t, B = self.B_from_t(particle, n_t_points)
+            t, B = self.b_from_t(particle, n_t_points)
             phi_Ta = simpson(
-                sc.e * B / (particle.GetGamma() * particle.GetMass()), t)
+                sc.e * B / (particle.get_gamma() * particle.get_mass()), t)
             return phi_Ta / t[-1]
 
-    def B_from_t(self, particle: Particle, n_t_points: int):
+    def b_from_t(self, particle: Particle, n_t_points: int):
         """
         Calculate the magnetic field as a function of time over 1 axial period
 
         Parameters
         ----------
-        trap : BaseField
-            The trapping field
         particle : Particle
             The particle being trapped
         n_t_points : int
@@ -187,7 +183,7 @@ class BaseField(ABC):
         t_vals = np.linspace(0.0, t[-1], n_t_points, endpoint=True)
         t_to_z = interp1d(t, z, kind='cubic')
         z = t_to_z(t_vals)
-        pStart = particle.GetPosition()
+        pStart = particle.get_position()
         rho_0 = np.sqrt(pStart[0]**2 + pStart[1]**2)
         rho = self.calc_rho_along_field_line(rho_0, z)
         return t_vals, self.evaluate_field_magnitude(rho, 0.0, z)
@@ -209,12 +205,12 @@ class BaseField(ABC):
         tuple[NDArray, NDArray]
             Time values in seconds, cumulative phase in radians
         """
-        t, B = self.B_from_t(particle, n_t_points)
+        t, B = self.b_from_t(particle, n_t_points)
         return t, cumulative_simpson(
-            sc.e * B / (particle.GetGamma() * particle.GetMass()), x=t, initial=0.0)
+            sc.e * B / (particle.get_gamma() * particle.get_mass()), x=t, initial=0.0)
 
-    def CalcOmegaAxial(self, particle: Particle,
-                       n_points: int = 50000) -> float:
+    def calc_omega_axial(self, particle: Particle,
+                         n_points: int = 50000) -> float:
         """
         Calculate the angular axial frequency of trapped particle motion
 
@@ -223,24 +219,24 @@ class BaseField(ABC):
         particle : Particle
             The particle being trapped
         n_points : int
-            Number of integration points to use    
+            Number of integration points to use
 
         Returns
         -------
         float
             Axial frequency in radians/s
         """
-        pa = particle.GetPitchAngle()
-        gamma = particle.GetGamma()
-        p0 = gamma * particle.GetMass() * particle.GetSpeed()
-        pStart = particle.GetPosition()
+        pa = particle.get_pitch_angle()
+        gamma = particle.get_gamma()
+        p0 = gamma * particle.get_mass() * particle.get_speed()
+        pStart = particle.get_position()
         rho_0 = np.sqrt(pStart[0]**2 + pStart[1]**2)
 
         centralField = self.evaluate_field_magnitude(pStart[0], pStart[1], 0.)
-        zMax = self.CalcZMax(particle)
+        zMax = self.calc_z_max(particle)
 
         # Equivalent magnetic moment
-        muMag = gamma * particle.GetMass() * (np.sin(pa) * particle.GetSpeed())**2 / \
+        muMag = gamma * particle.get_mass() * (np.sin(pa) * particle.get_speed())**2 / \
             (2 * centralField)
 
         # Use the substitution z = zMax * sin^2(u) to avoid singularities
@@ -254,9 +250,9 @@ class BaseField(ABC):
 
         # dt/dz = γm |B| / (p_∥ |B_z|), where p_∥ = sqrt(p0² - 2γm μ B)
         p_parallel = np.sqrt(np.maximum(
-            p0**2 - 2 * gamma * particle.GetMass() * muMag * B_mag, 0.0))
+            p0**2 - 2 * gamma * particle.get_mass() * muMag * B_mag, 0.0))
         with np.errstate(divide='ignore', invalid='ignore'):
-            integrand = gamma * particle.GetMass() * B_mag / (p_parallel * np.abs(B_z)) * dz_du
+            integrand = gamma * particle.get_mass() * B_mag / (p_parallel * np.abs(B_z)) * dz_du
         integrand = np.where(np.isfinite(integrand), integrand, 0.0)
 
         integral = float(2 * simpson(integrand, u_points) / np.pi)
@@ -283,19 +279,19 @@ class BaseField(ABC):
             Time values in seconds, z values in metres
         """
 
-        pa = particle.GetPitchAngle()
-        gamma = particle.GetGamma()
-        p0 = gamma * particle.GetMass() * particle.GetSpeed()
-        pStart = particle.GetPosition()
+        pa = particle.get_pitch_angle()
+        gamma = particle.get_gamma()
+        p0 = gamma * particle.get_mass() * particle.get_speed()
+        pStart = particle.get_position()
         rho_0 = np.sqrt(pStart[0]**2 + pStart[1]**2)
 
         centralField = self.evaluate_field_magnitude(pStart[0], pStart[1], 0.)
-        zMax = self.CalcZMax(particle)
-        muMag = gamma * particle.GetMass() * (np.sin(pa) * particle.GetSpeed())**2 / \
+        zMax = self.calc_z_max(particle)
+        muMag = gamma * particle.get_mass() * (np.sin(pa) * particle.get_speed())**2 / \
             (2 * centralField)
 
         if axial_period is None:
-            axial_period = 2 * np.pi / self.CalcOmegaAxial(particle)
+            axial_period = 2 * np.pi / self.calc_omega_axial(particle)
 
         quarter_period = axial_period / 4
         half_period = axial_period / 2
@@ -309,10 +305,10 @@ class BaseField(ABC):
         B_mag = self.evaluate_field_magnitude(rho, 0.0, z1)
         _, _, B_z_comp = self.evaluate_field(rho, 0.0, z1)
         p_parallel = np.sqrt(np.maximum(
-            p0**2 - 2 * gamma * particle.GetMass() * muMag * B_mag, 0.0))
+            p0**2 - 2 * gamma * particle.get_mass() * muMag * B_mag, 0.0))
 
         with np.errstate(divide='ignore', invalid='ignore'):
-            integrand_u = gamma * particle.GetMass() * B_mag / (p_parallel *
+            integrand_u = gamma * particle.get_mass() * B_mag / (p_parallel *
                                                                 np.abs(B_z_comp)) * dz_du
         integrand_u = np.where(np.isfinite(integrand_u), integrand_u, 0.0)
 

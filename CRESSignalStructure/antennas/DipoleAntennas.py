@@ -76,7 +76,7 @@ class ShortDipoleAntenna(BaseAntenna):
             raise ValueError("Resistance must be finite")
         self._resistance = float(resistance)
 
-    def GetETheta(self, pos: NDArray) -> NDArray:
+    def get_e_theta(self, pos: NDArray) -> NDArray:
         """
         Get the theta component of the short dipole radiation pattern
 
@@ -112,7 +112,7 @@ class ShortDipoleAntenna(BaseAntenna):
 
         return E_theta
 
-    def GetEPhi(self, pos: NDArray) -> NDArray:
+    def get_e_phi(self, pos: NDArray) -> NDArray:
         """
         Get the phi component of the short dipole radiation pattern
 
@@ -130,7 +130,7 @@ class ShortDipoleAntenna(BaseAntenna):
         """
         return np.zeros((np.atleast_2d(pos).shape[0], 3))
 
-    def GetEffectiveLength(self, frequency: float, pos: NDArray) -> NDArray:
+    def get_effective_length(self, frequency: float, pos: NDArray) -> NDArray:
         """
         Get the effective length vector of the short dipole
 
@@ -150,9 +150,9 @@ class ShortDipoleAntenna(BaseAntenna):
             (N, 3) array of effective length vectors in meters
         """
         self._validate_frequency(frequency)
-        return -self._length * self.GetETheta(pos)
+        return -self._length * self.get_e_theta(pos)
 
-    def GetImpedance(self, frequency: float) -> complex:
+    def get_impedance(self, frequency: float) -> complex:
         """
         Get the antenna impedance for a short dipole
 
@@ -191,7 +191,7 @@ class ShortDipoleAntenna(BaseAntenna):
 
         return R + 1j * X_c
 
-    def GetGain(self, theta: float, phi: float) -> float:
+    def get_gain(self, theta: float, phi: float) -> float:
         """
         Get the antenna gain pattern for a short dipole
 
@@ -302,7 +302,7 @@ class HalfWaveDipoleAntenna(BaseAntenna):
                 raise ValueError("Wire radius must be finite")
             self._wire_radius = float(wire_radius)
 
-    def GetETheta(self, pos: NDArray) -> NDArray:
+    def get_e_theta(self, pos: NDArray) -> NDArray:
         """
         Get the theta component of the half-wave dipole radiation pattern
 
@@ -351,7 +351,7 @@ class HalfWaveDipoleAntenna(BaseAntenna):
 
         return pattern[:, np.newaxis] * v                            # (N, 3)
 
-    def GetEPhi(self, pos: NDArray) -> NDArray:
+    def get_e_phi(self, pos: NDArray) -> NDArray:
         """
         Get the phi component of the half-wave dipole radiation pattern
 
@@ -369,7 +369,7 @@ class HalfWaveDipoleAntenna(BaseAntenna):
         """
         return np.zeros((np.atleast_2d(pos).shape[0], 3))
 
-    def GetEffectiveLength(self, frequency: float, pos: NDArray) -> NDArray:
+    def get_effective_length(self, frequency: float, pos: NDArray) -> NDArray:
         """
         Get the effective length vector of the half-wave dipole
 
@@ -390,9 +390,9 @@ class HalfWaveDipoleAntenna(BaseAntenna):
         """
         self._validate_frequency(frequency)
         wavelength = sc.c / frequency
-        return -(wavelength / np.pi) * self.GetETheta(pos)
+        return -(wavelength / np.pi) * self.get_e_theta(pos)
 
-    def GetImpedance(self, frequency: float) -> complex:
+    def get_impedance(self, frequency: float) -> complex:
         """
         Get the antenna impedance for a half-wave dipole
 
@@ -434,7 +434,7 @@ class HalfWaveDipoleAntenna(BaseAntenna):
 
         return R_rad + 1j * X
 
-    def GetGain(self, theta: float, phi: float) -> float:
+    def get_gain(self, theta: float, phi: float) -> float:
         """
         Get the antenna gain pattern for a half-wave dipole
 
@@ -482,7 +482,7 @@ class HalfWaveDipoleAntenna(BaseAntenna):
 
         return gain
 
-    def GetResonantFrequency(self) -> float:
+    def get_resonant_frequency(self) -> float:
         """
         Get the resonant frequency of the dipole
 
@@ -493,7 +493,7 @@ class HalfWaveDipoleAntenna(BaseAntenna):
         """
         return self._f0
 
-    def GetLength(self) -> float:
+    def get_length(self) -> float:
         """
         Get the physical length of the dipole
 

@@ -76,7 +76,7 @@ class IsotropicAntenna(BaseAntenna):
             raise ValueError("Effective length must be finite")
         self._effective_length = float(effective_length)
 
-    def GetETheta(self, pos: NDArray) -> NDArray:
+    def get_e_theta(self, pos: NDArray) -> NDArray:
         """
         Get the theta component of the isotropic radiation pattern
 
@@ -115,7 +115,7 @@ class IsotropicAntenna(BaseAntenna):
         safe_sin = np.where(sin_theta > 1e-10, sin_theta, 1.0)
         return np.where(sin_theta > 1e-10, v / safe_sin, 0.0)       # (N, 3)
 
-    def GetEPhi(self, pos: NDArray) -> NDArray:
+    def get_e_phi(self, pos: NDArray) -> NDArray:
         """
         Get the phi component of the isotropic radiation pattern
 
@@ -153,7 +153,7 @@ class IsotropicAntenna(BaseAntenna):
         safe_sin = np.where(sin_theta > 1e-10, sin_theta, 1.0)
         return np.where(sin_theta > 1e-10, v / safe_sin, 0.0)       # (N, 3)
 
-    def GetEffectiveLength(self, frequency: float, pos: NDArray) -> NDArray:
+    def get_effective_length(self, frequency: float, pos: NDArray) -> NDArray:
         """
         Get the effective length vector of the isotropic antenna
 
@@ -213,7 +213,7 @@ class IsotropicAntenna(BaseAntenna):
 
         return l_eff
 
-    def GetImpedance(self, frequency: float) -> complex:
+    def get_impedance(self, frequency: float) -> complex:
         """
         Get the antenna impedance
 
@@ -233,7 +233,7 @@ class IsotropicAntenna(BaseAntenna):
         _ = self._validate_frequency(frequency)
         return self._impedance
 
-    def GetGain(self, theta: float, phi: float) -> float:
+    def get_gain(self, theta: float, phi: float) -> float:
         """
         Get the antenna gain pattern for an isotropic antenna
 
@@ -254,7 +254,7 @@ class IsotropicAntenna(BaseAntenna):
         _, _ = self._validate_angles(theta, phi)
         return 1.0
 
-    def GetEffectiveLengthMagnitude(self) -> float:
+    def get_effective_length_magnitude(self) -> float:
         """
         Get the effective length magnitude
 
@@ -265,7 +265,7 @@ class IsotropicAntenna(BaseAntenna):
         """
         return self._effective_length
 
-    def SetEffectiveLength(self, effective_length: float) -> None:
+    def set_effective_length(self, effective_length: float) -> None:
         """
         Set the effective length magnitude
 

@@ -24,7 +24,7 @@ class MockTrap:
 
 class MockWaveguide:
     def __init__(self): self.wgR = 0.005
-    def CalcTE11Impedance(self, omega): return 50.0
+    def calc_te11_impedance(self, omega): return 50.0
 
 class TestCRESWriterPhysics(unittest.TestCase):
     
@@ -68,7 +68,7 @@ class TestCRESWriterPhysics(unittest.TestCase):
                 # Verify Velocity Logic (Sine/Cosine Split)
                 vel = attrs['Starting velocity [metres/second]']
                 p_ref = Particle(ke=ke, startPos=np.zeros(3), pitchAngle=np.radians(deg))
-                total_speed = p_ref.GetSpeed()
+                total_speed = p_ref.get_speed()
 
                 expected_v_perp = total_speed * np.sin(np.radians(deg))
                 expected_v_z    = total_speed * np.cos(np.radians(deg))

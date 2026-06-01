@@ -114,8 +114,8 @@ class AntennaSignalGenerator:
         ])
 
         # Average cyclotron frequency
-        gamma = self.__trajectory.particle.GetGamma()
-        mass = self.__trajectory.particle.GetMass()
+        gamma = self.__trajectory.particle.get_gamma()
+        mass = self.__trajectory.particle.get_mass()
         avg_B = np.mean(B_samples, dtype=float)
         omega_c_avg = sc.e * avg_B / (gamma * mass)
         f_c_avg = omega_c_avg / (2 * np.pi)
@@ -141,7 +141,7 @@ class AntennaSignalGenerator:
         r_electron = self.__trajectory.position
 
         # Get antenna position
-        r_antenna = self.__antenna.GetPosition()
+        r_antenna = self.__antenna.get_position()
 
         # Calculate distance from electron to antenna at each time
         r_vec = r_antenna - r_electron  # Vector from electron to antenna
@@ -198,7 +198,7 @@ class AntennaSignalGenerator:
         psi_ret = psi_spline(t_ret)
 
         # Calculate distance and direction from electron to antenna
-        r_antenna = self.__antenna.GetPosition()
+        r_antenna = self.__antenna.get_position()
         r_vec = r_antenna - r_ret  # Vector from electron to antenna
         R_ret = np.linalg.norm(r_vec, axis=1)  # Distance
         n_hat = r_vec / R_ret[:, np.newaxis]  # Unit vector toward antenna
@@ -251,7 +251,7 @@ class AntennaSignalGenerator:
         n_dot_beta = np.sum(n_hat * beta, axis=1)  # (N,)
 
         # Prefactor
-        q = self.__trajectory.particle.GetCharge()
+        q = self.__trajectory.particle.get_charge()
         prefactor = q / (4 * np.pi * sc.epsilon_0) / \
             (R**2 * (1 - n_dot_beta)**3)
 
@@ -294,9 +294,9 @@ class AntennaSignalGenerator:
         # Synthetic positions at unit distance from antenna toward each source.
         # n_hat_ret points source->antenna, so -n_hat_ret is antenna->source.
         # GetETheta normalises internally, so only direction matters.
-        pos = self.__antenna.GetPosition() - ret_quantities['n_hat_ret']
+        pos = self.__antenna.get_position() - ret_quantities['n_hat_ret']
 
-        l_eff = self.__antenna.GetEffectiveLength(
+        l_eff = self.__antenna.get_effective_length(
             self.__avg_cyclotron_frequency, pos)
 
         return np.sum(E_field * l_eff, axis=1)

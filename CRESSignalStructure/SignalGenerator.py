@@ -48,7 +48,7 @@ class SignalGenerator:
             acq_time, "Acquisition time")
         self.__spec_calc = spectrum_calc
 
-    def GenerateSignal(self, max_order: int, phi_c: float = 0.0,
+    def generate_signal(self, max_order: int, phi_c: float = 0.0,
                        phi_a: float = 0.0) -> tuple[NDArray, NDArray]:
         """
         Main method orchestrating signal generation
@@ -81,19 +81,19 @@ class SignalGenerator:
 
         # Get the fourier amplitudes and frequencies, applying initial phases
         orders = np.arange(-max_order, max_order+1, 1)
-        fourier_freqs = self.__spec_calc.GetPeakFrequency(orders, False)
+        fourier_freqs = self.__spec_calc.get_peak_frequency(orders, False)
         fourier_freqs = np.append(
-            fourier_freqs, self.__spec_calc.GetPeakFrequency(orders, True))
+            fourier_freqs, self.__spec_calc.get_peak_frequency(orders, True))
         fourier_amps = self.__spec_calc.apply_phase_shifts(
-            self.__spec_calc.GetPeakAmp(orders, False), orders, phi_c, phi_a, False)
+            self.__spec_calc.get_peak_amp(orders, False), orders, phi_c, phi_a, False)
         fourier_amps = np.append(
             fourier_amps, self.__spec_calc.apply_phase_shifts(
-                self.__spec_calc.GetPeakAmp(orders, True), orders, phi_c, phi_a, True))
+                self.__spec_calc.get_peak_amp(orders, True), orders, phi_c, phi_a, True))
 
         # Calculate the chirp rate
-        beta = self.__spec_calc.GetParticle().GetBeta()
-        gamma = self.__spec_calc.GetParticle().GetGamma()
-        central_freq = self.__spec_calc.GetPeakFrequency(0)
+        beta = self.__spec_calc.get_particle().get_beta()
+        gamma = self.__spec_calc.get_particle().get_gamma()
+        central_freq = self.__spec_calc.get_peak_frequency(0)
         chirp_rate_ang = sc.e**2 * (2 * np.pi * central_freq)**3 * gamma * \
             beta**2 / (6 * np.pi * sc.epsilon_0 * sc.c) / \
             (sc.m_e * sc.c**2)  # radians per second squared
@@ -110,4 +110,4 @@ class SignalGenerator:
         rf_signal_filtered = sosfiltfilt(sos, rf_signal_dm) * np.sqrt(IMPEDANCE)
 
         # Return reduced signal
-        return times_fast_sample[::FAST_SAMPLE_FACTOR], rf_signal_filtered[::FAST_SAMPLE_FACTOR] * np.sqrt(self.__spec_calc.GetPowerNorm())
+        return times_fast_sample[::FAST_SAMPLE_FACTOR], rf_signal_filtered[::FAST_SAMPLE_FACTOR] * np.sqrt(self.__spec_calc.get_power_norm())

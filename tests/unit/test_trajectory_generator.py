@@ -358,7 +358,7 @@ class TestTrajectoryPhysics:
         traj = gen.generate(sample_rate=1e9, t_max=1e-6)
 
         initial_pos = traj.position[0]
-        expected_pos = particle.GetPosition()
+        expected_pos = particle.get_position()
 
         # Should match closely (may have small numerical differences)
         np.testing.assert_allclose(initial_pos, expected_pos, atol=1e-6)
@@ -372,7 +372,7 @@ class TestTrajectoryPhysics:
 
         # Get maximum axial position
         z_max = np.max(np.abs(traj.position[:, 2]))
-        z_max_expected = field.CalcZMax(particle)
+        z_max_expected = field.calc_z_max(particle)
 
         # Should be close to the calculated maximum
         np.testing.assert_allclose(z_max, z_max_expected, rtol=0.1)
@@ -394,9 +394,9 @@ class TestTrajectoryPhysics:
         traj = gen.generate(sample_rate=sample_rate, t_max=1e-7)
 
         # Calculate expected cyclotron frequency at starting position
-        pos = particle.GetPosition()
+        pos = particle.get_position()
         B0 = field.evaluate_field_magnitude(pos[0], pos[1], pos[2])
-        expected_f_c = sc.e * B0 / (2 * np.pi * sc.m_e * particle.GetGamma())
+        expected_f_c = sc.e * B0 / (2 * np.pi * sc.m_e * particle.get_gamma())
 
         # FFT of x-velocity to find dominant frequency
         from scipy.fft import fft, fftfreq
@@ -612,7 +612,7 @@ class TestTrajectoryEdgeCases:
         traj = gen.generate(sample_rate=10e9, t_max=1e-6)
 
         # Check that relativistic effects are included
-        gamma = particle.GetGamma()
+        gamma = particle.get_gamma()
         assert gamma > 1.1  # Should be noticeably relativistic
 
         # Velocity should still be below c
@@ -667,8 +667,8 @@ class TestTrajectoryAcceleration:
         # Calculate expected centripetal acceleration for cyclotron motion
         # a_c = omega_c * v for perpendicular motion
         B0 = field.evaluate_field_magnitude(0.001, 0.0, 0.0)
-        omega_c = sc.e * B0 / (particle.GetGamma() * particle.GetMass())
-        v = particle.GetSpeed()
+        omega_c = sc.e * B0 / (particle.get_gamma() * particle.get_mass())
+        v = particle.get_speed()
         expected_acc = omega_c * v  # Order of magnitude
 
         acc_mags = np.linalg.norm(traj.acceleration, axis=1)

@@ -38,10 +38,10 @@ class SpectrumCalculator:
         self._waveguide = waveguide
         self._particle = particle
 
-    def GetParticle(self) -> Particle:
+    def get_particle(self) -> Particle:
         return self._particle
 
-    def GetPowerNorm(self) -> float:
+    def get_power_norm(self) -> float:
         """
         Calculate the power normalisation for an electron in a circular
         waveguide coupling to the TE11 mode
@@ -56,18 +56,18 @@ class SpectrumCalculator:
 
         kc = 1.841 / self._waveguide.wgR
         alpha, _ = quad(alphaIntegrand, 0, self._waveguide.wgR, args=kc)
-        r_gyro = np.sqrt(self._particle.GetPosition()[0]**2 +
-                         self._particle.GetPosition()[1]**2)
+        r_gyro = np.sqrt(self._particle.get_position()[0]**2 +
+                         self._particle.get_position()[1]**2)
 
         if isinstance(self._trap, BaseTrap):
-            prefactor = self._waveguide.CalcTE11Impedance(
-                self._trap.CalcOmega0(self._particle.GetSpeed(),
-                                      self._particle.GetPitchAngle())
-            ) * (sc.e * self._particle.GetSpeed())**2 / (8 * np.pi * alpha)
+            prefactor = self._waveguide.calc_te11_impedance(
+                self._trap.calc_omega_0(self._particle.get_speed(),
+                                      self._particle.get_pitch_angle())
+            ) * (sc.e * self._particle.get_speed())**2 / (8 * np.pi * alpha)
         elif isinstance(self._trap, BaseField):
-            prefactor = self._waveguide.CalcTE11Impedance(
-                self._trap.CalcOmega0(self._particle)
-            ) * (sc.e * self._particle.GetSpeed())**2 / (8 * np.pi * alpha)
+            prefactor = self._waveguide.calc_te11_impedance(
+                self._trap.calc_omega_0(self._particle)
+            ) * (sc.e * self._particle.get_speed())**2 / (8 * np.pi * alpha)
         else:
             prefactor = 0.0
 
@@ -77,7 +77,7 @@ class SpectrumCalculator:
             return prefactor * (jvp(1, kc * r_gyro)**2 +
                                 (j1(kc * r_gyro) / (kc * r_gyro))**2)
 
-    def GetPeakPower(self, order: ArrayLike) -> NDArray:
+    def get_peak_power(self, order: ArrayLike) -> NDArray:
         """
         Calculate the power in a given sideband order
 
@@ -96,7 +96,7 @@ class SpectrumCalculator:
             raise TypeError("Order must be an integer")
         if not np.any(np.isfinite(order)):
             raise ValueError("Order must be finite")
-        return np.abs(self.GetPeakAmp(order))**2 * self.GetPowerNorm()
+        return np.abs(self.get_peak_amp(order))**2 * self.get_power_norm()
 
     def apply_phase_shifts(self, amps: NDArray, orders: ArrayLike,
                            phi_c: float, phi_a: float,
@@ -125,7 +125,7 @@ class SpectrumCalculator:
         sign = -1 if negativeFreqs else 1
         return amps * np.exp(sign * 1j * (phi_c + np.asarray(orders) * phi_a))
 
-    def GetPeakFrequency(self, order: ArrayLike, negativeFreqs=False) -> NDArray:
+    def get_peak_frequency(self, order: ArrayLike, negativeFreqs=False) -> NDArray:
         """
         Calculate the frequencies at which spectral components occur
 
@@ -148,20 +148,20 @@ class SpectrumCalculator:
             raise ValueError("Order must be finite")
 
         if isinstance(self._trap, BaseTrap):
-            v0 = self._particle.GetSpeed()
-            pa = self._particle.GetPitchAngle()
-            f0 = self._trap.CalcOmega0(v0, pa) / (2 * np.pi)
-            fa = self._trap.CalcOmegaAxial(v0, pa) / (2 * np.pi)
+            v0 = self._particle.get_speed()
+            pa = self._particle.get_pitch_angle()
+            f0 = self._trap.calc_omega_0(v0, pa) / (2 * np.pi)
+            fa = self._trap.calc_omega_axial(v0, pa) / (2 * np.pi)
         else:
-            f0 = self._trap.CalcOmega0(self._particle) / (2 * np.pi)
-            fa = self._trap.CalcOmegaAxial(self._particle) / (2 * np.pi)
+            f0 = self._trap.calc_omega_0(self._particle) / (2 * np.pi)
+            fa = self._trap.calc_omega_axial(self._particle) / (2 * np.pi)
 
         if negativeFreqs:
             return -f0 - order * fa
         else:
             return f0 + order * fa
 
-    def GetPeakAmp(self, order: ArrayLike, negativeFreqs=False) -> NDArray:
+    def get_peak_amp(self, order: ArrayLike, negativeFreqs=False) -> NDArray:
         """
         Calculate the complex amplitude of spectral peaks
 
@@ -190,14 +190,14 @@ class SpectrumCalculator:
 
     def _get_peak_amp_analytical(self, order: NDArray, negativeFreqs: bool) -> NDArray:
         kc = 1.841 / self._waveguide.wgR
-        f1 = self.GetPeakFrequency(order)
-        pitchAngle = self._particle.GetPitchAngle()
-        v0 = self._particle.GetSpeed()
-        zmax = self._trap.CalcZMax(pitchAngle)
+        f1 = self.get_peak_frequency(order)
+        pitchAngle = self._particle.get_pitch_angle()
+        v0 = self._particle.get_speed()
+        zmax = self._trap.calc_z_max(pitchAngle)
         beta = np.sqrt((f1 * 2 * np.pi / sc.c)**2 - kc**2)
 
         if isinstance(self._trap, HarmonicTrap):
-            q = self._trap.Calcq(v0, pitchAngle)
+            q = self._trap.calc_q(v0, pitchAngle)
             MArr = np.arange(-6, 7, 1)
             order_2d = np.atleast_1d(order)[:, np.newaxis]
             beta_2d = np.atleast_1d(beta)[:, np.newaxis]
@@ -207,14 +207,14 @@ class SpectrumCalculator:
             return amp
 
         elif isinstance(self._trap, BathtubTrap):
-            omega_a = v0 * np.sin(pitchAngle) / self._trap.GetL0()
-            t1 = self._trap.CalcT1(v0, pitchAngle)
+            omega_a = v0 * np.sin(pitchAngle) / self._trap.get_l0()
+            t1 = self._trap.calc_t1(v0, pitchAngle)
             t2 = t1 + np.pi / omega_a
             T = 2 * t2
-            omegaAx = self._trap.CalcOmegaAxial(v0, pitchAngle)
-            deltaOmega = self._trap.CalcOmega0(
-                v0, pitchAngle) - sc.e * self._trap.GetB0() / (self._particle.GetGamma() * sc.m_e)
-            L1 = self._trap.GetL1()
+            omegaAx = self._trap.calc_omega_axial(v0, pitchAngle)
+            deltaOmega = self._trap.calc_omega_0(
+                v0, pitchAngle) - sc.e * self._trap.get_b0() / (self._particle.get_gamma() * sc.m_e)
+            L1 = self._trap.get_l1()
 
             M_SUM_RANGE = 40
             MArr = np.arange(-M_SUM_RANGE, 21, 1)
@@ -284,8 +284,8 @@ class SpectrumCalculator:
         interp_t1_z = interp1d(t1, z, kind='cubic')
 
         N_T_POINTS = 499
-        omega_a = self._trap.CalcOmegaAxial(self._particle)
-        omega_0 = self._trap.CalcOmega0(self._particle, N_T_POINTS)
+        omega_a = self._trap.calc_omega_axial(self._particle)
+        omega_0 = self._trap.calc_omega_0(self._particle, N_T_POINTS)
         t, phi_t = self._trap.cyclotron_phase_from_t(self._particle, N_T_POINTS)
         Ta = t[-1]
         z_t = interp_t1_z(t)

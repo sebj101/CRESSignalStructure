@@ -22,8 +22,8 @@ class TestShortDipoleAntenna:
 
         antenna = ShortDipoleAntenna(position, orientation, length, resistance)
 
-        np.testing.assert_array_almost_equal(antenna.GetPosition(), position)
-        np.testing.assert_array_almost_equal(antenna.GetOrientation(), orientation)
+        np.testing.assert_array_almost_equal(antenna.get_position(), position)
+        np.testing.assert_array_almost_equal(antenna.get_orientation(), orientation)
 
     def test_construction_normalizes_orientation(self):
         """Test that orientation vector is automatically normalized"""
@@ -34,7 +34,7 @@ class TestShortDipoleAntenna:
         antenna = ShortDipoleAntenna(position, orientation, length)
 
         # Should be normalized to unit vector
-        result_orientation = antenna.GetOrientation()
+        result_orientation = antenna.get_orientation()
         np.testing.assert_almost_equal(np.linalg.norm(result_orientation), 1.0)
         np.testing.assert_array_almost_equal(result_orientation, [0.0, 0.0, 1.0])
 
@@ -78,7 +78,7 @@ class TestShortDipoleAntenna:
         # Unit-distance point in equatorial plane (perpendicular to dipole)
         pos = np.array([[1.0, 0.0, 0.0]])
 
-        l_eff = antenna.GetEffectiveLength(frequency, pos)
+        l_eff = antenna.get_effective_length(frequency, pos)
 
         # For perpendicular incidence, effective length should be full length
         assert np.linalg.norm(l_eff) == pytest.approx(0.005, rel=1e-6)
@@ -98,7 +98,7 @@ class TestShortDipoleAntenna:
         # Unit-distance point along dipole axis
         pos = np.array([[0.0, 0.0, 1.0]])
 
-        l_eff = antenna.GetEffectiveLength(frequency, pos)
+        l_eff = antenna.get_effective_length(frequency, pos)
 
         # For parallel incidence, effective length should be zero
         assert np.linalg.norm(l_eff) == pytest.approx(0.0, abs=1e-10)
@@ -113,7 +113,7 @@ class TestShortDipoleAntenna:
         )
 
         frequency = 26e9
-        Z = antenna.GetImpedance(frequency)
+        Z = antenna.get_impedance(frequency)
 
         # Should have positive resistance
         assert Z.real > 0
@@ -129,7 +129,7 @@ class TestShortDipoleAntenna:
         )
 
         # Maximum gain should be at theta = pi/2 (perpendicular to dipole)
-        gain_perp = antenna.GetGain(np.pi / 2, 0.0)
+        gain_perp = antenna.get_gain(np.pi / 2, 0.0)
 
         # For short dipole, maximum gain is 1.5
         assert gain_perp == pytest.approx(1.5, rel=1e-6)
@@ -143,7 +143,7 @@ class TestShortDipoleAntenna:
         )
 
         # Gain should be zero along dipole axis (theta = 0)
-        gain_along = antenna.GetGain(0.0, 0.0)
+        gain_along = antenna.get_gain(0.0, 0.0)
 
         assert gain_along == pytest.approx(0.0, abs=1e-10)
 
@@ -159,9 +159,9 @@ class TestHalfWaveDipoleAntenna:
 
         antenna = HalfWaveDipoleAntenna(position, orientation, resonant_frequency)
 
-        np.testing.assert_array_almost_equal(antenna.GetPosition(), position)
-        np.testing.assert_array_almost_equal(antenna.GetOrientation(), orientation)
-        assert antenna.GetResonantFrequency() == resonant_frequency
+        np.testing.assert_array_almost_equal(antenna.get_position(), position)
+        np.testing.assert_array_almost_equal(antenna.get_orientation(), orientation)
+        assert antenna.get_resonant_frequency() == resonant_frequency
 
     def test_length_is_half_wavelength(self):
         """Test that antenna length is λ/2 at resonant frequency"""
@@ -175,7 +175,7 @@ class TestHalfWaveDipoleAntenna:
         wavelength = sc.c / resonant_frequency
         expected_length = wavelength / 2
 
-        assert antenna.GetLength() == pytest.approx(expected_length, rel=1e-10)
+        assert antenna.get_length() == pytest.approx(expected_length, rel=1e-10)
 
     def test_invalid_resonant_frequency_raises_error(self):
         """Test that invalid resonant frequency raises error"""
@@ -195,7 +195,7 @@ class TestHalfWaveDipoleAntenna:
             resonant_frequency=resonant_frequency
         )
 
-        Z = antenna.GetImpedance(resonant_frequency)
+        Z = antenna.get_impedance(resonant_frequency)
 
         # At resonance, impedance should be approximately 73 + j42.5 Ω
         assert Z.real == pytest.approx(73.0, rel=1e-3)
@@ -211,7 +211,7 @@ class TestHalfWaveDipoleAntenna:
         )
 
         # Test at 95% of resonant frequency
-        Z = antenna.GetImpedance(0.95 * resonant_frequency)
+        Z = antenna.get_impedance(0.95 * resonant_frequency)
 
         # Below resonance, should be capacitive (negative reactance)
         assert Z.imag < 0
@@ -226,7 +226,7 @@ class TestHalfWaveDipoleAntenna:
         )
 
         # Test at 105% of resonant frequency
-        Z = antenna.GetImpedance(1.05 * resonant_frequency)
+        Z = antenna.get_impedance(1.05 * resonant_frequency)
 
         # Above resonance, should be inductive (positive reactance)
         assert Z.imag > 0
@@ -243,7 +243,7 @@ class TestHalfWaveDipoleAntenna:
         # Unit-distance point in equatorial plane (perpendicular to dipole)
         pos = np.array([[1.0, 0.0, 0.0]])
 
-        l_eff = antenna.GetEffectiveLength(resonant_frequency, pos)
+        l_eff = antenna.get_effective_length(resonant_frequency, pos)
 
         wavelength = sc.c / resonant_frequency
         expected_magnitude = wavelength / np.pi  # ~0.318 λ
@@ -262,7 +262,7 @@ class TestHalfWaveDipoleAntenna:
         # Unit-distance point along dipole axis
         pos = np.array([[0.0, 0.0, 1.0]])
 
-        l_eff = antenna.GetEffectiveLength(resonant_frequency, pos)
+        l_eff = antenna.get_effective_length(resonant_frequency, pos)
 
         # Should be zero for parallel incidence
         assert np.linalg.norm(l_eff) == pytest.approx(0.0, abs=1e-10)
@@ -277,7 +277,7 @@ class TestHalfWaveDipoleAntenna:
         )
 
         # Maximum gain at theta = pi/2
-        gain_perp = antenna.GetGain(np.pi / 2, 0.0)
+        gain_perp = antenna.get_gain(np.pi / 2, 0.0)
 
         # Half-wave dipole has maximum gain of ~1.643
         assert gain_perp == pytest.approx(1.643, rel=1e-2)
@@ -292,7 +292,7 @@ class TestHalfWaveDipoleAntenna:
         )
 
         # Gain should be zero along axis
-        gain_along = antenna.GetGain(0.0, 0.0)
+        gain_along = antenna.get_gain(0.0, 0.0)
 
         assert gain_along == pytest.approx(0.0, abs=1e-10)
 
@@ -315,8 +315,8 @@ class TestHalfWaveDipoleAntenna:
         theta = np.pi / 2
         phi = 0.0
 
-        gain_hw = half_wave.GetGain(theta, phi)
-        gain_sd = short_dipole.GetGain(theta, phi)
+        gain_hw = half_wave.get_gain(theta, phi)
+        gain_sd = short_dipole.get_gain(theta, phi)
 
         # Half-wave should have higher gain (1.643 vs 1.5)
         assert gain_hw > gain_sd
@@ -341,8 +341,8 @@ class TestAntennaComparison:
             resonant_frequency=frequency
         )
 
-        Z_short = short.GetImpedance(frequency)
-        Z_hw = half_wave.GetImpedance(frequency)
+        Z_short = short.get_impedance(frequency)
+        Z_hw = half_wave.get_impedance(frequency)
 
         # Short dipole should be much more capacitive (more negative reactance)
         assert Z_short.imag < Z_hw.imag
@@ -356,11 +356,11 @@ class TestAntennaComparison:
             length=0.005
         )
 
-        position = antenna.GetPosition()
+        position = antenna.get_position()
         position[0] = 999.0  # Modify returned array
 
         # Original should be unchanged
-        assert antenna.GetPosition()[0] == pytest.approx(1.0)
+        assert antenna.get_position()[0] == pytest.approx(1.0)
 
     def test_orientation_getter_returns_copy(self):
         """Test that GetOrientation returns a copy, not a reference"""
@@ -370,11 +370,11 @@ class TestAntennaComparison:
             length=0.005
         )
 
-        orientation = antenna.GetOrientation()
+        orientation = antenna.get_orientation()
         orientation[0] = 999.0  # Modify returned array
 
         # Original should be unchanged
-        assert antenna.GetOrientation()[0] == pytest.approx(0.0)
+        assert antenna.get_orientation()[0] == pytest.approx(0.0)
 
 
 class TestShortDipoleGetEFields:
@@ -390,13 +390,13 @@ class TestShortDipoleGetEFields:
     def test_e_theta_zero_at_poles(self):
         """E_theta is zero along ±z (the dipole axis)"""
         pos = np.array([[0.0, 0.0, 1.0], [0.0, 0.0, -1.0]])
-        E = self.antenna.GetETheta(pos)
+        E = self.antenna.get_e_theta(pos)
         np.testing.assert_array_almost_equal(E, np.zeros((2, 3)))
 
     def test_e_theta_equator_direction_and_magnitude(self):
         """At the equator E_theta = −ẑ with magnitude 1, for any azimuth"""
         pos = np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [1.0, 1.0, 0.0]])
-        E = self.antenna.GetETheta(pos)
+        E = self.antenna.get_e_theta(pos)
         for row in E:
             np.testing.assert_array_almost_equal(row, [0.0, 0.0, -1.0])
 
@@ -404,7 +404,7 @@ class TestShortDipoleGetEFields:
         """Magnitude of E_theta equals sin(theta) across the sphere"""
         thetas = np.linspace(0.01, np.pi - 0.01, 30)
         pos = np.column_stack([np.sin(thetas), np.zeros(30), np.cos(thetas)])
-        magnitudes = np.linalg.norm(self.antenna.GetETheta(pos), axis=1)
+        magnitudes = np.linalg.norm(self.antenna.get_e_theta(pos), axis=1)
         np.testing.assert_array_almost_equal(magnitudes, np.sin(thetas))
 
     def test_e_theta_perpendicular_to_r_hat(self):
@@ -415,7 +415,7 @@ class TestShortDipoleGetEFields:
             [1.0, 0.0, 1.0],
             [0.0, 1.0, 1.0],
         ])
-        E = self.antenna.GetETheta(pos)
+        E = self.antenna.get_e_theta(pos)
         r_hat = pos / np.linalg.norm(pos, axis=1, keepdims=True)
         dots = np.sum(E * r_hat, axis=1)
         np.testing.assert_array_almost_equal(dots, np.zeros(4))
@@ -428,10 +428,10 @@ class TestShortDipoleGetEFields:
             length=0.005
         )
         # Along dipole axis → zero
-        E_along = antenna.GetETheta(np.array([[1.0, 0.0, 0.0]]))
+        E_along = antenna.get_e_theta(np.array([[1.0, 0.0, 0.0]]))
         np.testing.assert_array_almost_equal(E_along, [[0.0, 0.0, 0.0]])
         # Perpendicular → magnitude 1
-        E_perp = antenna.GetETheta(np.array([[0.0, 1.0, 0.0]]))
+        E_perp = antenna.get_e_theta(np.array([[0.0, 1.0, 0.0]]))
         assert np.linalg.norm(E_perp) == pytest.approx(1.0)
 
     def test_e_theta_offset_antenna(self):
@@ -442,7 +442,7 @@ class TestShortDipoleGetEFields:
             length=0.005
         )
         # r = [2,0,0] - [1,0,0] = [1,0,0]: same geometry as origin case
-        E = antenna.GetETheta(np.array([[2.0, 0.0, 0.0]]))
+        E = antenna.get_e_theta(np.array([[2.0, 0.0, 0.0]]))
         np.testing.assert_array_almost_equal(E, [[0.0, 0.0, -1.0]])
 
     def test_e_phi_is_zero(self):
@@ -452,12 +452,12 @@ class TestShortDipoleGetEFields:
             [0.0, 0.0, 1.0], [1.0, 1.0, 1.0],
         ])
         np.testing.assert_array_almost_equal(
-            self.antenna.GetEPhi(pos), np.zeros((4, 3))
+            self.antenna.get_e_phi(pos), np.zeros((4, 3))
         )
 
     def test_e_theta_single_point_input(self):
         """GetETheta accepts a single 1D point and returns (1, 3)"""
-        E = self.antenna.GetETheta(np.array([1.0, 0.0, 0.0]))
+        E = self.antenna.get_e_theta(np.array([1.0, 0.0, 0.0]))
         assert E.shape == (1, 3)
         np.testing.assert_array_almost_equal(E, [[0.0, 0.0, -1.0]])
 
@@ -475,20 +475,20 @@ class TestHalfWaveDipoleGetEFields:
     def test_e_theta_zero_at_poles(self):
         """E_theta is zero along ±z"""
         pos = np.array([[0.0, 0.0, 1.0], [0.0, 0.0, -1.0]])
-        E = self.antenna.GetETheta(pos)
+        E = self.antenna.get_e_theta(pos)
         np.testing.assert_array_almost_equal(E, np.zeros((2, 3)))
 
     def test_e_theta_unit_magnitude_at_equator(self):
         """At theta = pi/2: F = cos(0)/1 = 1, direction = −ẑ"""
         pos = np.array([[1.0, 0.0, 0.0]])
-        E = self.antenna.GetETheta(pos)
+        E = self.antenna.get_e_theta(pos)
         np.testing.assert_array_almost_equal(E, [[0.0, 0.0, -1.0]])
 
     def test_e_theta_magnitude_matches_pattern(self):
         """Magnitude matches cos((pi/2)cos(theta)) / sin(theta)"""
         thetas = np.linspace(0.05, np.pi - 0.05, 30)
         pos = np.column_stack([np.sin(thetas), np.zeros(30), np.cos(thetas)])
-        magnitudes = np.linalg.norm(self.antenna.GetETheta(pos), axis=1)
+        magnitudes = np.linalg.norm(self.antenna.get_e_theta(pos), axis=1)
         expected = np.cos(0.5 * np.pi * np.cos(thetas)) / np.sin(thetas)
         np.testing.assert_array_almost_equal(magnitudes, expected)
 
@@ -500,7 +500,7 @@ class TestHalfWaveDipoleGetEFields:
             [1.0, 0.0, 1.0],
             [0.0, 1.0, 1.0],
         ])
-        E = self.antenna.GetETheta(pos)
+        E = self.antenna.get_e_theta(pos)
         r_hat = pos / np.linalg.norm(pos, axis=1, keepdims=True)
         dots = np.sum(E * r_hat, axis=1)
         np.testing.assert_array_almost_equal(dots, np.zeros(4))
@@ -512,5 +512,5 @@ class TestHalfWaveDipoleGetEFields:
             [0.0, 0.0, 1.0], [1.0, 1.0, 1.0],
         ])
         np.testing.assert_array_almost_equal(
-            self.antenna.GetEPhi(pos), np.zeros((4, 3))
+            self.antenna.get_e_phi(pos), np.zeros((4, 3))
         )

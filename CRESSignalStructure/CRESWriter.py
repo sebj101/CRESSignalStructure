@@ -98,11 +98,11 @@ class CRESWriter:
         # 2. Calculate Derived Physics Values
         
         # --- Kinematics ---
-        gamma = particle.GetGamma()
-        mass = particle.GetMass()
-        speed = particle.GetSpeed()
-        pos = particle.GetPosition()
-        pitch = particle.GetPitchAngle()
+        gamma = particle.get_gamma()
+        mass = particle.get_mass()
+        speed = particle.get_speed()
+        pos = particle.get_position()
+        pitch = particle.get_pitch_angle()
         
         v_z = speed * np.cos(pitch)
         v_perp = speed * np.sin(pitch)
@@ -112,8 +112,8 @@ class CRESWriter:
         # B_local at the starting position
         if hasattr(self._trap, 'evaluate_field_magnitude'):
             B_local = self._trap.evaluate_field_magnitude(pos[0], pos[1], pos[2])
-        elif hasattr(self._trap, 'GetB0'):
-            B_local = self._trap.GetB0() 
+        elif hasattr(self._trap, 'get_b0'):
+            B_local = self._trap.get_b0()
         else:
             B_local = 1.0 # Default fallback
 
@@ -125,7 +125,7 @@ class CRESWriter:
         # --- Waveguide ---
         omega_cyc = 2 * np.pi * f_cyc
         try:
-            impedance = self._waveguide.CalcTE11Impedance(omega_cyc)
+            impedance = self._waveguide.calc_te11_impedance(omega_cyc)
         except (ValueError, AttributeError):
             impedance = np.nan
 
@@ -135,14 +135,14 @@ class CRESWriter:
         # Trap / Background
         if hasattr(self._trap, 'background') and isinstance(self._trap.background, np.ndarray):
             attrs['B_bkg [Tesla]'] = abs(self._trap.background[2])
-        elif hasattr(self._trap, 'GetB0'):
-            attrs['B_bkg [Tesla]'] = self._trap.GetB0()
+        elif hasattr(self._trap, 'get_b0'):
+            attrs['B_bkg [Tesla]'] = self._trap.get_b0()
         else:
             attrs['B_bkg [Tesla]'] = B_local
 
         attrs['Cyclotron frequency [Hertz]'] = f_cyc
         attrs['Downmixed cyclotron frequency [Hertz]'] = abs(f_cyc - f_lo)
-        attrs['Energy [eV]'] = particle.GetEnergy()
+        attrs['Energy [eV]'] = particle.get_energy()
         attrs['LO frequency [Hertz]'] = f_lo
         attrs['Pitch angle [degrees]'] = np.degrees(pitch)
         attrs['Starting position [metres]'] = pos

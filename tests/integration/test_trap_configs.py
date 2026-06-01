@@ -17,11 +17,11 @@ def test_harmonic_trap_produces_correct_motion():
     particle = Particle(KE, mass=sc.m_e, startPos=np.zeros(
         3), pitchAngle=89.5 * np.pi / 180, q=-sc.e)
 
-    z_max = trap.CalcZMax(particle.GetPitchAngle())
-    f_axial = trap.CalcOmegaAxial(
-        particle.GetSpeed(), particle.GetPitchAngle()) / (2 * np.pi)
-    f_cyc = trap.CalcOmega0(particle.GetSpeed(),
-                            particle.GetPitchAngle()) / (2 * np.pi)
+    z_max = trap.calc_z_max(particle.get_pitch_angle())
+    f_axial = trap.calc_omega_axial(
+        particle.get_speed(), particle.get_pitch_angle()) / (2 * np.pi)
+    f_cyc = trap.calc_omega_0(particle.get_speed(),
+                            particle.get_pitch_angle()) / (2 * np.pi)
 
     assert z_max > 0, "Maximum axial displacement should be positive"
     assert f_axial > 0, "Axial frequency should be positive"
@@ -43,9 +43,9 @@ def test_harmonic_field_produces_correct_motion():
     particle = Particle(KE, mass=sc.m_e, startPos=np.zeros(
         3), pitchAngle=89.5 * np.pi / 180, q=-sc.e)
 
-    z_max = trap.CalcZMax(particle)
-    f_axial = trap.CalcOmegaAxial(particle) / (2*np.pi)
-    f_cyc = trap.CalcOmega0(particle) / (2*np.pi)
+    z_max = trap.calc_z_max(particle)
+    f_axial = trap.calc_omega_axial(particle) / (2*np.pi)
+    f_cyc = trap.calc_omega_0(particle) / (2*np.pi)
 
     assert z_max > 0, "Maximum axial displacement should be positive"
     assert f_axial > 0, "Axial frequency should be positive"

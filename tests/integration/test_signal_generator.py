@@ -62,12 +62,12 @@ class TestSignalPeakFrequenciesAnalytical:
         particle = Electron(KE, np.array([0.0, 0.0, 0.0]), np.pi / 2)
         spec = SpectrumCalculator(trap, wg, particle)
 
-        f_0 = spec.GetPeakFrequency(0)
+        f_0 = spec.get_peak_frequency(0)
         lo_freq = f_0 - 200e6
         f_if_expected = 200e6
 
         sg = SignalGenerator(spec, SAMPLE_RATE, lo_freq, ACQ_TIME)
-        _, signal = sg.GenerateSignal(0)
+        _, signal = sg.generate_signal(0)
 
         f_if_measured = _fft_peak_near(signal, SAMPLE_RATE, f_if_expected, 50e6)
         assert abs(f_if_measured - f_if_expected) < 2 * FREQ_BIN
@@ -82,12 +82,12 @@ class TestSignalPeakFrequenciesAnalytical:
         particle = Electron(KE, np.array([1e-4, 0.0, 0.0]), PITCH_87)
         spec = SpectrumCalculator(trap, wg, particle)
 
-        f_0 = spec.GetPeakFrequency(0)
-        f_axial = trap.CalcOmegaAxial(particle.GetSpeed(), PITCH_87) / (2 * np.pi)
+        f_0 = spec.get_peak_frequency(0)
+        f_axial = trap.calc_omega_axial(particle.get_speed(), PITCH_87) / (2 * np.pi)
         lo_freq = f_0 - 200e6
 
         sg = SignalGenerator(spec, SAMPLE_RATE, lo_freq, ACQ_TIME)
-        _, signal = sg.GenerateSignal(9)
+        _, signal = sg.generate_signal(9)
 
         f_n0 = _fft_peak_near(signal, SAMPLE_RATE, 200e6, 10e6)
         f_n1 = _fft_peak_near(signal, SAMPLE_RATE, 200e6 + f_axial, 10e6)
@@ -103,12 +103,12 @@ class TestSignalPeakFrequenciesAnalytical:
         particle = Electron(KE, np.array([1e-4, 0.0, 0.0]), PITCH_87)
         spec = SpectrumCalculator(trap, wg, particle)
 
-        f_0 = spec.GetPeakFrequency(0)
-        f_axial = trap.CalcOmegaAxial(particle.GetSpeed(), PITCH_87) / (2 * np.pi)
+        f_0 = spec.get_peak_frequency(0)
+        f_axial = trap.calc_omega_axial(particle.get_speed(), PITCH_87) / (2 * np.pi)
         lo_freq = f_0 - 200e6
 
         sg = SignalGenerator(spec, SAMPLE_RATE, lo_freq, ACQ_TIME)
-        _, signal = sg.GenerateSignal(1)
+        _, signal = sg.generate_signal(1)
 
         f_n0 = _fft_peak_near(signal, SAMPLE_RATE, 200e6, 5e6)
         f_n1 = _fft_peak_near(signal, SAMPLE_RATE, 200e6 + f_axial, 5e6)
@@ -134,12 +134,12 @@ class TestSignalPeakFrequenciesNumerical:
         particle = Electron(KE, np.array([0.0, 0.0, 0.0]), PITCH_87)
         spec = SpectrumCalculator(trap, wg, particle)
 
-        f_axial = trap.CalcOmegaAxial(particle) / (2 * np.pi)
-        f_0 = spec.GetPeakFrequency(0)
+        f_axial = trap.calc_omega_axial(particle) / (2 * np.pi)
+        f_0 = spec.get_peak_frequency(0)
         lo_freq = f_0 - 200e6
 
         sg = SignalGenerator(spec, SAMPLE_RATE, lo_freq, ACQ_TIME)
-        _, signal = sg.GenerateSignal(1)
+        _, signal = sg.generate_signal(1)
 
         f_n0 = _fft_peak_near(signal, SAMPLE_RATE, 200e6, 5e6)
         f_n1 = _fft_peak_near(signal, SAMPLE_RATE, 200e6 + f_axial, 5e6)

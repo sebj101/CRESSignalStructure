@@ -35,7 +35,7 @@ class BaseAntenna(ABC):
         self._y_ax = np.cross(self._z_ax, self._x_ax)
 
     @abstractmethod
-    def GetETheta(self, pos: NDArray) -> NDArray:
+    def get_e_theta(self, pos: NDArray) -> NDArray:
         """
         Get the component of the antenna radiation pattern in the theta direction
 
@@ -53,7 +53,7 @@ class BaseAntenna(ABC):
         pass
 
     @abstractmethod
-    def GetEPhi(self, pos: NDArray) -> NDArray:
+    def get_e_phi(self, pos: NDArray) -> NDArray:
         """
         Get the component of the antenna radiation pattern in the phi direction
 
@@ -70,7 +70,7 @@ class BaseAntenna(ABC):
         """
         pass
 
-    def GetTheta(self, pos: NDArray) -> NDArray:
+    def get_theta(self, pos: NDArray) -> NDArray:
         """
         Calculates polar angle theta w.r.t. antenna axes
 
@@ -88,7 +88,7 @@ class BaseAntenna(ABC):
         rHat = r / np.linalg.norm(r, axis=1, keepdims=True)
         return np.acos(np.dot(rHat, self._z_ax))
 
-    def GetPhi(self, pos: NDArray) -> NDArray:
+    def get_phi(self, pos: NDArray) -> NDArray:
         """
         Calculates azimuthal angle phi w.r.t. antenna axes
 
@@ -108,14 +108,14 @@ class BaseAntenna(ABC):
         return phi
 
     @abstractmethod
-    def GetEffectiveLength(self, frequency: float, pos: NDArray) -> NDArray:
+    def get_effective_length(self, frequency: float, pos: NDArray) -> NDArray:
         """
         Get the effective length of the antenna
 
         The effective length relates the incident electric field to the
         open-circuit voltage at the antenna terminals: V_oc = E · l_eff.
         Subclasses with a single dominant polarisation (e.g. dipoles)
-        should implement this in terms of GetETheta / GetEPhi.
+        should implement this in terms of get_e_theta / get_e_phi.
 
         Parameters
         ----------
@@ -127,7 +127,7 @@ class BaseAntenna(ABC):
             evaluated — typically a synthetic point at unit distance from
             the antenna toward each source.  Only the direction from the
             antenna matters; magnitude is normalised internally by
-            GetETheta / GetEPhi.
+            get_e_theta / get_e_phi.
 
         Returns
         -------
@@ -137,7 +137,7 @@ class BaseAntenna(ABC):
         pass
 
     @abstractmethod
-    def GetImpedance(self, frequency: float) -> complex:
+    def get_impedance(self, frequency: float) -> complex:
         """
         Get the antenna impedance at a given frequency
 
@@ -153,7 +153,7 @@ class BaseAntenna(ABC):
         """
         pass
 
-    def GetPosition(self) -> NDArray:
+    def get_position(self) -> NDArray:
         """
         Get the antenna position in the trap coordinate system
 
@@ -164,7 +164,7 @@ class BaseAntenna(ABC):
         """
         return self._pos.copy()
 
-    def GetOrientation(self) -> NDArray:
+    def get_orientation(self) -> NDArray:
         """
         Get the antenna orientation unit vector
 
@@ -178,7 +178,7 @@ class BaseAntenna(ABC):
         """
         return self._z_ax.copy()
 
-    def GetGain(self, theta: float, phi: float) -> float:
+    def get_gain(self, theta: float, phi: float) -> float:
         """
         Get the antenna gain pattern (default implementation)
 

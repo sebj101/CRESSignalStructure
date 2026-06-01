@@ -19,7 +19,7 @@ class CircularWaveguide:
     def __str__(self):
         return f"Waveguide with radius {self.wgR} metres"
 
-    def _ValidateFrequency(self, omega: float) -> None:
+    def _validate_frequency(self, omega: float) -> None:
         """
         Validate inputted frequency parameter
         """
@@ -37,7 +37,7 @@ class CircularWaveguide:
             raise ValueError(
                 f"Frequency {omega} rad/s is below cutoff frequency {kc * sc.c} rad/s")
 
-    def _ValidatePosition(self, rho, phi) -> tuple[NDArray, NDArray]:
+    def _validate_position(self, rho, phi) -> tuple[NDArray, NDArray]:
         """
         Validate position parameters
         """
@@ -59,7 +59,7 @@ class CircularWaveguide:
 
         return rho, phi
 
-    def _ValidateAmplitude(self, A) -> NDArray:
+    def _validate_amplitude(self, A) -> NDArray:
         """
         Validate amplitude parameter
         """
@@ -70,16 +70,16 @@ class CircularWaveguide:
             raise ValueError("Amplitude must be finite")
         return A
 
-    def _SafeJ1OverRho(self, kcRho) -> float:
+    def _safe_j1_over_rho(self, kcRho) -> float:
         """
-        Safely compute j1(x)/x to avoid division by zero   
+        Safely compute j1(x)/x to avoid division by zero
         """
         if np.abs(kcRho) < 1e-10:
             return 0.5
         else:
             return j1(kcRho) / kcRho
 
-    def EFieldTE11Rho_1(self, rho: ArrayLike, phi: ArrayLike, A: ArrayLike) -> NDArray:
+    def e_field_te11_rho_1(self, rho: ArrayLike, phi: ArrayLike, A: ArrayLike) -> NDArray:
         """
         Calculate the radial electric field for the TE11 mode
 
@@ -89,17 +89,17 @@ class CircularWaveguide:
         phi: float representing the azimuthal angle in the waveguide
         A: float representing the amplitude of the mode
         """
-        rho, phi = self._ValidatePosition(rho, phi)
-        A = self._ValidateAmplitude(A)
+        rho, phi = self._validate_position(rho, phi)
+        A = self._validate_amplitude(A)
 
         kc = 1.841 / self.wgR
 
         conditions = [rho > self.wgR, rho == 0.0, rho <= self.wgR]
         choices = [0.0, A * np.cos(phi) / kc,
-                   A * self._SafeJ1OverRho(kc * rho) * np.cos(phi)]
+                   A * self._safe_j1_over_rho(kc * rho) * np.cos(phi)]
         return np.select(conditions, choices)
 
-    def HFieldTE11Rho_1(self, rho: ArrayLike, phi: ArrayLike, omega: float,
+    def h_field_te11_rho_1(self, rho: ArrayLike, phi: ArrayLike, omega: float,
                         A: ArrayLike) -> NDArray:
         """
         Calculate the radial magnetic field for the TE11 mode
@@ -115,9 +115,9 @@ class CircularWaveguide:
         A: float
             Amplitude of the mode
         """
-        rho, phi = self._ValidatePosition(rho, phi)
-        A = self._ValidateAmplitude(A)
-        self._ValidateFrequency(omega)
+        rho, phi = self._validate_position(rho, phi)
+        A = self._validate_amplitude(A)
+        self._validate_frequency(omega)
 
         kc = 1.841 / self.wgR
         beta = np.sqrt(omega**2 / sc.c**2 - kc**2)
@@ -126,24 +126,24 @@ class CircularWaveguide:
                    jvp(1, kc * rho, 1) * np.sin(phi) / (omega * sc.mu_0)]
         return np.select(conditions, choices)
 
-    def EFieldTE11Phi_1(self, rho: ArrayLike, phi: ArrayLike, A: ArrayLike) -> NDArray:
-        '''Calculate the radial electric field for the TE11 mode
+    def e_field_te11_phi_1(self, rho: ArrayLike, phi: ArrayLike, A: ArrayLike) -> NDArray:
+        """Calculate the radial electric field for the TE11 mode
 
         Parameters
         ----------
         rho: float representing the radial position in the waveguide
         phi: float representing the azimuthal angle in the waveguide
         A: float representing the amplitude of the mode
-        '''
-        rho, phi = self._ValidatePosition(rho, phi)
-        A = self._ValidateAmplitude(A)
+        """
+        rho, phi = self._validate_position(rho, phi)
+        A = self._validate_amplitude(A)
 
         kc = 1.841 / self.wgR
         conditions = [rho > self.wgR, rho <= self.wgR]
         choices = [0.0, -A * jvp(1, kc * rho, 1) * np.sin(phi)]
         return np.select(conditions, choices)
 
-    def HFieldTE11Phi_1(self, rho: ArrayLike, phi: ArrayLike, omega: float,
+    def h_field_te11_phi_1(self, rho: ArrayLike, phi: ArrayLike, omega: float,
                         A: ArrayLike) -> NDArray:
         """
         Calculate the azimuthal magnetic field for the TE11 mode
@@ -163,19 +163,19 @@ class CircularWaveguide:
         -------
         float: The azimuthal magnetic field in Tesla
         """
-        rho, phi = self._ValidatePosition(rho, phi)
-        A = self._ValidateAmplitude(A)
-        self._ValidateFrequency(omega)
+        rho, phi = self._validate_position(rho, phi)
+        A = self._validate_amplitude(A)
+        self._validate_frequency(omega)
 
         kc = 1.841 / self.wgR
 
         beta = np.sqrt(omega**2 / sc.c**2 - kc**2)
         conditions = [rho > self.wgR, rho <= self.wgR]
         choices = [0.0,
-                   A * beta * self._SafeJ1OverRho(kc * rho) * np.cos(phi) / (omega * sc.mu_0)]
+                   A * beta * self._safe_j1_over_rho(kc * rho) * np.cos(phi) / (omega * sc.mu_0)]
         return np.select(conditions, choices)
 
-    def EFieldTE11Z(self, rho, phi, A) -> NDArray:
+    def e_field_te11_z(self, rho, phi, A) -> NDArray:
         """
         Calculate the axial electric field for the TE11 mode
 
@@ -187,7 +187,7 @@ class CircularWaveguide:
         """
         return np.zeros_like(rho)
 
-    def EFieldTE11_1(self, rho, phi, A) -> NDArray:
+    def e_field_te11_1(self, rho, phi, A) -> NDArray:
         """
         Calculate the electric field vector for mode 1 in Cartesian coordinates
 
@@ -201,12 +201,12 @@ class CircularWaveguide:
             Amplitude of the mode
         """
 
-        return np.array([self.EFieldTE11Rho_1(rho, phi, A) * np.cos(phi) - self.EFieldTE11Phi_1(rho, phi, A) * np.sin(phi),
-                         self.EFieldTE11Rho_1(
-                             rho, phi, A) * np.sin(phi) + self.EFieldTE11Phi_1(rho, phi, A) * np.cos(phi),
-                         self.EFieldTE11Z(rho, phi, A)])
+        return np.array([self.e_field_te11_rho_1(rho, phi, A) * np.cos(phi) - self.e_field_te11_phi_1(rho, phi, A) * np.sin(phi),
+                         self.e_field_te11_rho_1(
+                             rho, phi, A) * np.sin(phi) + self.e_field_te11_phi_1(rho, phi, A) * np.cos(phi),
+                         self.e_field_te11_z(rho, phi, A)])
 
-    def EFieldTE11Pos_1(self, pos, A) -> NDArray:
+    def e_field_te11_pos_1(self, pos, A) -> NDArray:
         """
         Calculate the electric field vector for mode 1 in Cartesian coordinates
 
@@ -220,9 +220,9 @@ class CircularWaveguide:
 
         rho = np.sqrt(pos[0]**2 + pos[1]**2)
         phi = np.arctan2(pos[1], pos[0])
-        return self.EFieldTE11_1(rho, phi, A)
+        return self.e_field_te11_1(rho, phi, A)
 
-    def HFieldTE11_1(self, rho, phi, omega, A) -> NDArray:
+    def h_field_te11_1(self, rho, phi, omega, A) -> NDArray:
         """
         Calculate the magnetic field vector for mode 1 in Cartesian coordinates
 
@@ -238,13 +238,13 @@ class CircularWaveguide:
             Amplitude of the mode
         """
 
-        return np.array([self.HFieldTE11Rho_1(rho, phi, omega, A) * np.cos(phi) - self.HFieldTE11Phi_1(rho, phi, omega, A) * np.sin(phi),
-                         self.HFieldTE11Rho_1(rho, phi, omega, A) * np.sin(
-                             phi) + self.HFieldTE11Phi_1(rho, phi, omega, A) * np.cos(phi),
+        return np.array([self.h_field_te11_rho_1(rho, phi, omega, A) * np.cos(phi) - self.h_field_te11_phi_1(rho, phi, omega, A) * np.sin(phi),
+                         self.h_field_te11_rho_1(rho, phi, omega, A) * np.sin(
+                             phi) + self.h_field_te11_phi_1(rho, phi, omega, A) * np.cos(phi),
                          0.0])
 
-    def HFieldTE11Pos_1(self, pos, omega, A) -> NDArray:
-        '''
+    def h_field_te11_pos_1(self, pos, omega, A) -> NDArray:
+        """
         Calculate the magnetic field vector for mode 1 in Cartesian coordinates
 
         Parameters
@@ -255,13 +255,13 @@ class CircularWaveguide:
             Angular frequency of the mode in rad/s
         A: float
             Amplitude of the mode
-        '''
+        """
 
         rho = np.sqrt(pos[0]**2 + pos[1]**2)
         phi = np.arctan2(pos[1], pos[0])
-        return self.HFieldTE11_1(rho, phi, omega, A)
+        return self.h_field_te11_1(rho, phi, omega, A)
 
-    def EFieldTE11Rho_2(self, rho: ArrayLike, phi: ArrayLike, A: ArrayLike) -> NDArray:
+    def e_field_te11_rho_2(self, rho: ArrayLike, phi: ArrayLike, A: ArrayLike) -> NDArray:
         """
         Calculate the radial electric field for the TE11 mode
 
@@ -271,19 +271,19 @@ class CircularWaveguide:
         phi: float representing the azimuthal angle in the waveguide
         A: float representing the amplitude of the mode
         """
-        rho, phi = self._ValidatePosition(rho, phi)
-        A = self._ValidateAmplitude(A)
+        rho, phi = self._validate_position(rho, phi)
+        A = self._validate_amplitude(A)
 
         kc = 1.841 / self.wgR
         conditions = [rho > self.wgR, rho == 0.0, rho <= self.wgR]
         choices = [
             0.0,
             -A * np.sin(phi) / kc,
-            -A * self._SafeJ1OverRho(kc * rho) * np.sin(phi)
+            -A * self._safe_j1_over_rho(kc * rho) * np.sin(phi)
         ]
         return np.select(conditions, choices)
 
-    def HFieldTE11Rho_2(self, rho: ArrayLike, phi: ArrayLike, omega: float,
+    def h_field_te11_rho_2(self, rho: ArrayLike, phi: ArrayLike, omega: float,
                         A: ArrayLike) -> NDArray:
         """
         Calculate the radial magnetic field for the TE11 mode
@@ -303,9 +303,9 @@ class CircularWaveguide:
         -------
         float: The radial magnetic field in Tesla
         """
-        rho, phi = self._ValidatePosition(rho, phi)
-        A = self._ValidateAmplitude(A)
-        self._ValidateFrequency(omega)
+        rho, phi = self._validate_position(rho, phi)
+        A = self._validate_amplitude(A)
+        self._validate_frequency(omega)
 
         kc = 1.841 / self.wgR
         beta = np.sqrt(omega**2 / sc.c**2 - kc**2)
@@ -314,7 +314,7 @@ class CircularWaveguide:
                    np.cos(phi) * jvp(1, kc * rho, 1) / (omega * sc.mu_0)]
         return np.select(conditions, choices)
 
-    def EFieldTE11Phi_2(self, rho: ArrayLike, phi: ArrayLike, A: ArrayLike) -> NDArray:
+    def e_field_te11_phi_2(self, rho: ArrayLike, phi: ArrayLike, A: ArrayLike) -> NDArray:
         """
         Calculate the radial electric field for the TE11 mode
 
@@ -327,15 +327,15 @@ class CircularWaveguide:
         A : float
             Amplitude of the mode
         """
-        rho, phi = self._ValidatePosition(rho, phi)
-        A = self._ValidateAmplitude(A)
+        rho, phi = self._validate_position(rho, phi)
+        A = self._validate_amplitude(A)
 
         kc = 1.841 / self.wgR
         conditions = [rho > self.wgR, rho <= self.wgR]
         choices = [0.0, -A * jvp(1, kc * rho, 1) * np.cos(phi)]
         return np.select(conditions, choices)
 
-    def HFieldTE11Phi_2(self, rho: ArrayLike, phi: ArrayLike, omega: float,
+    def h_field_te11_phi_2(self, rho: ArrayLike, phi: ArrayLike, omega: float,
                         A: ArrayLike) -> NDArray:
         """
         Calculate the azimuthal magnetic field for the TE11 mode
@@ -355,9 +355,9 @@ class CircularWaveguide:
         -------
         float: The azimuthal magnetic field in Tesla
         """
-        rho, phi = self._ValidatePosition(rho, phi)
-        A = self._ValidateAmplitude(A)
-        self._ValidateFrequency(omega)
+        rho, phi = self._validate_position(rho, phi)
+        A = self._validate_amplitude(A)
+        self._validate_frequency(omega)
 
         kc = 1.841 / self.wgR
         beta = np.sqrt(omega**2 / sc.c**2 - kc**2)
@@ -366,31 +366,31 @@ class CircularWaveguide:
                    j1(kc * rho) * np.sin(phi) / (kc * rho * omega * sc.mu_0)]
         return np.select(conditions, choices)
 
-    def EFieldTE11_2(self, rho, phi, A) -> NDArray:
-        '''Calculate the electric field vector for mode 2 in Cartesian coordinates
+    def e_field_te11_2(self, rho, phi, A) -> NDArray:
+        """Calculate the electric field vector for mode 2 in Cartesian coordinates
 
         rho: float representing the radial position
         phi: float representing the azimuthal position
-        '''
+        """
 
-        return np.array([self.EFieldTE11Rho_2(rho, phi, A) * np.cos(phi) - self.EFieldTE11Phi_2(rho, phi, A) * np.sin(phi),
-                        self.EFieldTE11Rho_2(
-                            rho, phi, A) * np.sin(phi) + self.EFieldTE11Phi_2(rho, phi, A) * np.cos(phi),
-                        self.EFieldTE11Z(rho, phi, A)])
+        return np.array([self.e_field_te11_rho_2(rho, phi, A) * np.cos(phi) - self.e_field_te11_phi_2(rho, phi, A) * np.sin(phi),
+                        self.e_field_te11_rho_2(
+                            rho, phi, A) * np.sin(phi) + self.e_field_te11_phi_2(rho, phi, A) * np.cos(phi),
+                        self.e_field_te11_z(rho, phi, A)])
 
-    def EFieldTE11Pos_2(self, pos, A) -> NDArray:
-        '''Calculate the electric field vector for mode 2 in Cartesian coordinates
+    def e_field_te11_pos_2(self, pos, A) -> NDArray:
+        """Calculate the electric field vector for mode 2 in Cartesian coordinates
 
         pos: numpy array representing the position
         A: float representing normlisation constant
-        '''
+        """
 
         rho = np.sqrt(pos[0]**2 + pos[1]**2)
         phi = np.arctan2(pos[1], pos[0])
-        return self.EFieldTE11_2(rho, phi, A)
+        return self.e_field_te11_2(rho, phi, A)
 
-    def HFieldTE11_2(self, rho, phi, omega, A) -> NDArray:
-        '''
+    def h_field_te11_2(self, rho, phi, omega, A) -> NDArray:
+        """
         Calculate the magnetic field vector for mode 2 in Cartesian coordinates
 
         Parameters
@@ -407,15 +407,15 @@ class CircularWaveguide:
         Returns
         -------
         numpy array: The magnetic field vector in Tesla
-        '''
+        """
 
-        return np.array([self.HFieldTE11Rho_2(rho, phi, omega, A) * np.cos(phi) - self.HFieldTE11Phi_2(rho, phi, omega, A) * np.sin(phi),
-                        self.HFieldTE11Rho_2(
-                            rho, phi, omega, A) * np.sin(phi) + self.HFieldTE11Phi_2(rho, phi, omega, A) * np.cos(phi),
+        return np.array([self.h_field_te11_rho_2(rho, phi, omega, A) * np.cos(phi) - self.h_field_te11_phi_2(rho, phi, omega, A) * np.sin(phi),
+                        self.h_field_te11_rho_2(
+                            rho, phi, omega, A) * np.sin(phi) + self.h_field_te11_phi_2(rho, phi, omega, A) * np.cos(phi),
                          0.0])
 
-    def HFieldTE11Pos_2(self, pos, omega, A) -> NDArray:
-        '''
+    def h_field_te11_pos_2(self, pos, omega, A) -> NDArray:
+        """
         Calculate the magnetic field vector for mode 2 in Cartesian coordinates
 
         Parameters
@@ -426,13 +426,13 @@ class CircularWaveguide:
             Angular frequency of the wave in rad/s
         A: float
             representing normlisation constant
-        '''
+        """
 
         rho = np.sqrt(pos[0]**2 + pos[1]**2)
         phi = np.arctan2(pos[1], pos[0])
-        return self.HFieldTE11_2(rho, phi, omega, A)
+        return self.h_field_te11_2(rho, phi, omega, A)
 
-    def CalcTE11Impedance(self, omega) -> float:
+    def calc_te11_impedance(self, omega) -> float:
         """
         Calculate the impedance of the TE11 mode
 
@@ -446,14 +446,14 @@ class CircularWaveguide:
         float
             Impedance of the mode in Ohms
         """
-        self._ValidateFrequency(omega)
+        self._validate_frequency(omega)
 
         k = omega / sc.c
         kc = 1.841 / self.wgR
         betaMode = np.sqrt(k**2 - kc**2)
         return k * np.sqrt(sc.mu_0 / sc.epsilon_0) / betaMode
 
-    def CalcNormalisationFactor(self) -> float:
+    def calc_normalisation_factor(self) -> float:
         """
         Calculate the required normalisation factor for the waveguide.
 
@@ -464,8 +464,8 @@ class CircularWaveguide:
         """
 
         def integrand_rho_phi(phi, rho):
-            E_rho = self.EFieldTE11Rho_1(rho, phi, 1.0)
-            E_phi = self.EFieldTE11Phi_1(rho, phi, 1.0)
+            E_rho = self.e_field_te11_rho_1(rho, phi, 1.0)
+            E_phi = self.e_field_te11_phi_1(rho, phi, 1.0)
             return (E_rho**2 + E_phi**2) * rho
 
         E1Integral, error = dblquad(
@@ -480,7 +480,7 @@ class CircularWaveguide:
 
         return 1 / np.sqrt(E1Integral)
 
-    def GetPhaseVelocity(self, omega: float) -> float:
+    def get_phase_velocity(self, omega: float) -> float:
         """
         Get the phase velocity for an EM wave in the waveguide.
 
@@ -494,11 +494,11 @@ class CircularWaveguide:
         float
             Phase velocity in m/s
         """
-        self._ValidateFrequency(omega)
+        self._validate_frequency(omega)
         omega_c = 1.841 * sc.c / self.wgR
         return sc.c / np.sqrt(1 - (omega_c / omega)**2)
 
-    def GetGroupVelocity(self, omega: float) -> float:
+    def get_group_velocity(self, omega: float) -> float:
         """
         Get the group velocity for an EM wave in the waveguide.
 
@@ -510,8 +510,8 @@ class CircularWaveguide:
         Returns
         -------
         float
-            Phase velocity in m/s
+            Group velocity in m/s
         """
-        self._ValidateFrequency(omega)
+        self._validate_frequency(omega)
         omega_c = 1.841 * sc.c / self.wgR
         return sc.c * np.sqrt(1 - (omega_c / omega)**2)

@@ -96,9 +96,9 @@ class CoilField(BaseField):
         else:
             return b_x, b_y, b_z
 
-    def CalcZMax(self, particle: Particle) -> float:
-        pa = particle.GetPitchAngle()
-        pStart = particle.GetPosition()
+    def calc_z_max(self, particle: Particle) -> float:
+        pa = particle.get_pitch_angle()
+        pStart = particle.get_position()
         rho_0 = np.sqrt(pStart[0]**2 + pStart[1]**2)
 
         centralField = self.evaluate_field_magnitude(pStart[0], pStart[1], 0.)
@@ -150,9 +150,9 @@ class BathtubField(BaseField):
 
         return b_x + self.background[0], b_y + self.background[1], b_z + self.background[2]
 
-    def CalcZMax(self, particle: Particle) -> float:
-        pa = particle.GetPitchAngle()
-        pStart = particle.GetPosition()
+    def calc_z_max(self, particle: Particle) -> float:
+        pa = particle.get_pitch_angle()
+        pStart = particle.get_position()
         rho_0 = np.sqrt(pStart[0]**2 + pStart[1]**2)
 
         centralField = self.evaluate_field_magnitude(pStart[0], pStart[1], 0.)
@@ -194,9 +194,9 @@ class HarmonicField(BaseField):
         b_x_coil, b_y_coil, b_z_coil = self.coil.evaluate_field(x, y, z)
         return b_x_coil, b_y_coil, b_z_coil + self.background[2]
 
-    def CalcZMax(self, particle: Particle) -> float:
-        pa = particle.GetPitchAngle()
-        pStart = particle.GetPosition()
+    def calc_z_max(self, particle: Particle) -> float:
+        pa = particle.get_pitch_angle()
+        pStart = particle.get_position()
         rho_0 = np.sqrt(pStart[0]**2 + pStart[1]**2)
 
         centralField = self.evaluate_field_magnitude(pStart[0], pStart[1], 0.)

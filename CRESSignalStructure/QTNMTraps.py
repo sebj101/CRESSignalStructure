@@ -53,56 +53,56 @@ class HarmonicTrap(BaseTrap):
 
         self.__B0 = B0
         self.__L0 = L0
-        self.SetGradB(gradB)
+        self.set_grad_b(gradB)
 
-    def CalcZMax(self, pitchAngle: ArrayLike) -> NDArray[np.floating]:
+    def calc_z_max(self, pitchAngle: ArrayLike) -> NDArray[np.floating]:
         """
         Calc the maximum axial position
 
         Parameters
         ----------
-        pitchAngle : float 
+        pitchAngle : float
             Pitch angle in radians
         """
-        pitchAngle = self._ValidatePitchAngle(pitchAngle)
+        pitchAngle = self._validate_pitch_angle(pitchAngle)
         result = np.where(np.abs(pitchAngle) < 1e-10, np.inf,
                           self.__L0 / np.tan(pitchAngle))
         result = np.where(np.abs(pitchAngle - np.pi/2) < 1e-10, 0.0, result)
         return result
 
-    def CalcOmegaAxial(self, v: ArrayLike, pitchAngle: ArrayLike) -> NDArray[np.floating]:
+    def calc_omega_axial(self, v: ArrayLike, pitchAngle: ArrayLike) -> NDArray[np.floating]:
         """
         Get the axial frequency of the electron's motion in radians/s
 
         Parameters:
         ----------
-        v : float 
+        v : float
             Speed of the electron in m/s
         pitchAngle : float
             Pitch angle in radians
         """
-        v = self._ValidateVelocity(v)
-        pitchAngle = self._ValidatePitchAngle(pitchAngle)
+        v = self._validate_velocity(v)
+        pitchAngle = self._validate_pitch_angle(pitchAngle)
         return v * np.sin(pitchAngle) / self.__L0
 
-    def CalcOmega0(self, v: ArrayLike, pitchAngle: ArrayLike) -> NDArray[np.floating]:
+    def calc_omega_0(self, v: ArrayLike, pitchAngle: ArrayLike) -> NDArray[np.floating]:
         """
         Get the average cyclotron frequency in radians/s
 
         Parameters
         ----------
-        v : ArrayLike 
+        v : ArrayLike
             Speed of the electron in m/s
-        pitchAngle : float 
+        pitchAngle : float
             Pitch angle in radians
         """
-        v = self._ValidateVelocity(v)
-        pitchAngle = self._ValidatePitchAngle(pitchAngle)
+        v = self._validate_velocity(v)
+        pitchAngle = self._validate_pitch_angle(pitchAngle)
         beta = v / sc.c
         gamma = 1 / np.sqrt(1 - beta ** 2)
-        return sc.e * self.__B0 / (sc.m_e * gamma) * (1 + self.CalcZMax(pitchAngle)**2 / (2 * self.__L0**2))
+        return sc.e * self.__B0 / (sc.m_e * gamma) * (1 + self.calc_z_max(pitchAngle)**2 / (2 * self.__L0**2))
 
-    def Calcq(self, v: ArrayLike, pitchAngle: ArrayLike) -> NDArray[np.floating]:
+    def calc_q(self, v: ArrayLike, pitchAngle: ArrayLike) -> NDArray[np.floating]:
         """
         Calculate the magnitude of the modulation of the CRES signal
 
@@ -116,22 +116,22 @@ class HarmonicTrap(BaseTrap):
         Returns
         -------
         """
-        pitchAngle = self._ValidatePitchAngle(pitchAngle)
-        v = self._ValidateVelocity(v)
+        pitchAngle = self._validate_pitch_angle(pitchAngle)
+        v = self._validate_velocity(v)
 
         beta = v / sc.c
         gamma = 1 / np.sqrt(1 - beta**2)
-        zmax = self.CalcZMax(pitchAngle)
+        zmax = self.calc_z_max(pitchAngle)
 
-        return -sc.e * self.__B0 * zmax**2 / (gamma * sc.m_e * 4 * self.__L0**2 * self.CalcOmegaAxial(v, pitchAngle))
+        return -sc.e * self.__B0 * zmax**2 / (gamma * sc.m_e * 4 * self.__L0**2 * self.calc_omega_axial(v, pitchAngle))
 
-    def GetB0(self) -> float:
+    def get_b0(self) -> float:
         """
         Getter for B0
         """
         return self.__B0
 
-    def GetL0(self) -> float:
+    def get_l0(self) -> float:
         """
         Getter for L0
         """
@@ -186,9 +186,9 @@ class BathtubTrap(BaseTrap):
         self.__B0 = B0
         self.__L0 = L0
         self.__L1 = L1
-        self.SetGradB(gradB)
+        self.set_grad_b(gradB)
 
-    def CalcZMax(self, pitchAngle: ArrayLike) -> NDArray[np.floating]:
+    def calc_z_max(self, pitchAngle: ArrayLike) -> NDArray[np.floating]:
         """
         Calc the maximum axial position
 
@@ -196,51 +196,51 @@ class BathtubTrap(BaseTrap):
         ----------
         pitchAngle: float representing the pitch angle in radians
         """
-        pitchAngle = self._ValidatePitchAngle(pitchAngle)
+        pitchAngle = self._validate_pitch_angle(pitchAngle)
         result = np.where(np.abs(pitchAngle) < 1e-10, np.inf,
                           self.__L0 / np.tan(pitchAngle))
         result = np.where(np.abs(pitchAngle - np.pi/2) < 1e-10, 0.0, result)
         return result
 
-    def CalcOmegaAxial(self, v: ArrayLike, pitchAngle: ArrayLike) -> NDArray[np.floating]:
+    def calc_omega_axial(self, v: ArrayLike, pitchAngle: ArrayLike) -> NDArray[np.floating]:
         """
         Get the axial frequency of the electron's motion in radians/s
 
         Parameters
         ----------
-        v : ArrayLike 
+        v : ArrayLike
             Speed of the electron in m/s
-        pitchAngle : ArrayLike 
+        pitchAngle : ArrayLike
             Pitch angle in radians
         """
-        pitchAngle = self._ValidatePitchAngle(pitchAngle)
-        v = self._ValidateVelocity(v)
+        pitchAngle = self._validate_pitch_angle(pitchAngle)
+        v = self._validate_velocity(v)
         wa = v * np.sin(pitchAngle) / self.__L0
 
         return wa / (1 + self.__L1 * np.tan(pitchAngle) / (self.__L0 * np.pi))
 
-    def CalcOmega0(self, v: ArrayLike, pitchAngle: ArrayLike) -> NDArray[np.floating]:
+    def calc_omega_0(self, v: ArrayLike, pitchAngle: ArrayLike) -> NDArray[np.floating]:
         """
         Get the average cyclotron frequency in radians/s
 
         Parameters
         ----------
-        v : ArrayLike 
+        v : ArrayLike
             Speed of the electron in m/s
-        pitchAngle : ArrayLike 
+        pitchAngle : ArrayLike
             Pitch angle in radians
         """
-        pitchAngle = self._ValidatePitchAngle(pitchAngle)
-        v = self._ValidateVelocity(v)
+        pitchAngle = self._validate_pitch_angle(pitchAngle)
+        v = self._validate_velocity(v)
 
         beta = v / sc.c
         gamma = 1 / np.sqrt(1 - beta**2)
         prefac = sc.e * self.__B0 / (sc.m_e * gamma)
 
-        zmax = self.CalcZMax(pitchAngle)
+        zmax = self.calc_z_max(pitchAngle)
         return prefac * (1 + (zmax**2 / (2 * self.__L0**2)) * (1 + self.__L1 * np.tan(pitchAngle) / (np.pi * self.__L0))**(-1))
 
-    def CalcT1(self, v: ArrayLike, pitchAngle: ArrayLike) -> NDArray[np.floating]:
+    def calc_t1(self, v: ArrayLike, pitchAngle: ArrayLike) -> NDArray[np.floating]:
         """
         Calculate the time period for the motion in the flat part of the trap
 
@@ -256,23 +256,23 @@ class BathtubTrap(BaseTrap):
         NDArray
             Time period in seconds
         """
-        pitchAngle = self._ValidatePitchAngle(pitchAngle)
-        v = self._ValidateVelocity(v)
+        pitchAngle = self._validate_pitch_angle(pitchAngle)
+        v = self._validate_velocity(v)
         return self.__L1 / (v * np.cos(pitchAngle))
 
-    def GetB0(self) -> float:
+    def get_b0(self) -> float:
         """
         Getter for B0
         """
         return self.__B0
 
-    def GetL0(self) -> float:
+    def get_l0(self) -> float:
         """
         Getter for L0
         """
         return self.__L0
 
-    def GetL1(self) -> float:
+    def get_l1(self) -> float:
         """
         Getter for L1
         """

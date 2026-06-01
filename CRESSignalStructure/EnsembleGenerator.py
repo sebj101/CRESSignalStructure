@@ -34,7 +34,7 @@ def _worker_generate_event(args):
         )
 
         # 2. Generate Pure Signal (Time Domain), returns (times, signal)
-        t, sig_pure = sig_gen.GenerateSignal(max_order=config['max_order'])
+        t, sig_pure = sig_gen.generate_signal(max_order=config['max_order'])
 
         F_DIGITIZER = config.get('sample_rate', 1e9)
         

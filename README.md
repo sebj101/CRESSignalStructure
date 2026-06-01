@@ -84,11 +84,11 @@ particle = Particle(
 calculator = SpectrumCalculator(trap, waveguide, particle)
 
 # Get peak frequencies for the fundamental (order=0)
-freq = calculator.GetPeakFrequency(order=0)
+freq = calculator.get_peak_frequency(order=0)
 print(f"Cyclotron frequency: {freq/1e9:.3f} GHz")
 
 # Get power in the fundamental peak
-power = calculator.GetPeakPower(order=0)
+power = calculator.get_peak_power(order=0)
 print(f"Power: {power*1e15:.3f} fW")
 ```
 
