@@ -8,6 +8,7 @@ fields.
 from abc import ABC, abstractmethod
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
+from typing import Optional
 from .Particle import Particle
 from scipy.integrate import simpson, cumulative_simpson
 import scipy.constants as sc
@@ -153,7 +154,7 @@ class BaseField(ABC):
         if particle.GetPitchAngle() == np.pi/2:
             pos = particle.GetPosition()
             B0 = self.evaluate_field_magnitude(pos[0], pos[1], pos[2])
-            return sc.e * B0 / (particle.GetGamma() * particle.GetMass())
+            return sc.e * B0[0] / (particle.GetGamma() * particle.GetMass())
         else:
             t, B = self.B_from_t(particle, n_t_points)
             phi_Ta = simpson(
@@ -241,7 +242,7 @@ class BaseField(ABC):
         return 1 / integral
 
     def calc_t_vs_z(self, particle: Particle,
-                    axial_period: float = None,
+                    axial_period: Optional[float] = None,
                     n_points: int = 10000) -> tuple[NDArray, NDArray]:
         """
         Calculate the time versus the z position of an electron in a trap
