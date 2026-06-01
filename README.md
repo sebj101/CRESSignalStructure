@@ -30,7 +30,7 @@ CRES is a technique used to measure the energy of electrons via the cyclotron ra
 
 ### Prerequisites
 
-- Python >= 3.9
+- Python >= 3.10
 - Numpy
 - Scipy >= 1.12
 - pip
@@ -40,7 +40,7 @@ CRES is a technique used to measure the energy of electrons via the cyclotron ra
 Clone the repository and install the package:
 
 ```bash
-git clone https://github.com/yourusername/CRESSignalStructure.git
+git clone https://github.com/sebj101/CRESSignalStructure.git
 cd CRESSignalStructure
 pip install -e .
 ```
@@ -74,7 +74,7 @@ trap = HarmonicTrap(B0=1.0, L0=0.2)  # B0 in Tesla, L0 in m
 waveguide = CircularWaveguide(radius=0.005)  # 5mm radius
 
 # Create an electron with specific energy and pitch angle
-particle = Particle(
+particle = Electron(
     ke=18.6e3,      # eV
     startPos=np.array([1e-3, 0.0, 0.0]),  # metres
     pitchAngle=89.9*np.pi/180.0  # radians
