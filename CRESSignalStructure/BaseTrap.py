@@ -1,11 +1,11 @@
-'''
+"""
 BaseTrap.py
 
 This file contains the BaseTrap class, which is an abstract class representing a
 generic electron trap.
 
 S. Jones 29-07-25
-'''
+"""
 from abc import ABC, abstractmethod
 import numpy as np
 import scipy.constants as sc
