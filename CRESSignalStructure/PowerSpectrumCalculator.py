@@ -88,7 +88,11 @@ class PowerSpectrumCalculator(BaseSpectrumCalculator):
         if isinstance(self.__trap, HarmonicTrap):
             q = self.__trap.Calcq(v0, pitchAngle)
             MArr = np.arange(-6, 7, 1)
-            amp = np.sum(jv(MArr, q) * jv(order - 2 * MArr, beta * zmax))
+            order_2d = np.atleast_1d(order)[:, np.newaxis]  # (N, 1)
+            beta_2d = np.atleast_1d(beta)[:, np.newaxis]    # (N, 1)
+            amp = np.sum(jv(MArr, q) * jv(order_2d - 2 * MArr, beta_2d * zmax), axis=1)
+            if np.ndim(order) == 0:
+                return amp[0]
             return amp
         elif isinstance(self.__trap, BathtubTrap):
             omega_a = v0 * np.sin(pitchAngle) / self.__trap.GetL0()
@@ -188,14 +192,19 @@ class PowerSpectrumCalculator(BaseSpectrumCalculator):
 
                 return (E + F + G + H) / T
 
+            order_1d = np.atleast_1d(order)
+            beta_1d = np.atleast_1d(beta)
             secondSum = np.arange(-20, 21, 1)
-            amp = np.sum(CalcAlpha_n(secondSum) *
-                         CalcBeta_n(order - secondSum, beta))
-
-            if negativeFreqs == True:
-                return np.conjugate(amp)
-            else:
-                return amp
+            alpha = CalcAlpha_n(secondSum)
+            amps = np.array([
+                np.sum(alpha * CalcBeta_n(n_out - secondSum, b))
+                for n_out, b in zip(order_1d, beta_1d)
+            ])
+            if negativeFreqs:
+                amps = np.conjugate(amps)
+            if np.ndim(order) == 0:
+                return amps[0]
+            return amps
 
         else:
             raise TypeError("Trap type currently not supported")
