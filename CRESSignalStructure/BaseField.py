@@ -40,7 +40,7 @@ class BaseField(ABC):
           z position(s) in metres
         """
 
-    def evaluate_field_magnitude(self, x: ArrayLike, y: ArrayLike, z: ArrayLike) -> NDArray:
+    def evaluate_field_magnitude(self, x: ArrayLike, y: ArrayLike, z: ArrayLike) -> NDArray | float:
         """
         Parameters
         ----------
@@ -154,7 +154,7 @@ class BaseField(ABC):
         if particle.GetPitchAngle() == np.pi/2:
             pos = particle.GetPosition()
             B0 = self.evaluate_field_magnitude(pos[0], pos[1], pos[2])
-            return sc.e * B0[0] / (particle.GetGamma() * particle.GetMass())
+            return sc.e * B0 / (particle.GetGamma() * particle.GetMass())
         else:
             t, B = self.B_from_t(particle, n_t_points)
             phi_Ta = simpson(
