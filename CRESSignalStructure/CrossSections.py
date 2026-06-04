@@ -38,7 +38,7 @@ class SimpleCrossSectionModel(BaseCrossSection):
         self._xsec = cross_sec
         self._sigma_e = sigma_energy_loss
         self._mu_p = mu_pitch_angle_change
-        self._sigma_p = sigma_energy_loss
+        self._sigma_p = sigma_pitch_angle_change
 
     def total_cross_section(self, energy: float) -> float:
         return self._xsec
