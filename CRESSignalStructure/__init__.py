@@ -96,6 +96,11 @@ from .SignalGenerator import SignalGenerator
 # Spectrum calculators
 from .SpectrumCalculator import SpectrumCalculator
 
+# Scattering
+from .BaseCrossSection import BaseCrossSection
+from .GasModel import GasModel
+from .ScatteringSimulator import ScatteringSimulator, ScatteringResult
+
 # Define public API
 __all__ = [
     # Particle
@@ -131,6 +136,12 @@ __all__ = [
 
     # Spectrum calculators
     'SpectrumCalculator',
+
+    # Scattering
+    'BaseCrossSection',
+    'GasModel',
+    'ScatteringSimulator',
+    'ScatteringResult',
 ]
 
 # Version info
