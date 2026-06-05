@@ -184,6 +184,8 @@ class ScatteringSimulator:
                         current_particle.get_energy(),
                         current_particle.get_pitch_angle(),
                         current_particle.get_speed(), rng)
+                    if new_pa > np.pi / 2:
+                        new_pa = np.pi - new_pa
                     scatter_times.append(elapsed)
                     if new_e <= 0 or not self.is_trapped(new_pa,
                                                         current_particle):
@@ -224,6 +226,8 @@ class ScatteringSimulator:
                 current_particle.get_energy(),
                 current_particle.get_pitch_angle(),
                 current_particle.get_speed(), rng)
+            if new_pa > np.pi / 2:
+                new_pa = np.pi - new_pa
 
             if new_e <= 0 or not self.is_trapped(new_pa, current_particle):
                 escaped = True
