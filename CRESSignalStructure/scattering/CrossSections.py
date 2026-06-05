@@ -30,11 +30,8 @@ class SimpleCrossSectionModel(BaseCrossSection):
     energy loss and a normal distribution for pitch angle change. The total xsec
     is constant at all energies.
 
-    Parameters
-    ----------
     cross_sec : float
-        Total cross-section in m^-2
-    sigma_energy_loss : float
+        Total cross-section in m^2
         Standard deviation of the energy loss distribution
     mu_pitch_angle_change : float
         Mean of the pitch angle change distribution
