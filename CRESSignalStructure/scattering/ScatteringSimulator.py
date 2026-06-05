@@ -20,7 +20,7 @@ from ..CircularWaveguide import CircularWaveguide
 from .GasModel import GasModel
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True, slots=True)
 class ScatteringResult:
     """
     Container for the output of a scattering simulation.
