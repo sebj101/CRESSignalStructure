@@ -161,18 +161,8 @@ class TestZeroScatterCase:
         sig_gen = SignalGenerator(spec, SAMPLE_RATE, lo, acq_time)
         _, sig_ref = sig_gen.generate_signal(MAX_ORDER)
 
-        # Compare signal lengths
-        min_len = min(len(scat_result.signal), len(sig_ref))
-        assert min_len > 0
-
-        # Compare power spectra (more robust than sample-by-sample)
-        fft_scat = np.abs(np.fft.fft(scat_result.signal[:min_len]))**2
-        fft_ref = np.abs(np.fft.fft(sig_ref[:min_len]))**2
-
-        # Peak frequencies should match
-        peak_scat = np.argmax(fft_scat[:min_len // 2])
-        peak_ref = np.argmax(fft_ref[:min_len // 2])
-        assert peak_scat == peak_ref
+        assert len(scat_result.signal) == len(sig_ref)
+        np.testing.assert_allclose(scat_result.signal, sig_ref, rtol=1e-10)
 
 
 class TestScatteringBehavior:
@@ -181,7 +171,7 @@ class TestScatteringBehavior:
         """With high density, scatters should occur."""
         trap, wg, particle = _make_components()
         # Very high density to guarantee scatters within 1 microsecond
-        gas = GasModel([(ConstantCrossSection(1e-18), 1e20)])
+        gas = GasModel([(ConstantCrossSection(1e-18), 1e17)])
         lo = _make_lo_freq(trap, wg, particle)
         sim = ScatteringSimulator(trap, wg, gas, SAMPLE_RATE, lo, 1e-6)
         result = sim.simulate(particle, MAX_ORDER, np.random.default_rng(42))
@@ -189,7 +179,7 @@ class TestScatteringBehavior:
 
     def test_scatter_times_are_non_decreasing(self):
         trap, wg, particle = _make_components()
-        gas = GasModel([(ConstantCrossSection(1e-18), 1e20)])
+        gas = GasModel([(ConstantCrossSection(1e-18), 1e17)])
         lo = _make_lo_freq(trap, wg, particle)
         sim = ScatteringSimulator(trap, wg, gas, SAMPLE_RATE, lo, 1e-6)
         result = sim.simulate(particle, MAX_ORDER, np.random.default_rng(42))
@@ -200,7 +190,7 @@ class TestScatteringBehavior:
     def test_scatter_times_within_event_duration(self):
         trap, wg, particle = _make_components()
         max_time = 1e-6
-        gas = GasModel([(ConstantCrossSection(1e-18), 1e20)])
+        gas = GasModel([(ConstantCrossSection(1e-18), 1e17)])
         lo = _make_lo_freq(trap, wg, particle)
         sim = ScatteringSimulator(trap, wg, gas, SAMPLE_RATE, lo, max_time)
         result = sim.simulate(particle, MAX_ORDER, np.random.default_rng(42))
@@ -209,7 +199,7 @@ class TestScatteringBehavior:
 
     def test_energy_loss_creates_multiple_particles(self):
         trap, wg, particle = _make_components()
-        gas = GasModel([(EnergyLossCrossSection(1e-18, 10.0), 1e20)])
+        gas = GasModel([(EnergyLossCrossSection(1e-18, 10.0), 1e17)])
         lo = _make_lo_freq(trap, wg, particle)
         sim = ScatteringSimulator(trap, wg, gas, SAMPLE_RATE, lo, 1e-6)
         result = sim.simulate(particle, MAX_ORDER, np.random.default_rng(42))
@@ -224,7 +214,7 @@ class TestScatteringBehavior:
         field = HarmonicField(radius=0.03, current=400, background=1.0)
         wg = CircularWaveguide(WG_RADIUS)
         particle = Electron(KE, POS, PITCH)
-        gas = GasModel([(EscapingCrossSection(1e-18), 1e20)])
+        gas = GasModel([(EscapingCrossSection(1e-18), 1e17)])
         spec = SpectrumCalculator(field, wg, particle)
         lo = spec.get_peak_frequency(0) - 200e6
         sim = ScatteringSimulator(field, wg, gas, SAMPLE_RATE, lo, 1e-6)
@@ -255,7 +245,7 @@ class TestSignalOutput:
 
     def test_times_and_signal_same_length(self):
         trap, wg, particle = _make_components()
-        gas = GasModel([(ConstantCrossSection(1e-18), 1e20)])
+        gas = GasModel([(ConstantCrossSection(1e-18), 1e17)])
         lo = _make_lo_freq(trap, wg, particle)
         sim = ScatteringSimulator(trap, wg, gas, SAMPLE_RATE, lo, 1e-6)
         result = sim.simulate(particle, MAX_ORDER, np.random.default_rng(42))
