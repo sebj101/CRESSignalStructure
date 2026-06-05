@@ -293,7 +293,7 @@ class ScatteringSimulator:
         else:
             f0 = self.__trap.calc_omega_0(particle) / (2 * np.pi)
             fa = self.__trap.calc_omega_axial(particle) / (2 * np.pi)
-        return f0, fa
+        return float(f0), float(fa)
 
     def _generate_segment(self, spec_calc: SpectrumCalculator,
                           orders: NDArray, n_samples: int,
