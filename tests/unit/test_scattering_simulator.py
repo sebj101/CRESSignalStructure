@@ -165,7 +165,7 @@ class TestZeroScatterCase:
         np.testing.assert_allclose(scat_result.signal, sig_ref, rtol=1e-10)
 
 
-class TestScatteringBehavior:
+class TestScatteringBehaviour:
 
     def test_scatters_recorded(self):
         """With high density, scatters should occur."""
