@@ -25,7 +25,7 @@ Run from the repo root:
 import numpy as np
 import matplotlib.pyplot as plt
 
-from CRESSignalStructure.CrossSections import (
+from CRESSignalStructure.scattering.CrossSections import (
     InelasticCrossSection, ElasticCrossSection,
 )
 
