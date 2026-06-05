@@ -3,8 +3,7 @@ Unit tests for scattering_utils.scatter_to_pitch_angle
 """
 
 import numpy as np
-import pytest
-from CRESSignalStructure.scattering_utils import scatter_to_pitch_angle
+from CRESSignalStructure.scattering import scatter_to_pitch_angle
 
 
 class TestScatterToPitchAngle:

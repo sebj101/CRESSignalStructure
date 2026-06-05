@@ -14,8 +14,7 @@ from CRESSignalStructure import (
     SpectrumCalculator,
     ScatteringSimulator,
 )
-from CRESSignalStructure.BaseCrossSection import BaseCrossSection
-from CRESSignalStructure.GasModel import GasModel
+from CRESSignalStructure.scattering import BaseCrossSection, GasModel
 
 KE = 18600.0
 WG_RADIUS = 5e-3

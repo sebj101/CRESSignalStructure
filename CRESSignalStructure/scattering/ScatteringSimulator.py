@@ -12,11 +12,11 @@ from numpy.typing import NDArray
 from scipy.signal import butter, sosfiltfilt
 import scipy.constants as sc
 
-from .Particle import Particle
-from .SpectrumCalculator import SpectrumCalculator
-from .BaseTrap import BaseTrap
-from .BaseField import BaseField
-from .CircularWaveguide import CircularWaveguide
+from ..Particle import Particle
+from ..SpectrumCalculator import SpectrumCalculator
+from ..BaseTrap import BaseTrap
+from ..BaseField import BaseField
+from ..CircularWaveguide import CircularWaveguide
 from .GasModel import GasModel
 
 

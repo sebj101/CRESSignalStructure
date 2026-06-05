@@ -13,8 +13,7 @@ from CRESSignalStructure import (
     SpectrumCalculator,
     ScatteringSimulator,
 )
-from CRESSignalStructure.BaseCrossSection import BaseCrossSection
-from CRESSignalStructure.GasModel import GasModel
+from CRESSignalStructure.scattering import BaseCrossSection, GasModel
 from CRESSignalStructure.EnsembleGenerator import generate_scattering_ensemble
 
 KE = 18600.0

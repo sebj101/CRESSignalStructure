@@ -15,7 +15,7 @@ from .Particle import Particle
 from .SignalGenerator import SignalGenerator
 from .SpectrumCalculator import SpectrumCalculator
 from .CRESWriter import CRESWriter
-from .ScatteringSimulator import ScatteringSimulator
+from .scattering import ScatteringSimulator
 
 def _worker_generate_event(args):
     """

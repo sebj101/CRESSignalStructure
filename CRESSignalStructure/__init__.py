@@ -97,11 +97,9 @@ from .SignalGenerator import SignalGenerator
 from .SpectrumCalculator import SpectrumCalculator
 
 # Scattering
-from .BaseCrossSection import BaseCrossSection
-from .CrossSections import InelasticCrossSection, ElasticCrossSection
-from .GasModel import GasModel
-from .ScatteringSimulator import ScatteringSimulator, ScatteringResult
-from .scattering_utils import scatter_to_pitch_angle
+from .scattering import (BaseCrossSection, InelasticCrossSection,
+                         ElasticCrossSection, GasModel, ScatteringSimulator,
+                         ScatteringResult, scatter_to_pitch_angle)
 
 # Define public API
 __all__ = [
