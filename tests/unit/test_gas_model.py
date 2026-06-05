@@ -4,8 +4,8 @@ Unit tests for GasModel and BaseCrossSection
 
 import numpy as np
 import pytest
-from CRESSignalStructure.BaseCrossSection import BaseCrossSection
-from CRESSignalStructure.GasModel import GasModel
+from CRESSignalStructure.scattering.BaseCrossSection import BaseCrossSection
+from CRESSignalStructure.scattering.GasModel import GasModel
 
 
 class ConstantCrossSection(BaseCrossSection):

@@ -6,7 +6,6 @@ import numpy as np
 import pytest
 import scipy.constants as sc
 from CRESSignalStructure import (
-    HarmonicTrap,
     HarmonicField,
     CircularWaveguide,
     Electron,
@@ -18,12 +17,14 @@ from CRESSignalStructure.scattering import BaseCrossSection, GasModel
 
 KE = 18600.0
 WG_RADIUS = 5e-3
-B0 = 1.0
-L0 = 0.5
 PITCH = np.deg2rad(89.0)
 POS = np.array([1e-4, 0.0, 0.0])
 SAMPLE_RATE = 1e9
 MAX_ORDER = 3
+R_COIL = 3e-2
+TRAP_DEPTH = 4e-3
+I_COIL = 2 * R_COIL * TRAP_DEPTH / sc.mu_0
+B0 = 1.0 
 
 
 class ConstantCrossSection(BaseCrossSection):
@@ -67,7 +68,7 @@ class EscapingCrossSection(BaseCrossSection):
 
 
 def _make_components():
-    trap = HarmonicTrap(B0, L0)
+    trap = HarmonicField(R_COIL, I_COIL, B0)
     wg = CircularWaveguide(WG_RADIUS)
     particle = Electron(KE, POS, PITCH)
     return trap, wg, particle

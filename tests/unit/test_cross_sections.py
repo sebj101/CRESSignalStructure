@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 from scipy.integrate import trapezoid
 
-from CRESSignalStructure.CrossSections import (
+from CRESSignalStructure.scattering.CrossSections import (
     InelasticCrossSection, ElasticCrossSection)
 
 

@@ -128,7 +128,7 @@ class ScatteringSimulator:
             return False
 
     def simulate(self, particle: Particle, max_order: int,
-                 rng: np.random.Generator = None,
+                 rng: np.random.Generator | None = None,
                  phi_c: float = 0.0,
                  phi_a: float = 0.0) -> ScatteringResult:
         """
