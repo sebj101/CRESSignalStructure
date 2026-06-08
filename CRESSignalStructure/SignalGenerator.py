@@ -76,8 +76,7 @@ class SignalGenerator:
         FAST_SAMPLE_FACTOR = 5
         FAST_SAMPLE_FREQ = FAST_SAMPLE_FACTOR * self.__sample_rate
         N_SAMPLES = int(self.__acq_time * FAST_SAMPLE_FREQ)
-        times_fast_sample = np.linspace(
-            0, N_SAMPLES / FAST_SAMPLE_FREQ, N_SAMPLES)
+        times_fast_sample = np.arange(N_SAMPLES) / FAST_SAMPLE_FREQ
 
         # Get the fourier amplitudes and frequencies, applying initial phases
         orders = np.arange(-max_order, max_order+1, 1)

@@ -8,6 +8,8 @@ accordingly. The analytical path uses closed-form Bessel-function expressions;
 the numerical path integrates the cyclotron phase over the axial period.
 """
 
+from typing import overload
+
 from .BaseTrap import BaseTrap
 from .BaseField import BaseField
 from .CircularWaveguide import CircularWaveguide
@@ -125,20 +127,25 @@ class SpectrumCalculator:
         sign = -1 if negativeFreqs else 1
         return amps * np.exp(sign * 1j * (phi_c + np.asarray(orders) * phi_a))
 
-    def get_peak_frequency(self, order: ArrayLike, negativeFreqs=False) -> NDArray:
+    @overload
+    def get_peak_frequency(self, order: int, negativeFreqs: bool = False) -> float: ...
+    @overload
+    def get_peak_frequency(self, order: NDArray, negativeFreqs: bool = False) -> NDArray: ...
+
+    def get_peak_frequency(self, order, negativeFreqs=False):
         """
         Calculate the frequencies at which spectral components occur
 
         Parameters
         ----------
-        order : ArrayLike
+        order : int or ArrayLike
             Sideband order(s)
         negativeFreqs : bool
             If True, return negative-frequency components
 
         Returns
         -------
-        NDArray
+        float or NDArray
             Frequencies in Hertz
         """
         order = np.asarray(order)

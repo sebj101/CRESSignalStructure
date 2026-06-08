@@ -608,7 +608,7 @@ class TestPhysicsConsistency:
         assert not np.allclose(E1, E2)
 
     def test_field_continuity_at_boundaries(self):
-        """Test field behavior at waveguide boundary"""
+        """Test field behaviour at waveguide boundary"""
         wg = CircularWaveguide(0.01)
         rho_inside = 0.99 * 0.01
         rho_outside = 1.01 * 0.01

@@ -168,3 +168,56 @@ class CRESWriter:
             attrs['r_wg [metres]'] = 0.005 # Default 5mm
 
         self.current_index += 1
+
+    def write_scattering_event(self, result):
+        """
+        Write a scattering event including scatter metadata.
+
+        Uses the initial particle for primary attributes (matching legacy
+        format) and adds scattering-specific attributes.
+
+        Parameters
+        ----------
+        result : ScatteringResult
+            Output from ScatteringSimulator.simulate()
+        """
+        initial_particle = result.particles[0]
+        self.write_event(initial_particle, result.times, result.signal)
+
+        # Add scattering metadata to the dataset just written
+        sig_name = f"signal{self.current_index}"
+        dset = self.file['Data'][sig_name]
+        attrs = dset.attrs
+
+        attrs['n_scatters'] = len(result.scatter_times)
+        attrs['escaped'] = result.escaped
+
+        if result.scatter_times:
+            attrs['scatter_times [seconds]'] = np.array(
+                result.scatter_times)
+            attrs['scatter_energies [eV]'] = np.array(
+                [p.get_energy() for p in result.particles])
+            attrs['scatter_pitch_angles [degrees]'] = np.array(
+                [np.degrees(p.get_pitch_angle())
+                 for p in result.particles])
+
+            f_lo = self._config.get('lo_freq', 0.0)
+            f_cyc_arr = []
+            for p in result.particles:
+                gamma = p.get_gamma()
+                mass = p.get_mass()
+                pos = p.get_position()
+                if hasattr(self._trap, 'evaluate_field_magnitude'):
+                    B_local = self._trap.evaluate_field_magnitude(
+                        pos[0], pos[1], pos[2])
+                elif hasattr(self._trap, 'get_b0'):
+                    B_local = self._trap.get_b0()
+                else:
+                    B_local = 1.0
+                f_cyc_arr.append(
+                    (sc.e * B_local) / (2 * np.pi * gamma * mass))
+
+            attrs['scatter_cyclotron_frequencies [Hertz]'] = np.array(
+                f_cyc_arr)
+            attrs['scatter_downmixed_cyclotron_frequencies [Hertz]'] = \
+                np.abs(np.array(f_cyc_arr) - f_lo)

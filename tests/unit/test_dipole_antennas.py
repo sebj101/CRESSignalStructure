@@ -323,7 +323,7 @@ class TestHalfWaveDipoleAntenna:
 
 
 class TestAntennaComparison:
-    """Tests comparing short dipole and half-wave dipole behaviors"""
+    """Tests comparing short dipole and half-wave dipole behaviours"""
 
     def test_short_dipole_more_capacitive(self):
         """Test that short dipole has more capacitive reactance"""
