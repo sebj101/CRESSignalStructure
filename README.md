@@ -164,6 +164,15 @@ The **CircularWaveguide** class models TE11 mode electromagnetic fields in circu
 
 - **SpectrumCalculator**: Class for calculating power spectra in waveguides
 
+### Scattering
+
+Models of both elastic and inelastic scattering are included (currently just for waveguide geometries) for hydrogen and helium via the following classes:
+- **BaseCrossSection**: Abstract base class for cross section models
+- **InelasticCrossSection**: Rudd model of impact ionisation is used here -- the class is configurable according to the species involved.
+- **ElasticCrossSection**: A screened Rutherford model is used for elastic cross sections -- the class is configurable via an inputted Z and A
+- **GasModel**: Allows for mixtures of gases to be modelled by inputting cross section models along with the relevant gas number densities
+- **ScatteringSimulator**: Generates time series signals with scattering included by calling `SpectrumCalculator` multiple times
+
 ### Antennas
 
 The antenna module provides classes for modelling different antenna types:
@@ -192,7 +201,7 @@ The antenna module provides classes for modelling different antenna types:
 
 Example Jupyter notebooks are provided in the repository:
 
-- [TestPowerSpec.ipynb](TestPowerSpec.ipynb) - Basic power spectrum calculations
+- [GettingStarted.ipynb](GettingStarted.ipynb) - Shows the basic mechanics of generating spectra, both with waveguide geometries and with antennas
 - [HarmonicComparison.ipynb](HarmonicComparison.ipynb) - Comparison of harmonic trap models
 - [RealisticFields.ipynb](RealisticFields.ipynb) - Working with realistic magnetic field configurations
 - [SignalGenExample.ipynb](SignalGenExample.ipynb) - Generating downmixed and sampled signals
@@ -230,11 +239,18 @@ CRESSignalStructure/
 │   ├── SignalGenerator.py              # Frequency-domain signal generation
 │   ├── SpectrumCalculator.py           # Waveguide spectrum calculator class
 │   ├── TrajectoryGenerator.py          # Trajectory generation with grad-B drift
-│   └── antennas/                       # Antenna models
+│   ├── antennas/                       # Antenna models
+│   │   ├── __init__.py
+│   │   ├── BaseAntenna.py              # Abstract antenna base class
+│   │   ├── IsotropicAntenna.py         # Isotropic antenna
+│   │   └── DipoleAntennas.py           # Dipole antenna implementations
+│   └── scattering/                     # Scattering sub-folder
 │       ├── __init__.py
-│       ├── BaseAntenna.py              # Abstract antenna base class
-│       ├── IsotropicAntenna.py         # Isotropic antenna
-│       └── DipoleAntennas.py           # Dipole antenna implementations
+│       ├── BaseCrossSection.py         # Abstract cross-section base class
+│       ├── CrossSections.py            # Cross-section model implementations
+│       ├── GasModel.py                 # Gas mixture code
+│       ├── ScatteringSimulator.py      # Simulator for events with scattering
+│       └── scattering_utils.py         # Utilities for use with scattering models
 ├── examples/                           
 ├── tests/                              # Tests
 │   ├── unit/                           # Unit tests
