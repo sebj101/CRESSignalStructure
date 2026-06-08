@@ -173,7 +173,7 @@ class InelasticCrossSection(BaseCrossSection):
                    + (2 - p.ni / p.n_electrons)
                    * ((t - 1) / t - np.log(t) / (t + 1))))
 
-    def sdcs(self, energy: float, W: float) -> float:
+    def sdcs(self, energy: float, W: np.typing.ArrayLike) -> np.ndarray:
         """
         BEB singly-differential cross-section dσ/dW.
 
@@ -181,35 +181,36 @@ class InelasticCrossSection(BaseCrossSection):
         ----------
         energy : float
             Incident electron kinetic energy in eV
-        W : float
-            Ejected electron kinetic energy in eV
+        W : ArrayLike
+            Outgoing electron kinetic energy in eV
 
         Returns
         -------
-        float
+        ArrayLike
             Cross-section in m^2/eV
         """
+        W = np.asarray(W, dtype=float)
         p = self.__params
-        if energy <= p.binding_energy or W < 0:
-            return 0.0
-        if W > energy - p.binding_energy:
-            return 0.0
-
         B = p.binding_energy
         t = energy / B
         u = p.orbital_ke / B
         w = W / B
         b, c, d, e, f = p.osc_coeffs
 
+        mask = (energy > B) & (W >= 0) & (W <= energy - B)
+        safe_t_minus_w = np.where(mask, t - w, 1.0)
+
         diff_osc = (b * (w + 1)**-2 + c * (w + 1)**-3 + d * (w + 1)**-4
                     + e * (w + 1)**-5 + f * (w + 1)**-6)
         prefactor = self._S() / (B * (t + u + 1))
-        term1 = (p.ni / p.n_electrons - 2) * (1 / (w + 1) + 1 / (t - w)) / (t + 1)
-        term2 = (2 - p.ni / p.n_electrons) * ((w + 1)**-2 + (t - w)**-2)
+        term1 = (p.ni / p.n_electrons - 2) * (1 / (w + 1) + 1 / safe_t_minus_w) / (t + 1)
+        term2 = (2 - p.ni / p.n_electrons) * ((w + 1)**-2 + safe_t_minus_w**-2)
         term3 = np.log(t) * diff_osc / (p.n_electrons * (w + 1))
-        return prefactor * (term1 + term2 + term3)
+        result = prefactor * (term1 + term2 + term3)
+        return np.where(mask, result, 0.0)
 
-    def ddcs(self, energy: float, W: float, theta: float) -> float:
+    def ddcs(self, energy: float, W: float,
+             theta: np.typing.ArrayLike) -> np.ndarray:
         """
         Rudd 1991 doubly-differential cross-section d²σ/dWdθ.
 
@@ -219,27 +220,24 @@ class InelasticCrossSection(BaseCrossSection):
             Incident electron kinetic energy in eV
         W : float
             Outgoing electron kinetic energy in eV
-        theta : float
+        theta : ArrayLike
             Scattering angle in radians
 
         Returns
         -------
-        float
+        ndarray
             Cross-section in m^2/eV/rad
         """
+        theta = np.asarray(theta, dtype=float)
         p = self.__params
-        if energy <= p.binding_energy or W < 0:
-            return 0.0
-        if W > energy - p.binding_energy:
-            return 0.0
+        if energy <= p.binding_energy or W < 0 or W > energy - p.binding_energy:
+            return np.zeros_like(theta)
         return self._G1(W, energy) * (self._f_BE(W, energy, theta)
                                        + self._G4fb(W, energy, theta))
 
     def sample_post_scatter(self, energy: float, pitch_angle: float,
                             rng: Generator) -> tuple[float, float]:
-        p = self.__params
-        W = self._sample_secondary_energy(energy, rng)
-        new_energy = energy - W - p.binding_energy
+        new_energy = self._sample_primary_energy(energy, rng)
         theta = self._sample_scattering_angle(energy, new_energy, rng)
         new_pitch = scatter_to_pitch_angle(pitch_angle, theta, rng)
         return new_energy, new_pitch
@@ -283,14 +281,14 @@ class InelasticCrossSection(BaseCrossSection):
             return 0.0
         return self._GAMMA_RUDD * (1 - w / t)**3 / (t * (w + 1))
 
-    def _f_BE(self, W: float, T: float, theta: float) -> float:
+    def _f_BE(self, W: float, T: float, theta: np.typing.ArrayLike) -> np.ndarray:
         g2 = self._G2(W, T)
         g3 = self._G3(W, T)
         if g3 == 0:
-            return 0.0
+            return np.zeros_like(theta)
         return 1.0 / (1 + ((np.cos(theta) - g2) / g3)**2)
 
-    def _f_b(self, theta: float) -> float:
+    def _f_b(self, theta: np.typing.ArrayLike) -> np.ndarray:
         return 1.0 / (1 + ((np.cos(theta) + 1) / self._G5)**2)
 
     def _g_BE(self, W: float, T: float) -> float:
@@ -325,21 +323,22 @@ class InelasticCrossSection(BaseCrossSection):
             return 0.0
         return self._S() * self._F(T) * self._f_1(W, T) / (B * denom)
 
-    def _G4fb(self, W: float, T: float, theta: float) -> float:
+    def _G4fb(self, W: float, T: float, theta: np.typing.ArrayLike) -> np.ndarray:
         return self._G4(W, T) * self._f_b(theta)
 
     # --- Private: sampling ---
 
-    def _sample_secondary_energy(self, energy: float, rng: Generator) -> float:
+    def _sample_primary_energy(self, energy: float, rng: Generator) -> float:
         p = self.__params
-        W_max = (energy - p.binding_energy) / 2
+        W_max = energy - p.binding_energy
         if W_max <= 0:
             return 0.0
 
-        W_min = 1e-5 * W_max
-        log_W = np.linspace(np.log(W_min), np.log(W_max), self._N_W_BINS)
-        W_grid = np.exp(log_W)
-        sdcs_vals = np.array([self.sdcs(energy, W) for W in W_grid])
+        W_min = W_max / 2
+        d = W_max - W_min
+        log_grid = np.linspace(np.log(1e-5 * d), np.log(d), self._N_W_BINS)
+        W_grid = W_max - np.exp(log_grid)[::-1]
+        sdcs_vals = self.sdcs(energy, W_grid)
 
         cdf = np.cumsum(0.5 * (sdcs_vals[:-1] + sdcs_vals[1:])
                         * np.diff(W_grid))
@@ -354,7 +353,7 @@ class InelasticCrossSection(BaseCrossSection):
     def _sample_scattering_angle(self, energy: float, W: float,
                                  rng: Generator) -> float:
         theta_grid = np.linspace(1e-6, np.pi - 1e-6, self._N_THETA_BINS)
-        ddcs_vals = np.array([self.ddcs(energy, W, th) for th in theta_grid])
+        ddcs_vals = self.ddcs(energy, W, theta_grid)
 
         # Weight by sin(theta) for solid angle
         weighted = ddcs_vals * np.sin(theta_grid)
