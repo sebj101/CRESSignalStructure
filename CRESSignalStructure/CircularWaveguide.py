@@ -6,6 +6,8 @@ from scipy.integrate import dblquad
 
 
 class CircularWaveguide:
+    _TE11_KC_COEFF = 1.841  # First zero of J1'
+
     def __init__(self, radius):
         if not isinstance(radius, (int, float)):
             raise TypeError("Radius must be a number")
@@ -15,6 +17,7 @@ class CircularWaveguide:
             raise ValueError("Radius must be finite")
 
         self.wgR = radius
+        self._kc = self._TE11_KC_COEFF / self.wgR
 
     def __str__(self):
         return f"Waveguide with radius {self.wgR} metres"
@@ -31,11 +34,10 @@ class CircularWaveguide:
             raise ValueError("Frequency must be finite")
 
         # Check that the frequency is above the cutoff frequency
-        kc = 1.841 / self.wgR
         k = omega / sc.c
-        if k <= kc:
+        if k <= self._kc:
             raise ValueError(
-                f"Frequency {omega} rad/s is below cutoff frequency {kc * sc.c} rad/s")
+                f"Frequency {omega} rad/s is below cutoff frequency {self._kc * sc.c} rad/s")
 
     def _validate_position(self, rho, phi) -> tuple[NDArray, NDArray]:
         """
@@ -92,11 +94,9 @@ class CircularWaveguide:
         rho, phi = self._validate_position(rho, phi)
         A = self._validate_amplitude(A)
 
-        kc = 1.841 / self.wgR
-
         conditions = [rho > self.wgR, rho == 0.0, rho <= self.wgR]
-        choices = [0.0, A * np.cos(phi) / kc,
-                   A * self._safe_j1_over_rho(kc * rho) * np.cos(phi)]
+        choices = [0.0, A * np.cos(phi) / self._kc,
+                   A * self._safe_j1_over_rho(self._kc * rho) * np.cos(phi)]
         return np.select(conditions, choices)
 
     def h_field_te11_rho_1(self, rho: ArrayLike, phi: ArrayLike, omega: float,
@@ -119,11 +119,10 @@ class CircularWaveguide:
         A = self._validate_amplitude(A)
         self._validate_frequency(omega)
 
-        kc = 1.841 / self.wgR
-        beta = np.sqrt(omega**2 / sc.c**2 - kc**2)
+        beta = np.sqrt(omega**2 / sc.c**2 - self._kc**2)
         conditions = [rho > self.wgR, rho <= self.wgR]
         choices = [0.0, A * beta *
-                   jvp(1, kc * rho, 1) * np.sin(phi) / (omega * sc.mu_0)]
+                   jvp(1, self._kc * rho, 1) * np.sin(phi) / (omega * sc.mu_0)]
         return np.select(conditions, choices)
 
     def e_field_te11_phi_1(self, rho: ArrayLike, phi: ArrayLike, A: ArrayLike) -> NDArray:
@@ -138,9 +137,8 @@ class CircularWaveguide:
         rho, phi = self._validate_position(rho, phi)
         A = self._validate_amplitude(A)
 
-        kc = 1.841 / self.wgR
         conditions = [rho > self.wgR, rho <= self.wgR]
-        choices = [0.0, -A * jvp(1, kc * rho, 1) * np.sin(phi)]
+        choices = [0.0, -A * jvp(1, self._kc * rho, 1) * np.sin(phi)]
         return np.select(conditions, choices)
 
     def h_field_te11_phi_1(self, rho: ArrayLike, phi: ArrayLike, omega: float,
@@ -167,12 +165,10 @@ class CircularWaveguide:
         A = self._validate_amplitude(A)
         self._validate_frequency(omega)
 
-        kc = 1.841 / self.wgR
-
-        beta = np.sqrt(omega**2 / sc.c**2 - kc**2)
+        beta = np.sqrt(omega**2 / sc.c**2 - self._kc**2)
         conditions = [rho > self.wgR, rho <= self.wgR]
         choices = [0.0,
-                   A * beta * self._safe_j1_over_rho(kc * rho) * np.cos(phi) / (omega * sc.mu_0)]
+                   A * beta * self._safe_j1_over_rho(self._kc * rho) * np.cos(phi) / (omega * sc.mu_0)]
         return np.select(conditions, choices)
 
     def e_field_te11_z(self, rho, phi, A) -> NDArray:
@@ -274,12 +270,11 @@ class CircularWaveguide:
         rho, phi = self._validate_position(rho, phi)
         A = self._validate_amplitude(A)
 
-        kc = 1.841 / self.wgR
         conditions = [rho > self.wgR, rho == 0.0, rho <= self.wgR]
         choices = [
             0.0,
-            -A * np.sin(phi) / kc,
-            -A * self._safe_j1_over_rho(kc * rho) * np.sin(phi)
+            -A * np.sin(phi) / self._kc,
+            -A * self._safe_j1_over_rho(self._kc * rho) * np.sin(phi)
         ]
         return np.select(conditions, choices)
 
@@ -307,11 +302,10 @@ class CircularWaveguide:
         A = self._validate_amplitude(A)
         self._validate_frequency(omega)
 
-        kc = 1.841 / self.wgR
-        beta = np.sqrt(omega**2 / sc.c**2 - kc**2)
+        beta = np.sqrt(omega**2 / sc.c**2 - self._kc**2)
         conditions = [rho > self.wgR, rho <= self.wgR]
         choices = [0.0, A * beta *
-                   np.cos(phi) * jvp(1, kc * rho, 1) / (omega * sc.mu_0)]
+                   np.cos(phi) * jvp(1, self._kc * rho, 1) / (omega * sc.mu_0)]
         return np.select(conditions, choices)
 
     def e_field_te11_phi_2(self, rho: ArrayLike, phi: ArrayLike, A: ArrayLike) -> NDArray:
@@ -330,9 +324,8 @@ class CircularWaveguide:
         rho, phi = self._validate_position(rho, phi)
         A = self._validate_amplitude(A)
 
-        kc = 1.841 / self.wgR
         conditions = [rho > self.wgR, rho <= self.wgR]
-        choices = [0.0, -A * jvp(1, kc * rho, 1) * np.cos(phi)]
+        choices = [0.0, -A * jvp(1, self._kc * rho, 1) * np.cos(phi)]
         return np.select(conditions, choices)
 
     def h_field_te11_phi_2(self, rho: ArrayLike, phi: ArrayLike, omega: float,
@@ -359,11 +352,10 @@ class CircularWaveguide:
         A = self._validate_amplitude(A)
         self._validate_frequency(omega)
 
-        kc = 1.841 / self.wgR
-        beta = np.sqrt(omega**2 / sc.c**2 - kc**2)
+        beta = np.sqrt(omega**2 / sc.c**2 - self._kc**2)
         conditions = [rho > self.wgR, rho <= self.wgR]
         choices = [0.0, -A * beta *
-                   self._safe_j1_over_rho(kc * rho) * np.sin(phi) / (omega * sc.mu_0)]
+                   self._safe_j1_over_rho(self._kc * rho) * np.sin(phi) / (omega * sc.mu_0)]
         return np.select(conditions, choices)
 
     def e_field_te11_2(self, rho, phi, A) -> NDArray:
@@ -449,8 +441,7 @@ class CircularWaveguide:
         self._validate_frequency(omega)
 
         k = omega / sc.c
-        kc = 1.841 / self.wgR
-        betaMode = np.sqrt(k**2 - kc**2)
+        betaMode = np.sqrt(k**2 - self._kc**2)
         return k * np.sqrt(sc.mu_0 / sc.epsilon_0) / betaMode
 
     def calc_normalisation_factor(self) -> float:
@@ -495,7 +486,7 @@ class CircularWaveguide:
             Phase velocity in m/s
         """
         self._validate_frequency(omega)
-        omega_c = 1.841 * sc.c / self.wgR
+        omega_c = self._kc * sc.c
         return sc.c / np.sqrt(1 - (omega_c / omega)**2)
 
     def get_group_velocity(self, omega: float) -> float:
@@ -513,5 +504,5 @@ class CircularWaveguide:
             Group velocity in m/s
         """
         self._validate_frequency(omega)
-        omega_c = 1.841 * sc.c / self.wgR
+        omega_c = self._kc * sc.c
         return sc.c * np.sqrt(1 - (omega_c / omega)**2)
