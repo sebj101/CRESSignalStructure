@@ -135,16 +135,19 @@ def _process_results(results_iterator, n_events, writer, fft_writer, start_time,
 
 
 # --- Helper Wrapper for Uniform Sampling ---
-def generate_uniform_ensemble(output_file, 
-                              n_events, 
-                              trap, 
-                              waveguide, 
-                              sim_config, 
+def generate_uniform_ensemble(output_file,
+                              n_events,
+                              trap,
+                              waveguide,
+                              sim_config,
                               ranges,
-                              fft_output_file=None, 
-                              use_multiprocessing=True, 
-                              verbose=True):
-    
+                              fft_output_file=None,
+                              use_multiprocessing=True,
+                              verbose=True,
+                              seed=None):
+
+    rng = np.random.default_rng(seed)
+
     def uniform_particle_generator(i):
         e_min, e_max = ranges.get('energy', (18500.0, 18600.0))
         p_min, p_max = ranges.get('pitch', (np.radians(88), np.radians(89.99)))
@@ -153,15 +156,15 @@ def generate_uniform_ensemble(output_file,
         r_min, r_max = ranges.get('r', (0.0, 0.001))
         theta_min, theta_max = ranges.get('theta', (0.0, 2*np.pi))
 
-        ke = np.random.uniform(e_min, e_max)
-        pitch = np.random.uniform(p_min, p_max)
-        z = np.random.uniform(z_min, z_max)
+        ke = rng.uniform(e_min, e_max)
+        pitch = rng.uniform(p_min, p_max)
+        z = rng.uniform(z_min, z_max)
 
         # Sample radius with uniform area density in the annulus [r_min, r_max]
-        u_rho = np.random.uniform(0, 1)
+        u_rho = rng.random()
         r = np.sqrt((r_max**2 - r_min**2) * u_rho + r_min**2)
 
-        theta = np.random.uniform(theta_min, theta_max)
+        theta = rng.uniform(theta_min, theta_max)
 
         pos = np.array([r * np.cos(theta), r * np.sin(theta), z])
         
@@ -246,7 +249,8 @@ def generate_scattering_ensemble(output_file,
                                  sim_config,
                                  fft_output_file=None,
                                  use_multiprocessing=True,
-                                 verbose=True):
+                                 verbose=True,
+                                 seed=None):
     """
     Generate an ensemble of scattering events.
 
@@ -273,7 +277,7 @@ def generate_scattering_ensemble(output_file,
     verbose : bool
         Whether to print progress (default True)
     """
-    ss = np.random.SeedSequence()
+    ss = np.random.SeedSequence(seed)
     child_seeds = ss.spawn(n_events)
 
     worker_args = []

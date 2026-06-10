@@ -37,6 +37,7 @@ def main():
     # Performance
     parser.add_argument("--mp", action="store_true", help="Enable Multiprocessing")
     parser.add_argument("--no-fft", action="store_true", help="Disable FFT generation (Signal only)")
+    parser.add_argument("--seed", type=int, default=None, help="RNG seed for reproducible results")
 
     args = parser.parse_args()
 
@@ -113,7 +114,8 @@ def main():
             ranges=param_ranges,
             fft_output_file=fft_path,
             use_multiprocessing=args.mp,
-            verbose=True
+            verbose=True,
+            seed=args.seed
         )
 
     total_time = time.time() - total_start
