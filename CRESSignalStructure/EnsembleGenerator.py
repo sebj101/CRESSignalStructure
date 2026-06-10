@@ -4,6 +4,7 @@ EnsembleGenerator.py
 Orchestrates the batch generation of CRES simulation data.
 Supports Multiprocessing and simultaneous Time-Series / FFT output.
 """
+from typing import Any, Callable, Iterator
 import numpy as np
 import multiprocessing as mp
 import scipy.fft
@@ -11,13 +12,17 @@ from contextlib import ExitStack
 import time
 
 # Internal Imports
+from .BaseTrap import BaseTrap
+from .BaseField import BaseField
+from .CircularWaveguide import CircularWaveguide
 from .Particle import Particle
 from .SignalGenerator import SignalGenerator
 from .SpectrumCalculator import SpectrumCalculator
 from .CRESWriter import CRESWriter
-from .scattering import ScatteringSimulator
+from .scattering import GasModel, ScatteringSimulator
 
-def _worker_generate_event(args):
+def _worker_generate_event(args: tuple[int, Particle, BaseTrap | BaseField, 
+                           CircularWaveguide, dict]) -> tuple:
     """
     Worker function. Generates a single event and computes FFT.
     """
@@ -56,15 +61,15 @@ def _worker_generate_event(args):
     except Exception as e:
         return (index, e)
 
-def generate_ensemble(output_file, 
-                      n_events, 
-                      particle_generator, 
-                      trap, 
-                      waveguide, 
-                      sim_config,
-                      fft_output_file=None, 
-                      use_multiprocessing=True,
-                      verbose=True):
+def generate_ensemble(output_file: str,
+                      n_events: int,
+                      particle_generator: Callable[[int], Particle],
+                      trap: BaseTrap | BaseField,
+                      waveguide: CircularWaveguide,
+                      sim_config: dict,
+                      fft_output_file: str | None = None,
+                      use_multiprocessing: bool = True,
+                      verbose: bool = True) -> None:
     """
     Main driver for ensemble generation.
     """
@@ -108,7 +113,9 @@ def generate_ensemble(output_file,
         print(f"Done! Saved to {output_file}")
 
 
-def _process_results(results_iterator, n_events, writer, fft_writer, start_time, verbose):
+def _process_results(results_iterator: Iterator[Any], n_events: int,
+                     writer: CRESWriter, fft_writer: CRESWriter | None,
+                     start_time: float, verbose: bool) -> None:
     """Helper to write results to disk (runs in main thread)."""
     for i, result in enumerate(results_iterator):
         
@@ -135,16 +142,16 @@ def _process_results(results_iterator, n_events, writer, fft_writer, start_time,
 
 
 # --- Helper Wrapper for Uniform Sampling ---
-def generate_uniform_ensemble(output_file,
-                              n_events,
-                              trap,
-                              waveguide,
-                              sim_config,
-                              ranges,
-                              fft_output_file=None,
-                              use_multiprocessing=True,
-                              verbose=True,
-                              seed=None):
+def generate_uniform_ensemble(output_file: str,
+                              n_events: int,
+                              trap: BaseTrap | BaseField,
+                              waveguide: CircularWaveguide,
+                              sim_config: dict,
+                              ranges: dict,
+                              fft_output_file: str | None = None,
+                              use_multiprocessing: bool = True,
+                              verbose: bool = True,
+                              seed: int | None = None) -> None:
 
     rng = np.random.default_rng(seed)
 
@@ -183,7 +190,9 @@ def generate_uniform_ensemble(output_file,
     )
 
 
-def _worker_generate_scattering_event(args):
+def _worker_generate_scattering_event(args: tuple[int, Particle, BaseTrap | BaseField, 
+                                      CircularWaveguide, GasModel, dict, 
+                                      np.random.SeedSequence]) -> tuple:
     """
     Worker function for scattering events. Generates a single event with
     gas scattering and computes FFT.
@@ -217,8 +226,9 @@ def _worker_generate_scattering_event(args):
         return (index, e)
 
 
-def _process_scattering_results(results_iterator, n_events, writer,
-                                fft_writer, start_time, verbose):
+def _process_scattering_results(results_iterator: Iterator[Any], n_events: int,
+                                writer: CRESWriter, fft_writer: CRESWriter | None,
+                                start_time: float, verbose: bool) -> None:
     """Helper to write scattering results to disk (runs in main thread)."""
     for i, result in enumerate(results_iterator):
 
@@ -240,17 +250,17 @@ def _process_scattering_results(results_iterator, n_events, writer,
             print(f"  Processed {i+1}/{n_events} events ({rate:.1f} ev/s)...")
 
 
-def generate_scattering_ensemble(output_file,
-                                 n_events,
-                                 particle_generator,
-                                 trap,
-                                 waveguide,
-                                 gas_model,
-                                 sim_config,
-                                 fft_output_file=None,
-                                 use_multiprocessing=True,
-                                 verbose=True,
-                                 seed=None):
+def generate_scattering_ensemble(output_file: str,
+                                 n_events: int,
+                                 particle_generator: Callable[[int], Particle],
+                                 trap: BaseTrap | BaseField,
+                                 waveguide: CircularWaveguide,
+                                 gas_model: GasModel,
+                                 sim_config: dict,
+                                 fft_output_file: str | None = None,
+                                 use_multiprocessing: bool = True,
+                                 verbose: bool = True,
+                                 seed: int | None = None) -> None:
     """
     Generate an ensemble of scattering events.
 
