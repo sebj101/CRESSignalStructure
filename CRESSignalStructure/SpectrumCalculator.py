@@ -96,7 +96,7 @@ class SpectrumCalculator:
         order = np.asarray(order)
         if not np.issubdtype(order.dtype, np.integer):
             raise TypeError("Order must be an integer")
-        if not np.any(np.isfinite(order)):
+        if not np.all(np.isfinite(order)):
             raise ValueError("Order must be finite")
         return np.abs(self.get_peak_amp(order))**2 * self.get_power_norm()
 
