@@ -45,13 +45,13 @@ def _worker_generate_event(args: tuple[int, Particle, BaseTrap | BaseField,
         F_DIGITIZER = config.get('sample_rate', 1e9)
         
         # FFT Calculation: fft(signal, norm='forward')
-        fft_complex = scipy.fft.fft(sig_pure, norm='forward')
-        
+        fft_complex = np.asarray(scipy.fft.fft(sig_pure, norm='forward'))
+
         # Frequency Axis
         dt = 1.0 / F_DIGITIZER
         N = len(sig_pure)
         freqs = scipy.fft.fftfreq(N, dt)
-        
+
         # Power Calculation: |fft|^2
         fft_power = np.abs(fft_complex)**2
         # ---------------------------------------------
@@ -215,7 +215,7 @@ def _worker_generate_scattering_event(args: tuple[int, Particle, BaseTrap | Base
             rng=rng
         )
 
-        fft_complex = scipy.fft.fft(result.signal, norm='forward')
+        fft_complex = np.asarray(scipy.fft.fft(result.signal, norm='forward'))
         dt = 1.0 / config['sample_rate']
         freqs = scipy.fft.fftfreq(len(result.signal), dt)
         fft_power = np.abs(fft_complex)**2
