@@ -65,7 +65,7 @@ def main():
     
     ref_p = Particle(ke=mean_energy, startPos=np.zeros(3), pitchAngle=mean_pitch_rad)
     calc = SpectrumCalculator(trap, wg, ref_p)
-    f_carrier = calc.GetPeakFrequency(0)
+    f_carrier = calc.get_peak_frequency(0)
 
     LO_FREQ = f_carrier - (F_DIGITIZER / 4)
     
@@ -121,7 +121,7 @@ def main():
     total_time = time.time() - total_start
     total_events = args.files * args.events
     print("=" * 40)
-    print(f"BATCH COMPLETE.")
+    print("BATCH COMPLETE.")
     print(f"Total Events: {total_events}")
     print(f"Total Time:   {total_time:.1f}s")
     print(f"Average Rate: {total_events/total_time:.1f} events/s")
