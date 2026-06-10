@@ -363,7 +363,7 @@ class CircularWaveguide:
         beta = np.sqrt(omega**2 / sc.c**2 - kc**2)
         conditions = [rho > self.wgR, rho <= self.wgR]
         choices = [0.0, -A * beta *
-                   j1(kc * rho) * np.sin(phi) / (kc * rho * omega * sc.mu_0)]
+                   self._safe_j1_over_rho(kc * rho) * np.sin(phi) / (omega * sc.mu_0)]
         return np.select(conditions, choices)
 
     def e_field_te11_2(self, rho, phi, A) -> NDArray:
