@@ -309,7 +309,7 @@ class TrajectoryGenerator:
             E_t = None
 
         # Calculate velocity and acceleration (passing energy if applicable)
-        psi = self._calc_cylotron_phase(t, pos, E_t)
+        psi = self._calc_cyclotron_phase(t, pos, E_t)
         vel = self._calc_velocity(t, pos, psi, E_t)
         acc = self._calc_acceleration(pos, vel, sample_rate, E_t)
 
@@ -702,7 +702,7 @@ class TrajectoryGenerator:
 
         return phi
 
-    def _calc_cylotron_phase(self, t: NDArray, pos: NDArray,
+    def _calc_cyclotron_phase(self, t: NDArray, pos: NDArray,
                              E_t: NDArray | None = None) -> NDArray:
         """
         Calculate the cyclotron phase a function of time by integrating the 
