@@ -81,6 +81,27 @@ class CircularWaveguide:
         else:
             return j1(kcRho) / kcRho
 
+    def _e_field_rho_impl(self, rho: NDArray, angular: NDArray, A: NDArray) -> NDArray:
+        """TE11 radial E-field with pre-validated inputs; angular is the trig(phi) factor."""
+        conditions = [rho > self._wgR, rho == 0.0, rho <= self._wgR]
+        choices = [0.0, A * angular / self._kc,
+                   A * self._safe_j1_over_rho(self._kc * rho) * angular]
+        return np.select(conditions, choices)
+
+    def _e_field_phi_impl(self, rho: NDArray, angular: NDArray, A: NDArray) -> NDArray:
+        """TE11 azimuthal E-field with pre-validated inputs; angular is the trig(phi) factor."""
+        conditions = [rho > self._wgR, rho <= self._wgR]
+        choices = [0.0, A * jvp(1, self._kc * rho, 1) * angular]
+        return np.select(conditions, choices)
+
+    def _to_cartesian(self, E_rho: NDArray, E_phi: NDArray, phi: NDArray) -> NDArray:
+        """Convert cylindrical E-field components to Cartesian coordinates."""
+        return np.array([
+            E_rho * np.cos(phi) - E_phi * np.sin(phi),
+            E_rho * np.sin(phi) + E_phi * np.cos(phi),
+            np.zeros_like(E_rho)
+        ])
+
     def e_field_te11_rho_1(self, rho: ArrayLike, phi: ArrayLike, A: ArrayLike) -> NDArray:
         """
         Calculate the radial electric field for the TE11 mode
@@ -93,15 +114,11 @@ class CircularWaveguide:
         """
         rho, phi = self._validate_position(rho, phi)
         A = self._validate_amplitude(A)
+        return self._e_field_rho_impl(rho, np.cos(phi), A)
 
-        conditions = [rho > self._wgR, rho == 0.0, rho <= self._wgR]
-        choices = [0.0, A * np.cos(phi) / self._kc,
-                   A * self._safe_j1_over_rho(self._kc * rho) * np.cos(phi)]
-        return np.select(conditions, choices)
-
-    
     def e_field_te11_phi_1(self, rho: ArrayLike, phi: ArrayLike, A: ArrayLike) -> NDArray:
-        """Calculate the radial electric field for the TE11 mode
+        """
+        Calculate the azimuthal electric field for the TE11 mode
 
         Parameters
         ----------
@@ -111,10 +128,7 @@ class CircularWaveguide:
         """
         rho, phi = self._validate_position(rho, phi)
         A = self._validate_amplitude(A)
-
-        conditions = [rho > self._wgR, rho <= self._wgR]
-        choices = [0.0, -A * jvp(1, self._kc * rho, 1) * np.sin(phi)]
-        return np.select(conditions, choices)
+        return self._e_field_phi_impl(rho, -np.sin(phi), A)
 
     def e_field_te11_z(self, rho, phi, A) -> NDArray:
         """
@@ -141,11 +155,11 @@ class CircularWaveguide:
         A: float
             Amplitude of the mode
         """
-
-        return np.array([self.e_field_te11_rho_1(rho, phi, A) * np.cos(phi) - self.e_field_te11_phi_1(rho, phi, A) * np.sin(phi),
-                         self.e_field_te11_rho_1(
-                             rho, phi, A) * np.sin(phi) + self.e_field_te11_phi_1(rho, phi, A) * np.cos(phi),
-                         self.e_field_te11_z(rho, phi, A)])
+        rho, phi = self._validate_position(rho, phi)
+        A = self._validate_amplitude(A)
+        E_rho = self._e_field_rho_impl(rho, np.cos(phi), A)
+        E_phi = self._e_field_phi_impl(rho, -np.sin(phi), A)
+        return self._to_cartesian(E_rho, E_phi, phi)
 
     def e_field_te11_pos_1(self, pos, A) -> NDArray:
         """
@@ -158,14 +172,13 @@ class CircularWaveguide:
         A: float
             Amplitude of the mode
         """
-
         rho = np.sqrt(pos[0]**2 + pos[1]**2)
         phi = np.arctan2(pos[1], pos[0])
         return self.e_field_te11_1(rho, phi, A)
 
     def e_field_te11_rho_2(self, rho: ArrayLike, phi: ArrayLike, A: ArrayLike) -> NDArray:
         """
-        Calculate the radial electric field for the TE11 mode
+        Calculate the radial electric field for the TE11 mode 2
 
         Parameters
         ----------
@@ -175,18 +188,11 @@ class CircularWaveguide:
         """
         rho, phi = self._validate_position(rho, phi)
         A = self._validate_amplitude(A)
-
-        conditions = [rho > self._wgR, rho == 0.0, rho <= self._wgR]
-        choices = [
-            0.0,
-            -A * np.sin(phi) / self._kc,
-            -A * self._safe_j1_over_rho(self._kc * rho) * np.sin(phi)
-        ]
-        return np.select(conditions, choices)
+        return self._e_field_rho_impl(rho, -np.sin(phi), A)
 
     def e_field_te11_phi_2(self, rho: ArrayLike, phi: ArrayLike, A: ArrayLike) -> NDArray:
         """
-        Calculate the radial electric field for the TE11 mode
+        Calculate the azimuthal electric field for the TE11 mode 2
 
         Parameters
         ----------
@@ -199,30 +205,33 @@ class CircularWaveguide:
         """
         rho, phi = self._validate_position(rho, phi)
         A = self._validate_amplitude(A)
-
-        conditions = [rho > self._wgR, rho <= self._wgR]
-        choices = [0.0, -A * jvp(1, self._kc * rho, 1) * np.cos(phi)]
-        return np.select(conditions, choices)
+        return self._e_field_phi_impl(rho, -np.cos(phi), A)
 
     def e_field_te11_2(self, rho, phi, A) -> NDArray:
-        """Calculate the electric field vector for mode 2 in Cartesian coordinates
+        """
+        Calculate the electric field vector for mode 2 in Cartesian coordinates
 
+        Parameters
+        ----------
         rho: float representing the radial position
         phi: float representing the azimuthal position
+        A: float representing the amplitude of the mode
         """
-
-        return np.array([self.e_field_te11_rho_2(rho, phi, A) * np.cos(phi) - self.e_field_te11_phi_2(rho, phi, A) * np.sin(phi),
-                        self.e_field_te11_rho_2(
-                            rho, phi, A) * np.sin(phi) + self.e_field_te11_phi_2(rho, phi, A) * np.cos(phi),
-                        self.e_field_te11_z(rho, phi, A)])
+        rho, phi = self._validate_position(rho, phi)
+        A = self._validate_amplitude(A)
+        E_rho = self._e_field_rho_impl(rho, -np.sin(phi), A)
+        E_phi = self._e_field_phi_impl(rho, -np.cos(phi), A)
+        return self._to_cartesian(E_rho, E_phi, phi)
 
     def e_field_te11_pos_2(self, pos, A) -> NDArray:
-        """Calculate the electric field vector for mode 2 in Cartesian coordinates
-
-        pos: numpy array representing the position
-        A: float representing normlisation constant
         """
+        Calculate the electric field vector for mode 2 in Cartesian coordinates
 
+        Parameters
+        ----------
+        pos: numpy array representing the position
+        A: float representing normalisation constant
+        """
         rho = np.sqrt(pos[0]**2 + pos[1]**2)
         phi = np.arctan2(pos[1], pos[0])
         return self.e_field_te11_2(rho, phi, A)
