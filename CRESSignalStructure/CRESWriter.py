@@ -9,7 +9,7 @@ with metadata stored as attributes with specific unit-labeled keys.
 import h5py
 import numpy as np
 import scipy.constants as sc
-from typing import Dict, Any, Union
+from typing import Any, Union
 
 # Internal Imports
 from .Particle import Particle
@@ -17,18 +17,19 @@ from .CircularWaveguide import CircularWaveguide
 from .BaseTrap import BaseTrap
 from .BaseField import BaseField
 from .RealFields import HarmonicField, BathtubField
+from .QTNMTraps import BathtubTrap, HarmonicTrap
 
 class CRESWriter:
     def __init__(self, filename: str, mode: str = 'w'):
         self.filename = filename
         self.mode = mode
-        self.file = None
+        self.file: h5py.File | None
         self.current_index = 0
-        
+
         # Global objects to query for metadata
-        self._trap = None
-        self._waveguide = None
-        self._config = None
+        self._trap: BaseTrap | BaseField | None
+        self._waveguide: CircularWaveguide | None
+        self._config: dict[str, Any] | None
 
     def __enter__(self):
         self.file = h5py.File(self.filename, self.mode)
@@ -42,7 +43,7 @@ class CRESWriter:
 
     def set_global_config(self, trap: Union[BaseTrap, BaseField], 
                           waveguide: CircularWaveguide, 
-                          sim_config: Dict[str, Any]):
+                          sim_config: dict[str, Any]):
         """
         Stores physics objects to calculate attributes for every event.
         """
@@ -72,8 +73,8 @@ class CRESWriter:
         """
         Writes a single event with the exact legacy attribute structure.
         """
-        if self.file is None:
-            raise RuntimeError("CRESWriter must be used within a 'with' statement.")
+        if self.file is None or self._config is None or self._trap is None:
+            raise RuntimeError("CRESWriter must be used within a 'with' statement and set_global_config must be called first.")
 
         # --- SAFETY CHECK ---
         if len(time_array) != len(signal_array):
@@ -110,9 +111,9 @@ class CRESWriter:
 
         # --- Fields & Frequencies ---
         # B_local at the starting position
-        if hasattr(self._trap, 'evaluate_field_magnitude'):
+        if isinstance(self._trap, BaseField):
             B_local = self._trap.evaluate_field_magnitude(pos[0], pos[1], pos[2])
-        elif hasattr(self._trap, 'get_b0'):
+        elif isinstance(self._trap, (HarmonicTrap, BathtubTrap)):
             B_local = self._trap.get_b0()
         else:
             B_local = 1.0 # Default fallback
@@ -124,18 +125,18 @@ class CRESWriter:
         
         # --- Waveguide ---
         omega_cyc = 2 * np.pi * f_cyc
-        try:
+        if isinstance(self._waveguide, CircularWaveguide):
             impedance = self._waveguide.calc_te11_impedance(omega_cyc)
-        except (ValueError, AttributeError):
+        else:
             impedance = np.nan
 
         # 3. Set Attributes (Exact Legacy Keys)
         attrs = dset.attrs
         
         # Trap / Background
-        if hasattr(self._trap, 'background') and isinstance(self._trap.background, np.ndarray):
+        if isinstance(self._trap, (HarmonicField, BathtubField)):
             attrs['B_bkg [Tesla]'] = abs(self._trap.background[2])
-        elif hasattr(self._trap, 'get_b0'):
+        elif isinstance(self._trap, (HarmonicTrap, BathtubTrap)):
             attrs['B_bkg [Tesla]'] = self._trap.get_b0()
         else:
             attrs['B_bkg [Tesla]'] = B_local
@@ -162,7 +163,7 @@ class CRESWriter:
         
         # WG Params
         # Handle cases where Waveguide might be a mock or different object
-        if hasattr(self._waveguide, 'wgR'):
+        if isinstance(self._waveguide, CircularWaveguide):
             attrs['r_wg [metres]'] = self._waveguide.wgR
         else:
             attrs['r_wg [metres]'] = 0.005 # Default 5mm
@@ -181,6 +182,10 @@ class CRESWriter:
         result : ScatteringResult
             Output from ScatteringSimulator.simulate()
         """
+        if self.file is None or self._config is None or self._trap is None:
+            raise RuntimeError("CRESWriter must be used within a 'with' " \
+                               "statement and set_global_config must be called first.")
+
         initial_particle = result.particles[0]
         self.write_event(initial_particle, result.times, result.signal)
 
@@ -207,10 +212,10 @@ class CRESWriter:
                 gamma = p.get_gamma()
                 mass = p.get_mass()
                 pos = p.get_position()
-                if hasattr(self._trap, 'evaluate_field_magnitude'):
+                if isinstance(self._trap, BaseField):
                     B_local = self._trap.evaluate_field_magnitude(
                         pos[0], pos[1], pos[2])
-                elif hasattr(self._trap, 'get_b0'):
+                elif isinstance(self._trap, (HarmonicTrap, BathtubTrap)):
                     B_local = self._trap.get_b0()
                 else:
                     B_local = 1.0
