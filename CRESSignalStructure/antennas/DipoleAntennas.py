@@ -221,7 +221,7 @@ class ShortDipoleAntenna(BaseAntenna):
 
         # Angle between dipole axis and observation direction
         cos_theta_d = np.dot(self._z_ax, r_hat)
-        sin_theta_d = np.sqrt(1 - cos_theta_d**2)
+        sin_theta_d = np.sqrt(np.clip(1 - cos_theta_d**2, 0.0, None))
 
         # Short dipole gain pattern: G(θ) = 1.5 * sin²(θ_d)
         gain = 1.5 * sin_theta_d**2
@@ -467,7 +467,7 @@ class HalfWaveDipoleAntenna(BaseAntenna):
 
         # Angle between dipole axis and observation direction
         cos_theta_d = np.dot(self._z_ax, r_hat)
-        sin_theta_d = np.sqrt(1 - cos_theta_d**2)
+        sin_theta_d = np.sqrt(np.clip(1 - cos_theta_d**2, 0.0, None))
 
         # Avoid division by zero at the poles
         if sin_theta_d < 1e-10:
