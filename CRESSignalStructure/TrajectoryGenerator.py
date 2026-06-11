@@ -207,7 +207,7 @@ class Trajectory:
 
         # Adiabatic invariant: sin²θ · B = const
         sin_theta_sq = np.clip(
-            np.sin(self.particle.get_pitch_angle())**2 * B_0 / B_vals, 0.0, 1.0)
+            np.sin(self.particle.get_pitch_angle())**2 * B_vals / B_0, 0.0, 1.0)
         sin_theta = np.sqrt(sin_theta_sq)
         cos_theta = np.sqrt(1.0 - sin_theta_sq)
 
@@ -365,7 +365,7 @@ class TrajectoryGenerator:
             p_start[0], p_start[1], p_start[2])
         theta_0 = self.particle.get_pitch_angle()
 
-        sin_theta_squared = np.sin(theta_0)**2 * B_0 / B_vals
+        sin_theta_squared = np.sin(theta_0)**2 * B_vals / B_0
         sin_theta_squared = np.clip(sin_theta_squared, 0.0, 1.0)
 
         # Perpendicular velocity at each point (speed is constant for this calc)
@@ -785,7 +785,7 @@ class TrajectoryGenerator:
         field_0 = self.field.evaluate_field_magnitude(
             p_start[0], p_start[1], p_start[2])
         sin_theta_squared = np.sin(
-            self.particle.get_pitch_angle())**2 * field_0 / B_vals
+            self.particle.get_pitch_angle())**2 * B_vals / field_0
 
         # Clamp to [0, 1] to handle numerical issues
         sin_theta_squared = np.clip(sin_theta_squared, 0.0, 1.0)
