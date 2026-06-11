@@ -459,7 +459,7 @@ class CircularWaveguide:
             E_phi = self.e_field_te11_phi_1(rho, phi, 1.0)
             return (E_rho**2 + E_phi**2) * rho
 
-        E1Integral, error = dblquad(
+        result = dblquad(
             integrand_rho_phi,
             0.0,              # rho lower limit
             self.wgR,         # rho upper limit
@@ -469,7 +469,7 @@ class CircularWaveguide:
             epsrel=1e-8
         )
 
-        return 1 / np.sqrt(E1Integral)
+        return 1 / np.sqrt(result[0])
 
     def get_phase_velocity(self, omega: float) -> float:
         """
