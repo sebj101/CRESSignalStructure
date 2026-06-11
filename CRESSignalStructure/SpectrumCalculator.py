@@ -196,7 +196,7 @@ class SpectrumCalculator:
             return self._get_peak_amp_numerical(order, negativeFreqs)
 
     def _get_peak_amp_analytical(self, order: NDArray, negativeFreqs: bool) -> NDArray:
-        kc = 1.841 / self._waveguide.get_radius()
+        kc = self._waveguide.get_kc()
         f1 = self.get_peak_frequency(order)
         pitchAngle = self._particle.get_pitch_angle()
         v0 = self._particle.get_speed()
@@ -287,6 +287,10 @@ class SpectrumCalculator:
             raise TypeError("Trap type currently not supported")
 
     def _get_peak_amp_numerical(self, order: NDArray, negativeFreqs: bool) -> NDArray:
+        if not isinstance(self._trap, BaseField):
+            raise ValueError("Cannot numerically calculate peak amplitudes for " \
+                             "classes not derived from BaseField.")
+
         t1, z = self._trap.calc_t_vs_z(self._particle)
         interp_t1_z = interp1d(t1, z, kind='cubic')
 
