@@ -249,72 +249,6 @@ class TestElectricFieldMode1:
         assert np.allclose(E_vec, E_vec_direct)
 
 
-class TestMagneticFieldMode1:
-    """Tests for TE11 mode 1 magnetic field calculations"""
-
-    def test_hfield_outside_waveguide(self):
-        """Test that magnetic field is zero outside waveguide"""
-        wg = CircularWaveguide(0.01)
-        rho = 0.02  # Outside waveguide
-        phi = 0.0
-        omega_c = 1.841 * sc.c / 0.01
-        omega = 2 * omega_c
-        A = 1.0
-
-        H_rho = wg.h_field_te11_rho_1(rho, phi, omega, A)
-        H_phi = wg.h_field_te11_phi_1(rho, phi, omega, A)
-
-        assert H_rho == 0.0
-        assert H_phi == 0.0
-
-    def test_hfield_inside_waveguide(self):
-        """Test magnetic field inside waveguide"""
-        wg = CircularWaveguide(0.01)
-        rho = 0.005
-        phi = np.pi / 4
-        omega_c = 1.841 * sc.c / 0.01
-        omega = 2 * omega_c
-        A = 1.0
-
-        H_rho = wg.h_field_te11_rho_1(rho, phi, omega, A)
-        H_phi = wg.h_field_te11_phi_1(rho, phi, omega, A)
-
-        # Should be non-zero inside waveguide
-        assert H_rho != 0.0
-        assert H_phi != 0.0
-
-    def test_hfield_cartesian_conversion(self):
-        """Test magnetic field in Cartesian coordinates"""
-        wg = CircularWaveguide(0.01)
-        rho = 0.005
-        phi = np.pi / 4
-        omega_c = 1.841 * sc.c / 0.01
-        omega = 2 * omega_c
-        A = 1.0
-
-        H_vec = wg.h_field_te11_1(rho, phi, omega, A)
-        assert H_vec.shape == (3,)
-        assert H_vec[2] == 0.0  # z-component should be zero for TE11
-
-    def test_hfield_from_position_vector(self):
-        """Test magnetic field calculation from position vector"""
-        wg = CircularWaveguide(0.01)
-        x, y, z = 0.005, 0.005, 0.0
-        pos = np.array([x, y, z])
-        omega_c = 1.841 * sc.c / 0.01
-        omega = 2 * omega_c
-        A = 1.0
-
-        H_vec = wg.h_field_te11_pos_1(pos, omega, A)
-        assert H_vec.shape == (3,)
-
-        # Compare with direct calculation
-        rho = np.sqrt(x**2 + y**2)
-        phi = np.arctan2(y, x)
-        H_vec_direct = wg.h_field_te11_1(rho, phi, omega, A)
-        assert np.allclose(H_vec, H_vec_direct)
-
-
 class TestElectricFieldMode2:
     """Tests for TE11 mode 2 electric field calculations"""
 
@@ -363,66 +297,6 @@ class TestElectricFieldMode2:
 
         E_vec = wg.e_field_te11_pos_2(pos, A)
         assert E_vec.shape == (3,)
-
-
-class TestMagneticFieldMode2:
-    """Tests for TE11 mode 2 magnetic field calculations"""
-
-    def test_hfield_mode2_outside_waveguide(self):
-        """Test that magnetic field is zero outside waveguide for mode 2"""
-        wg = CircularWaveguide(0.01)
-        rho = 0.02
-        phi = 0.0
-        omega_c = 1.841 * sc.c / 0.01
-        omega = 2 * omega_c
-        A = 1.0
-
-        H_rho = wg.h_field_te11_rho_2(rho, phi, omega, A)
-        H_phi = wg.h_field_te11_phi_2(rho, phi, omega, A)
-
-        assert H_rho == 0.0
-        assert H_phi == 0.0
-
-    def test_hfield_mode2_inside_waveguide(self):
-        """Test magnetic field inside waveguide for mode 2"""
-        wg = CircularWaveguide(0.01)
-        rho = 0.005
-        phi = np.pi / 4
-        omega_c = 1.841 * sc.c / 0.01
-        omega = 2 * omega_c
-        A = 1.0
-
-        H_rho = wg.h_field_te11_rho_2(rho, phi, omega, A)
-        H_phi = wg.h_field_te11_phi_2(rho, phi, omega, A)
-
-        # Should be non-zero inside waveguide
-        assert H_rho != 0.0
-        assert H_phi != 0.0
-
-    def test_hfield_mode2_cartesian_conversion(self):
-        """Test mode 2 magnetic field in Cartesian coordinates"""
-        wg = CircularWaveguide(0.01)
-        rho = 0.005
-        phi = np.pi / 4
-        omega_c = 1.841 * sc.c / 0.01
-        omega = 2 * omega_c
-        A = 1.0
-
-        H_vec = wg.h_field_te11_2(rho, phi, omega, A)
-        assert H_vec.shape == (3,)
-        assert H_vec[2] == 0.0
-
-    def test_hfield_mode2_from_position_vector(self):
-        """Test mode 2 magnetic field from position vector"""
-        wg = CircularWaveguide(0.01)
-        x, y, z = 0.005, 0.005, 0.0
-        pos = np.array([x, y, z])
-        omega_c = 1.841 * sc.c / 0.01
-        omega = 2 * omega_c
-        A = 1.0
-
-        H_vec = wg.h_field_te11_pos_2(pos, omega, A)
-        assert H_vec.shape == (3,)
 
 
 class TestVelocityCalculations:
@@ -561,19 +435,6 @@ class TestArrayInputs:
         E_phi = wg.e_field_te11_phi_1(rho, phi, A)
         assert E_phi.shape == rho.shape
         assert np.all(np.isfinite(E_phi))
-
-    def test_hfield_array_inputs(self):
-        """Test magnetic field with array inputs"""
-        wg = CircularWaveguide(0.01)
-        rho = np.array([0.003, 0.005, 0.007])
-        phi = np.array([0.0, np.pi/4, np.pi/2])
-        omega_c = 1.841 * sc.c / 0.01
-        omega = 2 * omega_c
-        A = 1.0
-
-        H_rho = wg.h_field_te11_rho_1(rho, phi, omega, A)
-        assert H_rho.shape == rho.shape
-        assert np.all(np.isfinite(H_rho))
 
 
 class TestPhysicsConsistency:
