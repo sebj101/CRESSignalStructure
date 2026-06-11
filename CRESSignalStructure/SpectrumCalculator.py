@@ -224,7 +224,7 @@ class SpectrumCalculator:
             L1 = self._trap.get_l1()
 
             M_SUM_RANGE = 40
-            MArr = np.arange(-M_SUM_RANGE, 21, 1)
+            MArr = np.arange(-M_SUM_RANGE, M_SUM_RANGE+1, 1)
 
             def CalcAlpha_n(n):
                 n = np.asarray(n)
