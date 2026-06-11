@@ -51,7 +51,7 @@ class CRESWriter:
         self._config = sim_config
 
     def _get_trap_params(self):
-        """Helper to extract parameters trap parameters."""
+        """Helper to extract trap parameters."""
         params = {'i_coil [Amps]': np.nan, 'r_coil [metres]': np.nan}
 
         if isinstance(self._trap, HarmonicField):
