@@ -16,11 +16,11 @@ class CircularWaveguide:
         if not np.isfinite(radius):
             raise ValueError("Radius must be finite")
 
-        self.wgR = radius
-        self._kc = self._TE11_KC_COEFF / self.wgR
+        self._wgR = radius
+        self._kc = self._TE11_KC_COEFF / self._wgR
 
     def __str__(self):
-        return f"Waveguide with radius {self.wgR} metres"
+        return f"Waveguide with radius {self._wgR} metres"
 
     def _validate_frequency(self, omega: float) -> None:
         """
@@ -94,7 +94,7 @@ class CircularWaveguide:
         rho, phi = self._validate_position(rho, phi)
         A = self._validate_amplitude(A)
 
-        conditions = [rho > self.wgR, rho == 0.0, rho <= self.wgR]
+        conditions = [rho > self._wgR, rho == 0.0, rho <= self._wgR]
         choices = [0.0, A * np.cos(phi) / self._kc,
                    A * self._safe_j1_over_rho(self._kc * rho) * np.cos(phi)]
         return np.select(conditions, choices)
@@ -112,7 +112,7 @@ class CircularWaveguide:
         rho, phi = self._validate_position(rho, phi)
         A = self._validate_amplitude(A)
 
-        conditions = [rho > self.wgR, rho <= self.wgR]
+        conditions = [rho > self._wgR, rho <= self._wgR]
         choices = [0.0, -A * jvp(1, self._kc * rho, 1) * np.sin(phi)]
         return np.select(conditions, choices)
 
@@ -176,7 +176,7 @@ class CircularWaveguide:
         rho, phi = self._validate_position(rho, phi)
         A = self._validate_amplitude(A)
 
-        conditions = [rho > self.wgR, rho == 0.0, rho <= self.wgR]
+        conditions = [rho > self._wgR, rho == 0.0, rho <= self._wgR]
         choices = [
             0.0,
             -A * np.sin(phi) / self._kc,
@@ -200,7 +200,7 @@ class CircularWaveguide:
         rho, phi = self._validate_position(rho, phi)
         A = self._validate_amplitude(A)
 
-        conditions = [rho > self.wgR, rho <= self.wgR]
+        conditions = [rho > self._wgR, rho <= self._wgR]
         choices = [0.0, -A * jvp(1, self._kc * rho, 1) * np.cos(phi)]
         return np.select(conditions, choices)
 
@@ -265,7 +265,7 @@ class CircularWaveguide:
         result = dblquad(
             integrand_rho_phi,
             0.0,              # rho lower limit
-            self.wgR,         # rho upper limit
+            self._wgR,         # rho upper limit
             0.0,              # phi lower limit
             2 * np.pi,        # phi upper limit
             epsabs=1e-10,
@@ -309,3 +309,25 @@ class CircularWaveguide:
         self._validate_frequency(omega)
         omega_c = self._kc * sc.c
         return sc.c * np.sqrt(1 - (omega_c / omega)**2)
+
+    def get_radius(self) -> float:
+        """
+        Gets the waveguide radius
+
+        Returns
+        -------
+        float
+            Waveguide radius in metres
+        """
+        return self._wgR
+    
+    def get_kc(self) -> float:
+        """
+        Gets the cutoff wavenumber.
+
+        Returns
+        -------
+        float
+            Cutoff wavenumber in units of radians / metre
+        """
+        return self._kc

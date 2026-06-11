@@ -16,7 +16,7 @@ class TestCircularWaveguideConstruction:
         """Test creating a valid waveguide"""
         radius = 0.01  # 1 cm radius
         wg = CircularWaveguide(radius)
-        assert wg.wgR == radius
+        assert wg.get_radius() == radius
 
     def test_waveguide_string_representation(self):
         """Test string representation"""

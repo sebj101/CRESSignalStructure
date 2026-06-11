@@ -164,7 +164,7 @@ class CRESWriter:
         # WG Params
         # Handle cases where Waveguide might be a mock or different object
         if isinstance(self._waveguide, CircularWaveguide):
-            attrs['r_wg [metres]'] = self._waveguide.wgR
+            attrs['r_wg [metres]'] = self._waveguide.get_radius()
         else:
             attrs['r_wg [metres]'] = 0.005 # Default 5mm
 

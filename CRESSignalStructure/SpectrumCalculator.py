@@ -56,8 +56,8 @@ class SpectrumCalculator:
         def alphaIntegrand(rho, kc):
             return rho * ((j1(kc * rho) / (kc * rho))**2 + jvp(1, kc * rho)**2)
 
-        kc = 1.841 / self._waveguide.wgR
-        alpha, _ = quad(alphaIntegrand, 0, self._waveguide.wgR, args=kc)
+        kc = self._waveguide.get_kc()
+        alpha, _ = quad(alphaIntegrand, 0, self._waveguide.get_radius(), args=kc)
         r_gyro = np.sqrt(self._particle.get_position()[0]**2 +
                          self._particle.get_position()[1]**2)
 
@@ -196,7 +196,7 @@ class SpectrumCalculator:
             return self._get_peak_amp_numerical(order, negativeFreqs)
 
     def _get_peak_amp_analytical(self, order: NDArray, negativeFreqs: bool) -> NDArray:
-        kc = 1.841 / self._waveguide.wgR
+        kc = 1.841 / self._waveguide.get_radius()
         f1 = self.get_peak_frequency(order)
         pitchAngle = self._particle.get_pitch_angle()
         v0 = self._particle.get_speed()
@@ -297,7 +297,7 @@ class SpectrumCalculator:
         Ta = t[-1]
         z_t = interp_t1_z(t)
 
-        omega_c = 1.841 * sc.c / self._waveguide.wgR
+        omega_c = self._waveguide.get_kc() * sc.c
         v_phase = sc.c / np.sqrt(1 - (omega_c / omega_0)**2)
         kLambda = omega_0 / v_phase
 
