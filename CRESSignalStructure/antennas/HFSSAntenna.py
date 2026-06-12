@@ -197,7 +197,7 @@ class HFSSAntenna(BaseAntenna):
 
         # Effective length magnitude from gain + impedance
         wavelength = sc.c / frequency
-        R_in = np.real(self.GetImpedance(frequency))
+        R_in = np.real(self.get_impedance(frequency))
         l_mag = np.sqrt(np.maximum(gain, 0.0) * wavelength**2 * R_in
                         / (np.pi * _ETA0))               # (N,)
 
