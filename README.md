@@ -30,7 +30,7 @@ CRES is a technique used to measure the energy of electrons via the cyclotron ra
 
 ### Prerequisites
 
-- Python >= 3.9
+- Python >= 3.10
 - Numpy
 - Scipy >= 1.12
 - pip
@@ -40,7 +40,7 @@ CRES is a technique used to measure the energy of electrons via the cyclotron ra
 Clone the repository and install the package:
 
 ```bash
-git clone https://github.com/yourusername/CRESSignalStructure.git
+git clone https://github.com/sebj101/CRESSignalStructure.git
 cd CRESSignalStructure
 pip install -e .
 ```
@@ -60,7 +60,12 @@ pip install -e ".[test]"
 Here's a simple example of calculating a CRES power spectrum:
 
 ```python
-from CRESSignalStructure import HarmonicTrap, CircularWaveguide, Particle, PowerSpectrumCalculator
+from CRESSignalStructure import (
+    HarmonicTrap, 
+    CircularWaveguide, 
+    Electron, 
+    SpectrumCalculator
+)
 
 # Create a harmonic trap with magnetic field parameters
 trap = HarmonicTrap(B0=1.0, L0=0.2)  # B0 in Tesla, L0 in m
@@ -69,22 +74,21 @@ trap = HarmonicTrap(B0=1.0, L0=0.2)  # B0 in Tesla, L0 in m
 waveguide = CircularWaveguide(radius=0.005)  # 5mm radius
 
 # Create an electron with specific energy and pitch angle
-particle = Particle(
-    mass=9.10938e-31,      # electron mass in kg
-    charge=-1.602176e-19,  # electron charge in C
-    kinetic_energy=18.6e3, # 18.6 keV
-    pitch_angle=1.5        # radians
+particle = Electron(
+    ke=18.6e3,      # eV
+    startPos=np.array([1e-3, 0.0, 0.0]),  # metres
+    pitchAngle=89.9*np.pi/180.0  # radians
 )
 
 # Calculate power spectrum
-calculator = PowerSpectrumCalculator(trap, waveguide, particle)
+calculator = SpectrumCalculator(trap, waveguide, particle)
 
 # Get peak frequencies for the fundamental (order=0)
-freq = calculator.GetPeakFrequency(order=0)
+freq = calculator.get_peak_frequency(order=0)
 print(f"Cyclotron frequency: {freq/1e9:.3f} GHz")
 
 # Get power in the fundamental peak
-power = calculator.GetPeakPower(order=0)
+power = calculator.get_peak_power(order=0)
 print(f"Power: {power*1e15:.3f} fW")
 ```
 
@@ -156,11 +160,18 @@ The **CircularWaveguide** class models TE11 mode electromagnetic fields in circu
 - Characteristic impedance
 - Cutoff frequencies
 
-### Power Spectrum Calculators
+### Spectrum Calculator (for waveguide geometries)
 
-- **BaseSpectrumCalculator**: Abstract base class for spectrum calculations
-- **PowerSpectrumCalculator**: Analytical calculations for harmonic and bathtub traps
-- **NumericalSpectrumCalculator**: Numerical integration approach for arbitrary magnetic field configurations
+- **SpectrumCalculator**: Class for calculating power spectra in waveguides
+
+### Scattering
+
+Models of both elastic and inelastic scattering are included (currently just for waveguide geometries) for hydrogen and helium via the following classes:
+- **BaseCrossSection**: Abstract base class for cross section models
+- **InelasticCrossSection**: Rudd model of impact ionisation is used here -- the class is configurable according to the species involved.
+- **ElasticCrossSection**: A screened Rutherford model is used for elastic cross sections -- the class is configurable via an inputted Z and A
+- **GasModel**: Allows for mixtures of gases to be modelled by inputting cross section models along with the relevant gas number densities
+- **ScatteringSimulator**: Generates time series signals with scattering included by calling `SpectrumCalculator` multiple times
 
 ### Antennas
 
@@ -177,7 +188,7 @@ The antenna module provides classes for modelling different antenna types:
 
 ### Signal Generation
 
-- **SignalGenerator**: Generates time-domain signals from power spectrum calculators (frequency domain approach)
+- **SignalGenerator**: Generates time-domain signals from power spectrum calculators (frequency domain approach applicable for waveguides)
 - **AntennaSignalGenerator**: Generates signals from electron trajectories using antenna models with Lienard-Wiechert fields
 - **ReceiverChain**: Models signal processing chain (downmixing, amplification, digitization)
 
@@ -190,10 +201,11 @@ The antenna module provides classes for modelling different antenna types:
 
 Example Jupyter notebooks are provided in the repository:
 
-- [TestPowerSpec.ipynb](TestPowerSpec.ipynb) - Basic power spectrum calculations
-- [HarmonicComparison.ipynb](HarmonicComparison.ipynb) - Comparison of harmonic trap models
-- [RealisticFields.ipynb](RealisticFields.ipynb) - Working with realistic magnetic field configurations
-- [SignalGenExample.ipynb](SignalGenExample.ipynb) - Generating downmixed and sampled signals
+- [GettingStarted.ipynb](examples/GettingStarted.ipynb) - Shows the basic mechanics of generating spectra, both with waveguide geometries and with antennas
+- [HarmonicComparison.ipynb](examples/armonicComparison.ipynb) - Comparison of harmonic trap models
+- [RealisticFields.ipynb](examples/RealisticFields.ipynb) - Working with realistic magnetic field configurations
+- [SignalGenExample.ipynb](examples/SignalGenExample.ipynb) - Generating downmixed and sampled signals
+- [DopplerEffectDemo.ipynb](examples/DopplerEffectDemo.ipynb) - Demonstration of the power of the Doppler effect in a long trap
 
 ## Testing
 
@@ -215,30 +227,35 @@ pytest --cov=CRESSignalStructure
 CRESSignalStructure/
 ├── CRESSignalStructure/                # Main package directory
 │   ├── __init__.py
-│   ├── BaseTrap.py                     # Abstract trap base class
-│   ├── QTNMTraps.py                    # Harmonic and bathtub trap implementations
-│   ├── BaseField.py                    # Abstract field base class
-│   ├── RealFields.py                   # Field implementations
-│   ├── Particle.py                     # Particle and Electron classes
-│   ├── CircularWaveguide.py            # Waveguide calculations
-│   ├── BaseSpectrumCalculator.py       # Abstract spectrum calculator base class
-│   ├── PowerSpectrumCalculator.py      # Analytical spectrum calculator
-│   ├── NumericalSpectrumCalculator.py  # Numerical spectrum calculator
-│   ├── TrajectoryGenerator.py          # Trajectory generation with grad-B drift
-│   ├── ReceiverChain.py                # Signal processing chain
-│   ├── SignalGenerator.py              # Frequency-domain signal generation
 │   ├── AntennaSignalGenerator.py       # Antenna-based signal generation
+│   ├── BaseField.py                    # Abstract field base class
+│   ├── BaseTrap.py                     # Abstract trap base class
+│   ├── CircularWaveguide.py            # Waveguide calculations
 │   ├── CRESWriter.py                   # HDF5 file I/O
 │   ├── EnsembleGenerator.py            # Batch simulation orchestration
-│   └── antennas/                       # Antenna models
+│   ├── Particle.py                     # Particle and Electron classes
+│   ├── QTNMTraps.py                    # Harmonic and bathtub trap implementations
+│   ├── RealFields.py                   # Field implementations
+│   ├── ReceiverChain.py                # Signal processing chain
+│   ├── SignalGenerator.py              # Frequency-domain signal generation
+│   ├── SpectrumCalculator.py           # Waveguide spectrum calculator class
+│   ├── TrajectoryGenerator.py          # Trajectory generation with grad-B drift
+│   ├── antennas/                       # Antenna models
+│   │   ├── __init__.py
+│   │   ├── BaseAntenna.py              # Abstract antenna base class
+│   │   ├── IsotropicAntenna.py         # Isotropic antenna
+│   │   └── DipoleAntennas.py           # Dipole antenna implementations
+│   └── scattering/                     # Scattering sub-folder
 │       ├── __init__.py
-│       ├── BaseAntenna.py              # Abstract antenna base class
-│       ├── IsotropicAntenna.py         # Isotropic antenna
-│       └── DipoleAntennas.py           # Dipole antenna implementations
-├── tests/                              # Unit tests
+│       ├── BaseCrossSection.py         # Abstract cross-section base class
+│       ├── CrossSections.py            # Cross-section model implementations
+│       ├── GasModel.py                 # Gas mixture code
+│       ├── ScatteringSimulator.py      # Simulator for events with scattering
+│       └── scattering_utils.py         # Utilities for use with scattering models
+├── examples/                           
+├── tests/                              # Tests
 │   ├── unit/                           # Unit tests
 │   └── integration/                    # Integration tests
-├── *.ipynb                             # Example notebooks
 ├── pyproject.toml                      # Project configuration
 └── README.md                           # This file
 ```

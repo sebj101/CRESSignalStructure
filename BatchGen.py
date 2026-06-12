@@ -15,7 +15,7 @@ import scipy.constants as sc
 from CRESSignalStructure.RealFields import HarmonicField
 from CRESSignalStructure.CircularWaveguide import CircularWaveguide
 from CRESSignalStructure.Particle import Particle
-from CRESSignalStructure.NumericalSpectrumCalculator import NumericalSpectrumCalculator
+from CRESSignalStructure.SpectrumCalculator import SpectrumCalculator
 from CRESSignalStructure.EnsembleGenerator import generate_uniform_ensemble
 
 def main():
@@ -37,6 +37,7 @@ def main():
     # Performance
     parser.add_argument("--mp", action="store_true", help="Enable Multiprocessing")
     parser.add_argument("--no-fft", action="store_true", help="Disable FFT generation (Signal only)")
+    parser.add_argument("--seed", type=int, default=None, help="RNG seed for reproducible results")
 
     args = parser.parse_args()
 
@@ -63,8 +64,8 @@ def main():
     mean_energy = (args.energy_min + args.energy_max) / 2 
     
     ref_p = Particle(ke=mean_energy, startPos=np.zeros(3), pitchAngle=mean_pitch_rad)
-    calc = NumericalSpectrumCalculator(trap, wg, ref_p)
-    f_carrier = calc.GetPeakFrequency(0)
+    calc = SpectrumCalculator(trap, wg, ref_p)
+    f_carrier = calc.get_peak_frequency(0)
 
     LO_FREQ = f_carrier - (F_DIGITIZER / 4)
     
@@ -113,13 +114,14 @@ def main():
             ranges=param_ranges,
             fft_output_file=fft_path,
             use_multiprocessing=args.mp,
-            verbose=True
+            verbose=True,
+            seed=args.seed
         )
 
     total_time = time.time() - total_start
     total_events = args.files * args.events
     print("=" * 40)
-    print(f"BATCH COMPLETE.")
+    print("BATCH COMPLETE.")
     print(f"Total Events: {total_events}")
     print(f"Total Time:   {total_time:.1f}s")
     print(f"Average Rate: {total_events/total_time:.1f} events/s")

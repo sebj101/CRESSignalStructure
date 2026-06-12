@@ -10,26 +10,25 @@ signal generation of CRES signals. This includes simulation of:
 """
 
 import logging
-
-from CRESSignalStructure.BaseSpectrumCalculator import BaseSpectrumCalculator
+from .SpectrumCalculator import SpectrumCalculator
 import numpy as np
 from numpy.typing import NDArray
-from scipy.signal import butter, sosfilt
+from scipy.signal import butter, sosfiltfilt
 import scipy.constants as sc
 
 logger = logging.getLogger(__name__)
 
 
 class SignalGenerator:
-    def __init__(self, spectrum_calc: BaseSpectrumCalculator,
+    def __init__(self, spectrum_calc: SpectrumCalculator,
                  sample_rate: float, lo_freq: float, acq_time: float):
         """
         Constructor for SignalGenerator class
 
         Parameters
         ----------
-        spectrum_calc : BaseSpectrumCalculator
-            Instance of PowerSpectrumCalculator or NumericalSpectrumCalculator
+        spectrum_calc : SpectrumCalculator
+            Instance of SpectrumCalculator
         sample_rate : float
             Digitizer sample rate in Hertz
         lo_freq : float
@@ -56,7 +55,8 @@ class SignalGenerator:
                     "LO frequency = %.5e Hz, acquisition time = %.3e s",
                     sample_rate, lo_freq, acq_time)
 
-    def GenerateSignal(self, max_order: int) -> tuple[NDArray, NDArray]:
+    def generate_signal(self, max_order: int, phi_c: float = 0.0,
+                       phi_a: float = 0.0) -> tuple[NDArray, NDArray]:
         """
         Main method orchestrating signal generation
 
@@ -64,11 +64,15 @@ class SignalGenerator:
         ----------
         max_order : int
             Maximum order of sideband to calculate
+        phi_c : float
+            Initial cyclotron phase in radians (default 0.0)
+        phi_a : float
+            Initial axial phase in radians (default 0.0)
 
         Returns
         -------
-        NDArray 
-            A 1D array of complex numbers representing the time series signal in 
+        NDArray
+            A 1D array of complex numbers representing the time series signal in
             units of volts, assuming a 50 Ohm impedance
         """
         if not isinstance(max_order, int):
@@ -79,22 +83,23 @@ class SignalGenerator:
         FAST_SAMPLE_FACTOR = 5
         FAST_SAMPLE_FREQ = FAST_SAMPLE_FACTOR * self.__sample_rate
         N_SAMPLES = int(self.__acq_time * FAST_SAMPLE_FREQ)
-        times_fast_sample = np.linspace(
-            0, N_SAMPLES / FAST_SAMPLE_FREQ, N_SAMPLES)
+        times_fast_sample = np.arange(N_SAMPLES) / FAST_SAMPLE_FREQ
 
-        # Get the fourier amplitudes and frequencies
+        # Get the fourier amplitudes and frequencies, applying initial phases
         orders = np.arange(-max_order, max_order+1, 1)
-        fourier_freqs = self.__spec_calc.GetPeakFrequency(orders, False)
+        fourier_freqs = self.__spec_calc.get_peak_frequency(orders, False)
         fourier_freqs = np.append(
-            fourier_freqs, self.__spec_calc.GetPeakFrequency(orders, True))
-        fourier_amps = self.__spec_calc.GetPeakAmp(orders, False)
+            fourier_freqs, self.__spec_calc.get_peak_frequency(orders, True))
+        fourier_amps = self.__spec_calc.apply_phase_shifts(
+            self.__spec_calc.get_peak_amp(orders, False), orders, phi_c, phi_a, False)
         fourier_amps = np.append(
-            fourier_amps, self.__spec_calc.GetPeakAmp(orders, True))
+            fourier_amps, self.__spec_calc.apply_phase_shifts(
+                self.__spec_calc.get_peak_amp(orders, True), orders, phi_c, phi_a, True))
 
         # Calculate the chirp rate
-        beta = self.__spec_calc.GetParticle().GetBeta()
-        gamma = self.__spec_calc.GetParticle().GetGamma()
-        central_freq = self.__spec_calc.GetPeakFrequency(0)
+        beta = self.__spec_calc.get_particle().get_beta()
+        gamma = self.__spec_calc.get_particle().get_gamma()
+        central_freq = self.__spec_calc.get_peak_frequency(0)
         chirp_rate_ang = sc.e**2 * (2 * np.pi * central_freq)**3 * gamma * \
             beta**2 / (6 * np.pi * sc.epsilon_0 * sc.c) / \
             (sc.m_e * sc.c**2)  # radians per second squared
@@ -108,8 +113,7 @@ class SignalGenerator:
         sos = butter(N=8, Wn=self.__sample_rate / 2, btype='low', output='sos',
                      fs=self.__sample_rate * FAST_SAMPLE_FACTOR)
         IMPEDANCE = 50.0  # Ohms
-        rf_signal_filtered = sosfilt(
-            sos, rf_signal_dm, zi=None) * np.sqrt(IMPEDANCE)
+        rf_signal_filtered = sosfiltfilt(sos, rf_signal_dm) * np.sqrt(IMPEDANCE)
 
         # Return reduced signal
-        return times_fast_sample[::FAST_SAMPLE_FACTOR], rf_signal_filtered[::FAST_SAMPLE_FACTOR] * np.sqrt(self.__spec_calc.GetPowerNorm())
+        return times_fast_sample[::FAST_SAMPLE_FACTOR], rf_signal_filtered[::FAST_SAMPLE_FACTOR] * np.sqrt(self.__spec_calc.get_power_norm())

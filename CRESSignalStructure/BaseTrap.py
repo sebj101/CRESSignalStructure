@@ -1,11 +1,11 @@
-'''
+"""
 BaseTrap.py
 
 This file contains the BaseTrap class, which is an abstract class representing a
 generic electron trap.
 
 S. Jones 29-07-25
-'''
+"""
 from abc import ABC, abstractmethod
 import numpy as np
 import scipy.constants as sc
@@ -23,7 +23,7 @@ class BaseTrap(ABC):
 
     __gradB = 0.0
 
-    def _ValidatePitchAngle(self, pitchAngle):
+    def _validate_pitch_angle(self, pitchAngle) -> NDArray[np.floating]:
         """Validate pitch angle parameter"""
         pitchAngle = np.asarray(pitchAngle)
 
@@ -38,7 +38,7 @@ class BaseTrap(ABC):
 
         return pitchAngle
 
-    def _ValidateVelocity(self, v):
+    def _validate_velocity(self, v) -> NDArray[np.floating]:
         """Validate speed parameter"""
         v = np.asarray(v)
 
@@ -49,7 +49,7 @@ class BaseTrap(ABC):
             raise ValueError("Velocity must be positive")
 
         if np.any(v >= sc.c):
-            raise ValueError(f"Velocity exceeds speed of light")
+            raise ValueError("Velocity exceeds speed of light")
 
         if not np.all(np.isfinite(v)):
             raise ValueError("Velocity must be finite")
@@ -57,43 +57,43 @@ class BaseTrap(ABC):
         return v
 
     @abstractmethod
-    def CalcZMax(self, pitchAngle: ArrayLike) -> NDArray[np.floating]:
+    def calc_z_max(self, pitchAngle: ArrayLike) -> NDArray[np.floating]:
         """
         Calculate the maximum axial position
 
         Parameters
         ----------
-        pitchAngle : ArrayLike 
+        pitchAngle : ArrayLike
             Pitch angle in radians
         """
 
     @abstractmethod
-    def CalcOmegaAxial(self, v: ArrayLike, pitchAngle: ArrayLike) -> NDArray[np.floating]:
+    def calc_omega_axial(self, v: ArrayLike, pitchAngle: ArrayLike) -> NDArray[np.floating]:
         """
         Get the axial frequency of the electron's motion
 
         Parameters
         ----------
-        v : ArrayLike 
+        v : ArrayLike
             Speed of the electron in m/s
-        pitchAngle : ArrayLike 
+        pitchAngle : ArrayLike
             Pitch angle in radians
         """
 
     @abstractmethod
-    def CalcOmega0(self, v: ArrayLike, pitchAngle: ArrayLike) -> NDArray[np.floating]:
+    def calc_omega_0(self, v: ArrayLike, pitchAngle: ArrayLike) -> NDArray[np.floating]:
         """
         Get the average cyclotron frequency
 
         Parameters
         ----------
-        v : ArrayLike 
+        v : ArrayLike
             Speed of the electron in m/s
-        pitchAngle : ArrayLike 
+        pitchAngle : ArrayLike
             Pitch angle in radians
         """
 
-    def GetGradB(self):
+    def get_grad_b(self) -> float:
         """
         Getter for the gradient of the magnetic field
 
@@ -103,13 +103,13 @@ class BaseTrap(ABC):
         """
         return self.__gradB
 
-    def SetGradB(self, gradB: float):
+    def set_grad_b(self, gradB: float) -> None:
         """
         Setter for the gradient of the magnetic field
 
         Parameters
         ----------
-        gradB : float 
+        gradB : float
             Gradient of the magnetic field in Tesla per metre
         """
         if not isinstance(gradB, (int, float)):

@@ -16,7 +16,7 @@ class TestCircularWaveguideConstruction:
         """Test creating a valid waveguide"""
         radius = 0.01  # 1 cm radius
         wg = CircularWaveguide(radius)
-        assert wg.wgR == radius
+        assert wg.get_radius() == radius
 
     def test_waveguide_string_representation(self):
         """Test string representation"""
@@ -58,7 +58,7 @@ class TestFrequencyValidation:
         wg = CircularWaveguide(0.01)
         omega_c = 1.841 * sc.c / 0.01
         omega = 2 * omega_c  # Well above cutoff
-        wg._ValidateFrequency(omega)
+        wg._validate_frequency(omega)
 
     def test_frequency_below_cutoff_raises_error(self):
         """Test that frequency below cutoff raises ValueError"""
@@ -66,37 +66,37 @@ class TestFrequencyValidation:
         omega_c = 1.841 * sc.c / 0.01
         omega = 0.5 * omega_c  # Below cutoff
         with pytest.raises(ValueError, match="below cutoff frequency"):
-            wg._ValidateFrequency(omega)
+            wg._validate_frequency(omega)
 
     def test_negative_frequency_raises_error(self):
         """Test that negative frequency raises ValueError"""
         wg = CircularWaveguide(0.01)
         with pytest.raises(ValueError, match="Frequency must be positive"):
-            wg._ValidateFrequency(-1e11)
+            wg._validate_frequency(-1e11)
 
     def test_zero_frequency_raises_error(self):
         """Test that zero frequency raises ValueError"""
         wg = CircularWaveguide(0.01)
         with pytest.raises(ValueError, match="Frequency must be positive"):
-            wg._ValidateFrequency(0.0)
+            wg._validate_frequency(0.0)
 
     def test_non_numeric_frequency_raises_error(self):
         """Test that non-numeric frequency raises TypeError"""
         wg = CircularWaveguide(0.01)
         with pytest.raises(TypeError, match="Frequency must be a number"):
-            wg._ValidateFrequency("1e11")
+            wg._validate_frequency("1e11")
 
     def test_infinite_frequency_raises_error(self):
         """Test that infinite frequency raises ValueError"""
         wg = CircularWaveguide(0.01)
         with pytest.raises(ValueError, match="Frequency must be finite"):
-            wg._ValidateFrequency(np.inf)
+            wg._validate_frequency(np.inf)
 
     def test_nan_frequency_raises_error(self):
         """Test that NaN frequency raises ValueError"""
         wg = CircularWaveguide(0.01)
         with pytest.raises(ValueError, match="Frequency must be finite"):
-            wg._ValidateFrequency(np.nan)
+            wg._validate_frequency(np.nan)
 
 
 class TestPositionValidation:
@@ -105,7 +105,7 @@ class TestPositionValidation:
     def test_valid_position(self):
         """Test that valid position passes validation"""
         wg = CircularWaveguide(0.01)
-        rho, phi = wg._ValidatePosition(0.005, np.pi / 4)
+        rho, phi = wg._validate_position(0.005, np.pi / 4)
         assert np.isclose(rho, 0.005)
         assert np.isclose(phi, np.pi / 4)
 
@@ -113,31 +113,31 @@ class TestPositionValidation:
         """Test that negative radial position raises ValueError"""
         wg = CircularWaveguide(0.01)
         with pytest.raises(ValueError, match="Radial position must be non-negative"):
-            wg._ValidatePosition(-0.001, 0.0)
+            wg._validate_position(-0.001, 0.0)
 
     def test_non_numeric_rho_raises_error(self):
         """Test that non-numeric radial position raises TypeError"""
         wg = CircularWaveguide(0.01)
         with pytest.raises(TypeError, match="Radial position must be numeric"):
-            wg._ValidatePosition("0.005", 0.0)
+            wg._validate_position("0.005", 0.0)
 
     def test_non_numeric_phi_raises_error(self):
         """Test that non-numeric azimuthal angle raises TypeError"""
         wg = CircularWaveguide(0.01)
         with pytest.raises(TypeError, match="Azimuthal angle must be numeric"):
-            wg._ValidatePosition(0.005, "0.0")
+            wg._validate_position(0.005, "0.0")
 
     def test_infinite_rho_raises_error(self):
         """Test that infinite radial position raises ValueError"""
         wg = CircularWaveguide(0.01)
         with pytest.raises(ValueError, match="Radial position must be finite"):
-            wg._ValidatePosition(np.inf, 0.0)
+            wg._validate_position(np.inf, 0.0)
 
     def test_infinite_phi_raises_error(self):
         """Test that infinite azimuthal angle raises ValueError"""
         wg = CircularWaveguide(0.01)
         with pytest.raises(ValueError, match="Azimuthal angle must be finite"):
-            wg._ValidatePosition(0.005, np.inf)
+            wg._validate_position(0.005, np.inf)
 
 
 class TestAmplitudeValidation:
@@ -146,26 +146,26 @@ class TestAmplitudeValidation:
     def test_valid_amplitude(self):
         """Test that valid amplitude passes validation"""
         wg = CircularWaveguide(0.01)
-        A = wg._ValidateAmplitude(1.0)
+        A = wg._validate_amplitude(1.0)
         assert np.isclose(A, 1.0)
 
     def test_non_numeric_amplitude_raises_error(self):
         """Test that non-numeric amplitude raises TypeError"""
         wg = CircularWaveguide(0.01)
         with pytest.raises(TypeError, match="Amplitude must be numeric"):
-            wg._ValidateAmplitude("1.0")
+            wg._validate_amplitude("1.0")
 
     def test_infinite_amplitude_raises_error(self):
         """Test that infinite amplitude raises ValueError"""
         wg = CircularWaveguide(0.01)
         with pytest.raises(ValueError, match="Amplitude must be finite"):
-            wg._ValidateAmplitude(np.inf)
+            wg._validate_amplitude(np.inf)
 
     def test_nan_amplitude_raises_error(self):
         """Test that NaN amplitude raises ValueError"""
         wg = CircularWaveguide(0.01)
         with pytest.raises(ValueError, match="Amplitude must be finite"):
-            wg._ValidateAmplitude(np.nan)
+            wg._validate_amplitude(np.nan)
 
 
 class TestElectricFieldMode1:
@@ -178,9 +178,9 @@ class TestElectricFieldMode1:
         phi = 0.0
         A = 1.0
 
-        E_rho = wg.EFieldTE11Rho_1(rho, phi, A)
-        E_phi = wg.EFieldTE11Phi_1(rho, phi, A)
-        E_z = wg.EFieldTE11Z(rho, phi, A)
+        E_rho = wg.e_field_te11_rho_1(rho, phi, A)
+        E_phi = wg.e_field_te11_phi_1(rho, phi, A)
+        E_z = wg.e_field_te11_z(rho, phi, A)
 
         assert E_rho == 0.0
         assert E_phi == 0.0
@@ -194,7 +194,7 @@ class TestElectricFieldMode1:
         A = 1.0
         kc = 1.841 / 0.01
 
-        E_rho = wg.EFieldTE11Rho_1(rho, phi, A)
+        E_rho = wg.e_field_te11_rho_1(rho, phi, A)
         expected = A * np.cos(phi) / kc
         assert np.isclose(E_rho, expected)
 
@@ -206,7 +206,7 @@ class TestElectricFieldMode1:
         A = 1.0
         kc = 1.841 / 0.01
 
-        E_rho = wg.EFieldTE11Rho_1(rho, phi, A)
+        E_rho = wg.e_field_te11_rho_1(rho, phi, A)
         expected = A * j1(kc * rho) / (kc * rho) * np.cos(phi)
         assert np.isclose(E_rho, expected)
 
@@ -218,7 +218,7 @@ class TestElectricFieldMode1:
         A = 1.0
 
         for rho in rho_values:
-            E_z = wg.EFieldTE11Z(rho, phi, A)
+            E_z = wg.e_field_te11_z(rho, phi, A)
             assert E_z == 0.0
 
     def test_efield_cartesian_conversion(self):
@@ -228,7 +228,7 @@ class TestElectricFieldMode1:
         phi = np.pi / 4
         A = 1.0
 
-        E_vec = wg.EFieldTE11_1(rho, phi, A)
+        E_vec = wg.e_field_te11_1(rho, phi, A)
         assert E_vec.shape == (3,)
         assert E_vec[2] == 0.0  # z-component should be zero
 
@@ -239,80 +239,14 @@ class TestElectricFieldMode1:
         pos = np.array([x, y, z])
         A = 1.0
 
-        E_vec = wg.EFieldTE11Pos_1(pos, A)
+        E_vec = wg.e_field_te11_pos_1(pos, A)
         assert E_vec.shape == (3,)
 
         # Compare with direct calculation
         rho = np.sqrt(x**2 + y**2)
         phi = np.arctan2(y, x)
-        E_vec_direct = wg.EFieldTE11_1(rho, phi, A)
+        E_vec_direct = wg.e_field_te11_1(rho, phi, A)
         assert np.allclose(E_vec, E_vec_direct)
-
-
-class TestMagneticFieldMode1:
-    """Tests for TE11 mode 1 magnetic field calculations"""
-
-    def test_hfield_outside_waveguide(self):
-        """Test that magnetic field is zero outside waveguide"""
-        wg = CircularWaveguide(0.01)
-        rho = 0.02  # Outside waveguide
-        phi = 0.0
-        omega_c = 1.841 * sc.c / 0.01
-        omega = 2 * omega_c
-        A = 1.0
-
-        H_rho = wg.HFieldTE11Rho_1(rho, phi, omega, A)
-        H_phi = wg.HFieldTE11Phi_1(rho, phi, omega, A)
-
-        assert H_rho == 0.0
-        assert H_phi == 0.0
-
-    def test_hfield_inside_waveguide(self):
-        """Test magnetic field inside waveguide"""
-        wg = CircularWaveguide(0.01)
-        rho = 0.005
-        phi = np.pi / 4
-        omega_c = 1.841 * sc.c / 0.01
-        omega = 2 * omega_c
-        A = 1.0
-
-        H_rho = wg.HFieldTE11Rho_1(rho, phi, omega, A)
-        H_phi = wg.HFieldTE11Phi_1(rho, phi, omega, A)
-
-        # Should be non-zero inside waveguide
-        assert H_rho != 0.0
-        assert H_phi != 0.0
-
-    def test_hfield_cartesian_conversion(self):
-        """Test magnetic field in Cartesian coordinates"""
-        wg = CircularWaveguide(0.01)
-        rho = 0.005
-        phi = np.pi / 4
-        omega_c = 1.841 * sc.c / 0.01
-        omega = 2 * omega_c
-        A = 1.0
-
-        H_vec = wg.HFieldTE11_1(rho, phi, omega, A)
-        assert H_vec.shape == (3,)
-        assert H_vec[2] == 0.0  # z-component should be zero for TE11
-
-    def test_hfield_from_position_vector(self):
-        """Test magnetic field calculation from position vector"""
-        wg = CircularWaveguide(0.01)
-        x, y, z = 0.005, 0.005, 0.0
-        pos = np.array([x, y, z])
-        omega_c = 1.841 * sc.c / 0.01
-        omega = 2 * omega_c
-        A = 1.0
-
-        H_vec = wg.HFieldTE11Pos_1(pos, omega, A)
-        assert H_vec.shape == (3,)
-
-        # Compare with direct calculation
-        rho = np.sqrt(x**2 + y**2)
-        phi = np.arctan2(y, x)
-        H_vec_direct = wg.HFieldTE11_1(rho, phi, omega, A)
-        assert np.allclose(H_vec, H_vec_direct)
 
 
 class TestElectricFieldMode2:
@@ -325,8 +259,8 @@ class TestElectricFieldMode2:
         phi = 0.0
         A = 1.0
 
-        E_rho = wg.EFieldTE11Rho_2(rho, phi, A)
-        E_phi = wg.EFieldTE11Phi_2(rho, phi, A)
+        E_rho = wg.e_field_te11_rho_2(rho, phi, A)
+        E_phi = wg.e_field_te11_phi_2(rho, phi, A)
 
         assert E_rho == 0.0
         assert E_phi == 0.0
@@ -339,7 +273,7 @@ class TestElectricFieldMode2:
         A = 1.0
         kc = 1.841 / 0.01
 
-        E_rho = wg.EFieldTE11Rho_2(rho, phi, A)
+        E_rho = wg.e_field_te11_rho_2(rho, phi, A)
         expected = -A * np.sin(phi) / kc
         assert np.isclose(E_rho, expected)
 
@@ -350,7 +284,7 @@ class TestElectricFieldMode2:
         phi = np.pi / 4
         A = 1.0
 
-        E_vec = wg.EFieldTE11_2(rho, phi, A)
+        E_vec = wg.e_field_te11_2(rho, phi, A)
         assert E_vec.shape == (3,)
         assert E_vec[2] == 0.0
 
@@ -361,68 +295,8 @@ class TestElectricFieldMode2:
         pos = np.array([x, y, z])
         A = 1.0
 
-        E_vec = wg.EFieldTE11Pos_2(pos, A)
+        E_vec = wg.e_field_te11_pos_2(pos, A)
         assert E_vec.shape == (3,)
-
-
-class TestMagneticFieldMode2:
-    """Tests for TE11 mode 2 magnetic field calculations"""
-
-    def test_hfield_mode2_outside_waveguide(self):
-        """Test that magnetic field is zero outside waveguide for mode 2"""
-        wg = CircularWaveguide(0.01)
-        rho = 0.02
-        phi = 0.0
-        omega_c = 1.841 * sc.c / 0.01
-        omega = 2 * omega_c
-        A = 1.0
-
-        H_rho = wg.HFieldTE11Rho_2(rho, phi, omega, A)
-        H_phi = wg.HFieldTE11Phi_2(rho, phi, omega, A)
-
-        assert H_rho == 0.0
-        assert H_phi == 0.0
-
-    def test_hfield_mode2_inside_waveguide(self):
-        """Test magnetic field inside waveguide for mode 2"""
-        wg = CircularWaveguide(0.01)
-        rho = 0.005
-        phi = np.pi / 4
-        omega_c = 1.841 * sc.c / 0.01
-        omega = 2 * omega_c
-        A = 1.0
-
-        H_rho = wg.HFieldTE11Rho_2(rho, phi, omega, A)
-        H_phi = wg.HFieldTE11Phi_2(rho, phi, omega, A)
-
-        # Should be non-zero inside waveguide
-        assert H_rho != 0.0
-        assert H_phi != 0.0
-
-    def test_hfield_mode2_cartesian_conversion(self):
-        """Test mode 2 magnetic field in Cartesian coordinates"""
-        wg = CircularWaveguide(0.01)
-        rho = 0.005
-        phi = np.pi / 4
-        omega_c = 1.841 * sc.c / 0.01
-        omega = 2 * omega_c
-        A = 1.0
-
-        H_vec = wg.HFieldTE11_2(rho, phi, omega, A)
-        assert H_vec.shape == (3,)
-        assert H_vec[2] == 0.0
-
-    def test_hfield_mode2_from_position_vector(self):
-        """Test mode 2 magnetic field from position vector"""
-        wg = CircularWaveguide(0.01)
-        x, y, z = 0.005, 0.005, 0.0
-        pos = np.array([x, y, z])
-        omega_c = 1.841 * sc.c / 0.01
-        omega = 2 * omega_c
-        A = 1.0
-
-        H_vec = wg.HFieldTE11Pos_2(pos, omega, A)
-        assert H_vec.shape == (3,)
 
 
 class TestVelocityCalculations:
@@ -434,7 +308,7 @@ class TestVelocityCalculations:
         omega_c = 1.841 * sc.c / 0.01
         omega = 2 * omega_c
 
-        v_phase = wg.GetPhaseVelocity(omega)
+        v_phase = wg.get_phase_velocity(omega)
         assert v_phase > sc.c
 
     def test_group_velocity_below_c(self):
@@ -443,7 +317,7 @@ class TestVelocityCalculations:
         omega_c = 1.841 * sc.c / 0.01
         omega = 2 * omega_c
 
-        v_group = wg.GetGroupVelocity(omega)
+        v_group = wg.get_group_velocity(omega)
         assert v_group < sc.c
 
     def test_velocity_product_equals_c_squared(self):
@@ -452,8 +326,8 @@ class TestVelocityCalculations:
         omega_c = 1.841 * sc.c / 0.01
         omega = 2 * omega_c
 
-        v_phase = wg.GetPhaseVelocity(omega)
-        v_group = wg.GetGroupVelocity(omega)
+        v_phase = wg.get_phase_velocity(omega)
+        v_group = wg.get_group_velocity(omega)
 
         assert np.isclose(v_phase * v_group, sc.c**2, rtol=1e-10)
 
@@ -463,8 +337,8 @@ class TestVelocityCalculations:
         omega_c = 1.841 * sc.c / 0.01
         omega = 100 * omega_c  # Very high frequency
 
-        v_phase = wg.GetPhaseVelocity(omega)
-        v_group = wg.GetGroupVelocity(omega)
+        v_phase = wg.get_phase_velocity(omega)
+        v_group = wg.get_group_velocity(omega)
 
         # At high frequency, both should approach c
         assert np.isclose(v_phase, sc.c, rtol=0.01)
@@ -477,10 +351,10 @@ class TestVelocityCalculations:
         omega = 0.5 * omega_c
 
         with pytest.raises(ValueError, match="below cutoff frequency"):
-            wg.GetPhaseVelocity(omega)
+            wg.get_phase_velocity(omega)
 
         with pytest.raises(ValueError, match="below cutoff frequency"):
-            wg.GetGroupVelocity(omega)
+            wg.get_group_velocity(omega)
 
 
 class TestImpedanceCalculations:
@@ -492,7 +366,7 @@ class TestImpedanceCalculations:
         omega_c = 1.841 * sc.c / 0.01
         omega = 2 * omega_c
 
-        Z = wg.CalcTE11Impedance(omega)
+        Z = wg.calc_te11_impedance(omega)
 
         # Impedance should be positive and real
         assert Z > 0
@@ -504,7 +378,7 @@ class TestImpedanceCalculations:
         omega_c = 1.841 * sc.c / 0.01
         omega = 100 * omega_c
 
-        Z = wg.CalcTE11Impedance(omega)
+        Z = wg.calc_te11_impedance(omega)
         # Free space impedance (~377 Ohms)
         Z0 = np.sqrt(sc.mu_0 / sc.epsilon_0)
 
@@ -518,7 +392,7 @@ class TestImpedanceCalculations:
         omega = 0.5 * omega_c
 
         with pytest.raises(ValueError, match="below cutoff frequency"):
-            wg.CalcTE11Impedance(omega)
+            wg.calc_te11_impedance(omega)
 
 
 class TestNormalisationFactor:
@@ -527,13 +401,13 @@ class TestNormalisationFactor:
     def test_normalisation_factor_positive(self):
         """Test that normalisation factor is positive"""
         wg = CircularWaveguide(0.01)
-        norm = wg.CalcNormalisationFactor()
+        norm = wg.calc_normalisation_factor()
         assert norm > 0
 
     def test_normalisation_factor_finite(self):
         """Test that normalisation factor is finite"""
         wg = CircularWaveguide(0.01)
-        norm = wg.CalcNormalisationFactor()
+        norm = wg.calc_normalisation_factor()
         assert np.isfinite(norm)
 
 
@@ -547,7 +421,7 @@ class TestArrayInputs:
         phi = np.pi/4
         A = 1.0
 
-        E_rho = wg.EFieldTE11Rho_1(rho, phi, A)
+        E_rho = wg.e_field_te11_rho_1(rho, phi, A)
         assert np.isfinite(E_rho)
         assert isinstance(E_rho, (float, np.floating, np.ndarray))
 
@@ -558,22 +432,9 @@ class TestArrayInputs:
         phi = np.array([0.0, np.pi/4, np.pi/2])
         A = 1.0
 
-        E_phi = wg.EFieldTE11Phi_1(rho, phi, A)
+        E_phi = wg.e_field_te11_phi_1(rho, phi, A)
         assert E_phi.shape == rho.shape
         assert np.all(np.isfinite(E_phi))
-
-    def test_hfield_array_inputs(self):
-        """Test magnetic field with array inputs"""
-        wg = CircularWaveguide(0.01)
-        rho = np.array([0.003, 0.005, 0.007])
-        phi = np.array([0.0, np.pi/4, np.pi/2])
-        omega_c = 1.841 * sc.c / 0.01
-        omega = 2 * omega_c
-        A = 1.0
-
-        H_rho = wg.HFieldTE11Rho_1(rho, phi, omega, A)
-        assert H_rho.shape == rho.shape
-        assert np.all(np.isfinite(H_rho))
 
 
 class TestPhysicsConsistency:
@@ -587,10 +448,10 @@ class TestPhysicsConsistency:
 
         # Frequency just below cutoff should fail
         with pytest.raises(ValueError, match="below cutoff frequency"):
-            wg._ValidateFrequency(0.999 * omega_c_expected)
+            wg._validate_frequency(0.999 * omega_c_expected)
 
         # Frequency just above cutoff should pass
-        wg._ValidateFrequency(1.001 * omega_c_expected)
+        wg._validate_frequency(1.001 * omega_c_expected)
 
     def test_mode_orthogonality(self):
         """Test that mode 1 and mode 2 are orthogonal"""
@@ -599,8 +460,8 @@ class TestPhysicsConsistency:
         phi = 0.0
         A = 1.0
 
-        E1 = wg.EFieldTE11_1(rho, phi, A)
-        E2 = wg.EFieldTE11_2(rho, phi, A)
+        E1 = wg.e_field_te11_1(rho, phi, A)
+        E2 = wg.e_field_te11_2(rho, phi, A)
 
         # At phi=0, mode 2 should have zero E_x and maximum E_y
         # while mode 1 should have maximum E_x and zero E_y (approximately)
@@ -608,15 +469,15 @@ class TestPhysicsConsistency:
         assert not np.allclose(E1, E2)
 
     def test_field_continuity_at_boundaries(self):
-        """Test field behavior at waveguide boundary"""
+        """Test field behaviour at waveguide boundary"""
         wg = CircularWaveguide(0.01)
         rho_inside = 0.99 * 0.01
         rho_outside = 1.01 * 0.01
         phi = 0.0
         A = 1.0
 
-        E_inside = wg.EFieldTE11Rho_1(rho_inside, phi, A)
-        E_outside = wg.EFieldTE11Rho_1(rho_outside, phi, A)
+        E_inside = wg.e_field_te11_rho_1(rho_inside, phi, A)
+        E_outside = wg.e_field_te11_rho_1(rho_outside, phi, A)
 
         # Field inside should be non-zero, outside should be zero
         assert E_inside != 0.0

@@ -65,24 +65,20 @@ Signal Generation:
     SignalGenerator - Generate signals from spectrum calculators (frequency domain)
 
 Spectrum Calculators:
-    BaseSpectrumCalculator - Abstract base for spectrum calculations
-    PowerSpectrumCalculator - Analytical power spectrum calculator
-    NumericalSpectrumCalculator - Numerical power spectrum calculator
+    SpectrumCalculator - Unified spectrum calculator (analytical and numerical)
 """
 
 # Particle
-from .Particle import Particle
+from .Particle import Particle, Electron
 
 # Magnetic fields
-from .BaseField import BaseField
 from .RealFields import HarmonicField, BathtubField
 
 # Traps
-from .BaseTrap import BaseTrap
 from .QTNMTraps import HarmonicTrap, BathtubTrap
 
 # Antennas
-from .antennas import BaseAntenna, IsotropicAntenna, ShortDipoleAntenna, HalfWaveDipoleAntenna
+from .antennas import IsotropicAntenna, ShortDipoleAntenna, HalfWaveDipoleAntenna
 
 # Trajectories
 from .TrajectoryGenerator import Trajectory, TrajectoryGenerator
@@ -98,27 +94,28 @@ from .AntennaSignalGenerator import AntennaSignalGenerator
 from .SignalGenerator import SignalGenerator
 
 # Spectrum calculators
-from .BaseSpectrumCalculator import BaseSpectrumCalculator
-from .PowerSpectrumCalculator import PowerSpectrumCalculator
-from .NumericalSpectrumCalculator import NumericalSpectrumCalculator
+from .SpectrumCalculator import SpectrumCalculator
+
+# Scattering
+from .scattering import (BaseCrossSection, InelasticCrossSection,
+                         ElasticCrossSection, GasModel, ScatteringSimulator,
+                         ScatteringResult, scatter_to_pitch_angle)
 
 # Define public API
 __all__ = [
     # Particle
     'Particle',
+    'Electron',
 
     # Fields
-    'BaseField',
     'HarmonicField',
     'BathtubField',
 
     # Traps
-    'BaseTrap',
     'HarmonicTrap',
     'BathtubTrap',
 
     # Antennas
-    'BaseAntenna',
     'IsotropicAntenna',
     'ShortDipoleAntenna',
     'HalfWaveDipoleAntenna',
@@ -138,9 +135,16 @@ __all__ = [
     'SignalGenerator',
 
     # Spectrum calculators
-    'BaseSpectrumCalculator',
-    'PowerSpectrumCalculator',
-    'NumericalSpectrumCalculator',
+    'SpectrumCalculator',
+
+    # Scattering
+    'BaseCrossSection',
+    'InelasticCrossSection',
+    'ElasticCrossSection',
+    'GasModel',
+    'ScatteringSimulator',
+    'ScatteringResult',
+    'scatter_to_pitch_angle',
 ]
 
 # Version info

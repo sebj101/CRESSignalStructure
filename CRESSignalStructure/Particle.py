@@ -76,58 +76,58 @@ class Particle:
         logger.debug(
             "Particle created: ke=%.3f eV, pitch_angle=%.4f rad, "
             "position=%s, gamma=%.6f",
-            ke, pitchAngle, startPos, self.GetGamma()
+            ke, pitchAngle, startPos, self.get_gamma()
         )
 
-    def GetGamma(self):
+    def get_gamma(self) -> float:
         """
         Get the Lorentz factor of the particle
         """
         return 1.0 + self.__ke * sc.e / (self.__mass * sc.c**2)
 
-    def GetBeta(self):
+    def get_beta(self) -> float:
         """
         Get the beta factor of the particle
         """
-        return np.sqrt(1 - 1 / self.GetGamma()**2)
+        return np.sqrt(1 - 1 / self.get_gamma()**2)
 
-    def GetSpeed(self):
+    def get_speed(self) -> float:
         """
         Get the speed of the particle
         """
-        return sc.c * self.GetBeta()
+        return sc.c * self.get_beta()
 
-    def GetMomentum(self):
+    def get_momentum(self) -> float:
         """
         Get the momentum of the particle
         """
-        return self.GetGamma() * self.__mass * self.GetSpeed()
+        return self.get_gamma() * self.__mass * self.get_speed()
 
-    def GetPitchAngle(self):
+    def get_pitch_angle(self) -> float:
         """
         Get the pitch angle of the particle in radians
         """
         return self.__pitchAngle
 
-    def GetPosition(self):
+    def get_position(self) -> np.ndarray:
         """
         Get the position of the particle
         """
         return self.__pos
 
-    def GetMass(self):
+    def get_mass(self) -> float:
         """
         Get the mass of the particle in kg
         """
         return self.__mass
 
-    def GetEnergy(self):
+    def get_energy(self) -> float:
         """
         Get the energy of the particle in eV
         """
         return self.__ke
 
-    def GetCharge(self):
+    def get_charge(self) -> float:
         """
         Get the charge of the particle in Coulombs
         """

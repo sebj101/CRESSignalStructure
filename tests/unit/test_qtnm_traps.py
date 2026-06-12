@@ -19,14 +19,14 @@ class TestHarmonicTrap:
         gradB = 4e-3
         trap = HarmonicTrap(B0=B0, L0=L0, gradB=gradB)
 
-        assert trap.GetB0() == B0
-        assert trap.GetL0() == L0
-        assert trap.GetGradB() == gradB
+        assert trap.get_b0() == B0
+        assert trap.get_l0() == L0
+        assert trap.get_grad_b() == gradB
 
     def test_valid_trap_creation_without_gradB(self):
         """Test creating a trap without specifying gradB (should default to 0)"""
         trap = HarmonicTrap(B0=1.0, L0=0.2)
-        assert trap.GetGradB() == 0.0
+        assert trap.get_grad_b() == 0.0
 
     # ==================== B0 Validation Tests ====================
     def test_negative_B0_raises_error(self):
@@ -88,20 +88,20 @@ class TestHarmonicTrap:
     def test_set_gradB(self):
         """Tests SetGradB method"""
         trap = HarmonicTrap(B0=1.0, L0=0.2)
-        trap.SetGradB(0.005)
-        assert trap.GetGradB() == 0.005
+        trap.set_grad_b(0.005)
+        assert trap.get_grad_b() == 0.005
 
     def test_set_negative_gradB(self):
         """Tests that negative gradB values are allowed (field can decrease)"""
         trap = HarmonicTrap(B0=1.0, L0=0.2, gradB=-0.004)
-        assert trap.GetGradB() == -0.004
+        assert trap.get_grad_b() == -0.004
 
     # ==================== CalcZMax Tests ====================
     def test_calc_zmax_single_value(self):
         """Tests CalcZMax with a single pitch angle"""
         trap = HarmonicTrap(B0=1.0, L0=0.2)
         pitch_angle = np.pi / 4  # 45 degrees
-        zmax = trap.CalcZMax(pitch_angle)
+        zmax = trap.calc_z_max(pitch_angle)
         expected = 0.2 / np.tan(np.pi / 4)  # Should be 0.2 m
         assert np.isclose(zmax, expected)
 
@@ -109,31 +109,31 @@ class TestHarmonicTrap:
         """Tests CalcZMax with an array of pitch angles"""
         trap = HarmonicTrap(B0=1.0, L0=0.2)
         pitch_angles = np.array([np.pi/6, np.pi/4, np.pi/3])
-        zmax = trap.CalcZMax(pitch_angles)
+        zmax = trap.calc_z_max(pitch_angles)
         expected = 0.2 / np.tan(pitch_angles)
         assert np.allclose(zmax, expected)
 
     def test_calc_zmax_near_zero_pitch_angle(self):
         """Tests CalcZMax with pitch angle near zero (should return inf)"""
         trap = HarmonicTrap(B0=1.0, L0=0.2)
-        zmax = trap.CalcZMax(1e-11)
+        zmax = trap.calc_z_max(1e-11)
         assert np.isinf(zmax)
 
     def test_calc_zmax_ninety_degrees(self):
         """Tests CalcZMax with pitch angle of π/2 (should return 0)"""
         trap = HarmonicTrap(B0=1.0, L0=0.2)
-        zmax = trap.CalcZMax(np.pi/2)
+        zmax = trap.calc_z_max(np.pi/2)
         assert np.isclose(zmax, 0.0)
 
     def test_calc_zmax_invalid_pitch_angle(self):
         """Tests that invalid pitch angles raise errors"""
         trap = HarmonicTrap(B0=1.0, L0=0.2)
         with pytest.raises(ValueError, match="Pitch angle must be in range"):
-            trap.CalcZMax(0.0)
+            trap.calc_z_max(0.0)
         with pytest.raises(ValueError, match="Pitch angle must be in range"):
-            trap.CalcZMax(np.pi)
+            trap.calc_z_max(np.pi)
         with pytest.raises(ValueError, match="Pitch angle must be in range"):
-            trap.CalcZMax(-0.1)
+            trap.calc_z_max(-0.1)
 
     # ==================== CalcOmegaAxial Tests ====================
     def test_calc_omega_axial_single_value(self):
@@ -141,7 +141,7 @@ class TestHarmonicTrap:
         trap = HarmonicTrap(B0=1.0, L0=0.2)
         v = 1e8  # m/s
         pitch_angle = np.pi / 4
-        omega_axial = trap.CalcOmegaAxial(v, pitch_angle)
+        omega_axial = trap.calc_omega_axial(v, pitch_angle)
         expected = v * np.sin(pitch_angle) / 0.2
         assert np.isclose(omega_axial, expected)
 
@@ -150,7 +150,7 @@ class TestHarmonicTrap:
         trap = HarmonicTrap(B0=1.0, L0=0.2)
         v = np.array([1e8, 1.5e8, 2e8])
         pitch_angle = np.array([np.pi/6, np.pi/4, np.pi/3])
-        omega_axial = trap.CalcOmegaAxial(v, pitch_angle)
+        omega_axial = trap.calc_omega_axial(v, pitch_angle)
         expected = v * np.sin(pitch_angle) / 0.2
         assert np.allclose(omega_axial, expected)
 
@@ -158,9 +158,9 @@ class TestHarmonicTrap:
         """Tests that invalid velocities raise errors"""
         trap = HarmonicTrap(B0=1.0, L0=0.2)
         with pytest.raises(ValueError, match="Velocity must be positive"):
-            trap.CalcOmegaAxial(-1e8, np.pi/4)
+            trap.calc_omega_axial(-1e8, np.pi/4)
         with pytest.raises(ValueError, match="Velocity exceeds speed of light"):
-            trap.CalcOmegaAxial(sc.c * 1.1, np.pi/4)
+            trap.calc_omega_axial(sc.c * 1.1, np.pi/4)
 
     # ==================== CalcOmega0 Tests ====================
     def test_calc_omega0_single_value(self):
@@ -168,12 +168,12 @@ class TestHarmonicTrap:
         trap = HarmonicTrap(B0=1.0, L0=0.2)
         v = 1e8  # m/s
         pitch_angle = np.pi / 4
-        omega0 = trap.CalcOmega0(v, pitch_angle)
+        omega0 = trap.calc_omega_0(v, pitch_angle)
 
         # Calculate expected value
         beta = v / sc.c
         gamma = 1 / np.sqrt(1 - beta**2)
-        zmax = trap.CalcZMax(pitch_angle)
+        zmax = trap.calc_z_max(pitch_angle)
         expected = sc.e * 1.0 / (sc.m_e * gamma) * (1 + zmax**2 / (2 * 0.2**2))
 
         assert np.isclose(omega0, expected)
@@ -183,7 +183,7 @@ class TestHarmonicTrap:
         trap = HarmonicTrap(B0=1.0, L0=0.2)
         v = np.array([1e8, 1.5e8])
         pitch_angle = np.array([np.pi/6, np.pi/3])
-        omega0 = trap.CalcOmega0(v, pitch_angle)
+        omega0 = trap.calc_omega_0(v, pitch_angle)
 
         assert omega0.shape == (2,)
         assert np.all(omega0 > 0)
@@ -193,10 +193,10 @@ class TestHarmonicTrap:
         trap = HarmonicTrap(B0=1.0, L0=0.2)
         v = 0.9 * sc.c  # 90% speed of light
         pitch_angle = np.pi / 4
-        omega0 = trap.CalcOmega0(v, pitch_angle)
+        omega0 = trap.calc_omega_0(v, pitch_angle)
 
         # Should be positive and smaller than non-relativistic case due to gamma
-        omega0_slow = trap.CalcOmega0(1e7, pitch_angle)
+        omega0_slow = trap.calc_omega_0(1e7, pitch_angle)
         assert omega0 > 0
         assert omega0 < omega0_slow
 
@@ -206,13 +206,13 @@ class TestHarmonicTrap:
         trap = HarmonicTrap(B0=1.0, L0=0.2)
         v = 1e8
         pitch_angle = np.pi / 4
-        q = trap.Calcq(v, pitch_angle)
+        q = trap.calc_q(v, pitch_angle)
 
         # Calculate expected value
         beta = v / sc.c
         gamma = 1 / np.sqrt(1 - beta**2)
-        zmax = trap.CalcZMax(pitch_angle)
-        omega_axial = trap.CalcOmegaAxial(v, pitch_angle)
+        zmax = trap.calc_z_max(pitch_angle)
+        omega_axial = trap.calc_omega_axial(v, pitch_angle)
         expected = -sc.e * 1.0 * zmax**2 / (gamma * sc.m_e * 4 * 0.2**2 * omega_axial)
 
         assert np.isclose(q, expected)
@@ -222,7 +222,7 @@ class TestHarmonicTrap:
         trap = HarmonicTrap(B0=1.0, L0=0.2)
         v = np.array([1e8, 1.5e8])
         pitch_angle = np.array([np.pi/6, np.pi/3])
-        q = trap.Calcq(v, pitch_angle)
+        q = trap.calc_q(v, pitch_angle)
 
         assert q.shape == (2,)
 
@@ -231,7 +231,7 @@ class TestHarmonicTrap:
         trap = HarmonicTrap(B0=1.0, L0=0.2)
         v = 1e8
         pitch_angle = np.pi / 2
-        q = trap.Calcq(v, pitch_angle)
+        q = trap.calc_q(v, pitch_angle)
 
         # At 90 degrees, zmax = 0, so q should be 0
         assert np.isclose(q, 0.0)
@@ -249,15 +249,15 @@ class TestBathtubTrap:
         gradB = 4e-3
         trap = BathtubTrap(B0=B0, L0=L0, L1=L1, gradB=gradB)
 
-        assert trap.GetB0() == B0
-        assert trap.GetL0() == L0
-        assert trap.GetL1() == L1
-        assert trap.GetGradB() == gradB
+        assert trap.get_b0() == B0
+        assert trap.get_l0() == L0
+        assert trap.get_l1() == L1
+        assert trap.get_grad_b() == gradB
 
     def test_valid_trap_creation_without_gradB(self):
         """Test creating a trap without specifying gradB (should default to 0)"""
         trap = BathtubTrap(B0=1.0, L0=0.2, L1=0.5)
-        assert trap.GetGradB() == 0.0
+        assert trap.get_grad_b() == 0.0
 
     # ==================== B0 Validation Tests ====================
     def test_negative_B0_raises_error(self):
@@ -336,20 +336,20 @@ class TestBathtubTrap:
     def test_set_gradB(self):
         """Tests SetGradB method"""
         trap = BathtubTrap(B0=1.0, L0=0.2, L1=0.5)
-        trap.SetGradB(0.005)
-        assert trap.GetGradB() == 0.005
+        trap.set_grad_b(0.005)
+        assert trap.get_grad_b() == 0.005
 
     def test_set_negative_gradB(self):
         """Tests that negative gradB values are allowed"""
         trap = BathtubTrap(B0=1.0, L0=0.2, L1=0.5, gradB=-0.004)
-        assert trap.GetGradB() == -0.004
+        assert trap.get_grad_b() == -0.004
 
     # ==================== CalcZMax Tests ====================
     def test_calc_zmax_single_value(self):
         """Tests CalcZMax with a single pitch angle"""
         trap = BathtubTrap(B0=1.0, L0=0.2, L1=0.5)
         pitch_angle = np.pi / 4
-        zmax = trap.CalcZMax(pitch_angle)
+        zmax = trap.calc_z_max(pitch_angle)
         expected = 0.2 / np.tan(np.pi / 4)
         assert np.isclose(zmax, expected)
 
@@ -357,20 +357,20 @@ class TestBathtubTrap:
         """Tests CalcZMax with an array of pitch angles"""
         trap = BathtubTrap(B0=1.0, L0=0.2, L1=0.5)
         pitch_angles = np.array([np.pi/6, np.pi/4, np.pi/3])
-        zmax = trap.CalcZMax(pitch_angles)
+        zmax = trap.calc_z_max(pitch_angles)
         expected = 0.2 / np.tan(pitch_angles)
         assert np.allclose(zmax, expected)
 
     def test_calc_zmax_near_zero_pitch_angle(self):
         """Tests CalcZMax with pitch angle near zero (should return inf)"""
         trap = BathtubTrap(B0=1.0, L0=0.2, L1=0.5)
-        zmax = trap.CalcZMax(1e-11)
+        zmax = trap.calc_z_max(1e-11)
         assert np.isinf(zmax)
 
     def test_calc_zmax_ninety_degrees(self):
         """Tests CalcZMax with pitch angle of π/2 (should return 0)"""
         trap = BathtubTrap(B0=1.0, L0=0.2, L1=0.5)
-        zmax = trap.CalcZMax(np.pi/2)
+        zmax = trap.calc_z_max(np.pi/2)
         assert np.isclose(zmax, 0.0)
 
     # ==================== CalcOmegaAxial Tests ====================
@@ -379,7 +379,7 @@ class TestBathtubTrap:
         trap = BathtubTrap(B0=1.0, L0=0.2, L1=0.5)
         v = 1e8
         pitch_angle = np.pi / 4
-        omega_axial = trap.CalcOmegaAxial(v, pitch_angle)
+        omega_axial = trap.calc_omega_axial(v, pitch_angle)
 
         wa = v * np.sin(pitch_angle) / 0.2
         expected = wa / (1 + 0.5 * np.tan(pitch_angle) / (0.2 * np.pi))
@@ -390,7 +390,7 @@ class TestBathtubTrap:
         trap = BathtubTrap(B0=1.0, L0=0.2, L1=0.5)
         v = np.array([1e8, 1.5e8, 2e8])
         pitch_angle = np.array([np.pi/6, np.pi/4, np.pi/3])
-        omega_axial = trap.CalcOmegaAxial(v, pitch_angle)
+        omega_axial = trap.calc_omega_axial(v, pitch_angle)
 
         assert omega_axial.shape == (3,)
         assert np.all(omega_axial > 0)
@@ -399,9 +399,9 @@ class TestBathtubTrap:
         """Tests that invalid velocities raise errors"""
         trap = BathtubTrap(B0=1.0, L0=0.2, L1=0.5)
         with pytest.raises(ValueError, match="Velocity must be positive"):
-            trap.CalcOmegaAxial(-1e8, np.pi/4)
+            trap.calc_omega_axial(-1e8, np.pi/4)
         with pytest.raises(ValueError, match="Velocity exceeds speed of light"):
-            trap.CalcOmegaAxial(sc.c * 1.1, np.pi/4)
+            trap.calc_omega_axial(sc.c * 1.1, np.pi/4)
 
     # ==================== CalcOmega0 Tests ====================
     def test_calc_omega0_single_value(self):
@@ -409,12 +409,12 @@ class TestBathtubTrap:
         trap = BathtubTrap(B0=1.0, L0=0.2, L1=0.5)
         v = 1e8
         pitch_angle = np.pi / 4
-        omega0 = trap.CalcOmega0(v, pitch_angle)
+        omega0 = trap.calc_omega_0(v, pitch_angle)
 
         beta = v / sc.c
         gamma = 1 / np.sqrt(1 - beta**2)
         prefac = sc.e * 1.0 / (sc.m_e * gamma)
-        zmax = trap.CalcZMax(pitch_angle)
+        zmax = trap.calc_z_max(pitch_angle)
         expected = prefac * (1 + (zmax**2 / (2 * 0.2**2)) * (1 + 0.5 * np.tan(pitch_angle) / (np.pi * 0.2))**(-1))
 
         assert np.isclose(omega0, expected)
@@ -424,7 +424,7 @@ class TestBathtubTrap:
         trap = BathtubTrap(B0=1.0, L0=0.2, L1=0.5)
         v = np.array([1e8, 1.5e8])
         pitch_angle = np.array([np.pi/6, np.pi/3])
-        omega0 = trap.CalcOmega0(v, pitch_angle)
+        omega0 = trap.calc_omega_0(v, pitch_angle)
 
         assert omega0.shape == (2,)
         assert np.all(omega0 > 0)
@@ -435,7 +435,7 @@ class TestBathtubTrap:
         trap = BathtubTrap(B0=1.0, L0=0.2, L1=0.5)
         v = 1e8
         pitch_angle = np.pi / 4
-        t1 = trap.CalcT1(v, pitch_angle)
+        t1 = trap.calc_t1(v, pitch_angle)
 
         expected = 0.5 / (v * np.cos(pitch_angle))
         assert np.isclose(t1, expected)
@@ -445,7 +445,7 @@ class TestBathtubTrap:
         trap = BathtubTrap(B0=1.0, L0=0.2, L1=0.5)
         v = np.array([1e8, 1.5e8, 2e8])
         pitch_angle = np.array([np.pi/6, np.pi/4, np.pi/3])
-        t1 = trap.CalcT1(v, pitch_angle)
+        t1 = trap.calc_t1(v, pitch_angle)
 
         expected = 0.5 / (v * np.cos(pitch_angle))
         assert np.allclose(t1, expected)
@@ -455,7 +455,7 @@ class TestBathtubTrap:
         trap = BathtubTrap(B0=1.0, L0=0.2, L1=0.5)
         v = 1e8
         pitch_angle = np.pi / 2
-        t1 = trap.CalcT1(v, pitch_angle)
+        t1 = trap.calc_t1(v, pitch_angle)
 
         # At 90 degrees, cos(π/2) ≈ 0, so t1 should be very large
         # Due to floating point precision, cos(π/2) is not exactly 0
@@ -465,9 +465,9 @@ class TestBathtubTrap:
         """Tests that invalid velocities raise errors"""
         trap = BathtubTrap(B0=1.0, L0=0.2, L1=0.5)
         with pytest.raises(ValueError, match="Velocity must be positive"):
-            trap.CalcT1(-1e8, np.pi/4)
+            trap.calc_t1(-1e8, np.pi/4)
         with pytest.raises(ValueError, match="Velocity exceeds speed of light"):
-            trap.CalcT1(sc.c * 1.1, np.pi/4)
+            trap.calc_t1(sc.c * 1.1, np.pi/4)
 
     # ==================== Comparison Tests ====================
     def test_bathtub_vs_harmonic_omega_axial(self):
@@ -480,8 +480,8 @@ class TestBathtubTrap:
         v = 1e8
         pitch_angle = np.pi / 4
 
-        omega_harmonic = harmonic.CalcOmegaAxial(v, pitch_angle)
-        omega_bathtub = bathtub.CalcOmegaAxial(v, pitch_angle)
+        omega_harmonic = harmonic.calc_omega_axial(v, pitch_angle)
+        omega_bathtub = bathtub.calc_omega_axial(v, pitch_angle)
 
         # Bathtub should have lower frequency due to longer path
         assert omega_bathtub < omega_harmonic

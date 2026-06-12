@@ -390,7 +390,7 @@ class TestBathtubFieldZMax:
         particle = Particle(ke=ke, startPos=np.zeros(3),
                             pitchAngle=pitch_angle)
 
-        zmax = field.CalcZMax(particle)
+        zmax = field.calc_z_max(particle)
 
         # Should be positive and less than coil separation
         assert zmax > 0
@@ -410,7 +410,7 @@ class TestBathtubFieldZMax:
             angle_rad = angle_deg * np.pi / 180.0
             particle = Particle(ke=ke, startPos=np.zeros(3),
                                 pitchAngle=angle_rad)
-            zmaxs.append(field.CalcZMax(particle))
+            zmaxs.append(field.calc_z_max(particle))
 
         # Smaller pitch angle -> more axial velocity -> larger zmax
         # (less perpendicular velocity means smaller magnetic moment, weaker trapping)
@@ -503,7 +503,7 @@ class TestHarmonicFieldZMax:
         particle = Particle(ke=ke, startPos=np.zeros(3),
                             pitchAngle=pitch_angle)
 
-        zmax = field.CalcZMax(particle)
+        zmax = field.calc_z_max(particle)
 
         assert zmax > 0
         assert np.isfinite(zmax)

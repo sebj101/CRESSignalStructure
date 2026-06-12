@@ -17,9 +17,9 @@ from numpy.typing import NDArray
 import scipy.constants as sc
 from scipy.interpolate import CubicSpline
 
-from CRESSignalStructure.TrajectoryGenerator import Trajectory
-from CRESSignalStructure.antennas import BaseAntenna
-from CRESSignalStructure.ReceiverChain import ReceiverChain
+from .TrajectoryGenerator import Trajectory
+from .antennas import BaseAntenna
+from .ReceiverChain import ReceiverChain
 
 logger = logging.getLogger(__name__)
 
@@ -123,8 +123,8 @@ class AntennaSignalGenerator:
         ])
 
         # Average cyclotron frequency
-        gamma = self.__trajectory.particle.GetGamma()
-        mass = self.__trajectory.particle.GetMass()
+        gamma = self.__trajectory.particle.get_gamma()
+        mass = self.__trajectory.particle.get_mass()
         avg_B = np.mean(B_samples, dtype=float)
         omega_c_avg = sc.e * avg_B / (gamma * mass)
         f_c_avg = omega_c_avg / (2 * np.pi)
@@ -150,7 +150,7 @@ class AntennaSignalGenerator:
         r_electron = self.__trajectory.position
 
         # Get antenna position
-        r_antenna = self.__antenna.GetPosition()
+        r_antenna = self.__antenna.get_position()
 
         # Calculate distance from electron to antenna at each time
         r_vec = r_antenna - r_electron  # Vector from electron to antenna
@@ -169,7 +169,8 @@ class AntennaSignalGenerator:
     def _calculate_retarded_quantities(self, t_obs: NDArray,
                                        t_spline: CubicSpline) -> dict:
         """
-        Calculate electron position, velocity, and acceleration at retarded times
+        Calculate electron position (relative to a detector) and phase at 
+        retarded times
 
         For each observation time t_obs, finds the retarded time t_ret such that
         the signal emitted at t_ret reaches the antenna at t_obs.
@@ -184,11 +185,10 @@ class AntennaSignalGenerator:
         Returns
         -------
         dict
-            Dictionary containing:
-            - 'v_ret': Velocity at retarded time, shape (N, 3)
-            - 'a_ret': Acceleration at retarded time, shape (N, 3)
+            - 'psi_ret': Cyclotron phase at retarded times, shape (N,)
             - 't_ret': Retarded times, shape (N,)
             - 'R_ret': Distance from electron to antenna, shape (N,)
+            - 'r_ret': Electron position, shape (N, 3)
             - 'n_hat_ret': Unit vector from electron to antenna, shape (N, 3)
         """
         # Find retarded times by inverting the advanced time relationship
@@ -196,28 +196,39 @@ class AntennaSignalGenerator:
         t_ret = t_spline(t_obs)
 
         # Create splines for trajectory quantities
+        psi_spline = CubicSpline(
+            self.__trajectory.time, self.__trajectory.phase
+        )
         pos_spline = CubicSpline(
             self.__trajectory.time, self.__trajectory.position)
-        vel_spline = CubicSpline(
-            self.__trajectory.time, self.__trajectory.velocity)
-        acc_spline = CubicSpline(
-            self.__trajectory.time, self.__trajectory.acceleration)
 
         # Interpolate trajectory quantities at retarded times
         r_ret = pos_spline(t_ret)
-        v_ret = vel_spline(t_ret)
-        a_ret = acc_spline(t_ret)
+        psi_ret = psi_spline(t_ret)
 
         # Calculate distance and direction from electron to antenna
-        r_antenna = self.__antenna.GetPosition()
+        r_antenna = self.__antenna.get_position()
         r_vec = r_antenna - r_ret  # Vector from electron to antenna
         R_ret = np.linalg.norm(r_vec, axis=1)  # Distance
         n_hat = r_vec / R_ret[:, np.newaxis]  # Unit vector toward antenna
 
+        # Replace unphysical retarded times (t_ret < 0) with safe values
+        unphysical = t_ret < 0
+        if np.any(unphysical):
+            if np.all(unphysical):
+                raise ValueError(
+                    "All retarded times are unphysical (t_ret < 0). "
+                    "The observation window starts before any signal can reach the antenna."
+                )
+            first_valid = np.argmax(~unphysical)
+            psi_ret[unphysical] = -1
+            R_ret[unphysical] = R_ret[first_valid]
+            n_hat[unphysical] = n_hat[first_valid]
+
         return {
-            'v_ret': v_ret,
-            'a_ret': a_ret,
+            'psi_ret': psi_ret,
             't_ret': t_ret,
+            'r_ret': r_ret,
             'R_ret': R_ret,
             'n_hat_ret': n_hat
         }
@@ -238,16 +249,18 @@ class AntennaSignalGenerator:
         """
         t_ret = ret_quantities['t_ret']
         n_hat = ret_quantities['n_hat_ret']
-        v = ret_quantities['v_ret']
-        a = ret_quantities['a_ret']
+        psi = ret_quantities['psi_ret']
+        r = ret_quantities['r_ret']
         R = ret_quantities['R_ret']
 
-        beta = v / sc.c
-        beta_dot = a / sc.c
+        # Reconstruct velocity and acceleration from position and cyclotron phase
+        vel, acc = self.__trajectory.reconstruct_kinematics(r, psi, t_ret)
+        beta = vel / sc.c
+        beta_dot = acc / sc.c
         n_dot_beta = np.sum(n_hat * beta, axis=1)  # (N,)
 
         # Prefactor
-        q = self.__trajectory.particle.GetCharge()
+        q = self.__trajectory.particle.get_charge()
         prefactor = q / (4 * np.pi * sc.epsilon_0) / \
             (R**2 * (1 - n_dot_beta)**3)
 
@@ -290,9 +303,9 @@ class AntennaSignalGenerator:
         # Synthetic positions at unit distance from antenna toward each source.
         # n_hat_ret points source->antenna, so -n_hat_ret is antenna->source.
         # GetETheta normalises internally, so only direction matters.
-        pos = self.__antenna.GetPosition() - ret_quantities['n_hat_ret']
+        pos = self.__antenna.get_position() - ret_quantities['n_hat_ret']
 
-        l_eff = self.__antenna.GetEffectiveLength(
+        l_eff = self.__antenna.get_effective_length(
             self.__avg_cyclotron_frequency, pos)
 
         return np.sum(E_field * l_eff, axis=1)

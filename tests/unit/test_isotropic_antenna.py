@@ -18,17 +18,17 @@ class TestIsotropicAntennaConstruction:
 
         antenna = IsotropicAntenna(position, impedance, effective_length)
 
-        assert np.array_equal(antenna.GetPosition(), position)
-        assert antenna.GetImpedance(1e9) == impedance
-        assert antenna.GetEffectiveLengthMagnitude() == effective_length
+        assert np.array_equal(antenna.get_position(), position)
+        assert antenna.get_impedance(1e9) == impedance
+        assert antenna.get_effective_length_magnitude() == effective_length
 
     def test_antenna_with_default_parameters(self):
         """Test creating antenna with default impedance and effective length"""
         position = np.array([1.0, 2.0, 3.0])
         antenna = IsotropicAntenna(position)
 
-        assert antenna.GetImpedance(1e9) == 50.0 + 0j
-        assert antenna.GetEffectiveLengthMagnitude() == 0.01
+        assert antenna.get_impedance(1e9) == 50.0 + 0j
+        assert antenna.get_effective_length_magnitude() == 0.01
 
     def test_antenna_with_complex_impedance(self):
         """Test antenna with reactive impedance component"""
@@ -36,7 +36,7 @@ class TestIsotropicAntennaConstruction:
         impedance = 50.0 + 10.0j  # Resistance + reactance
 
         antenna = IsotropicAntenna(position, impedance)
-        assert antenna.GetImpedance(1e9) == impedance
+        assert antenna.get_impedance(1e9) == impedance
 
     def test_negative_resistance_raises_error(self):
         """Test that negative resistance raises ValueError"""
@@ -85,13 +85,13 @@ class TestIsotropicAntennaGain:
         ]
 
         for theta, phi in angles:
-            gain = antenna.GetGain(theta, phi)
+            gain = antenna.get_gain(theta, phi)
             assert gain == 1.0
 
     def test_gain_in_dbi(self):
         """Test that gain in dBi is 0 (reference)"""
         antenna = IsotropicAntenna(np.zeros(3))
-        gain_linear = antenna.GetGain(np.pi/4, 0.0)
+        gain_linear = antenna.get_gain(np.pi/4, 0.0)
         gain_dbi = 10 * np.log10(gain_linear)
         assert np.isclose(gain_dbi, 0.0)
 
@@ -104,7 +104,7 @@ class TestRadiationPattern:
         antenna = IsotropicAntenna(np.zeros(3))
         pos = np.array([1.0, 0.0, 0.0])  # Point on x-axis
 
-        e_theta = antenna.GetETheta(pos)
+        e_theta = antenna.get_e_theta(pos)
 
         # Should return (1, 3) array
         assert e_theta.shape == (1, 3)
@@ -119,7 +119,7 @@ class TestRadiationPattern:
             [0.0, 0.0, 1.0]
         ])
 
-        e_theta = antenna.GetETheta(positions)
+        e_theta = antenna.get_e_theta(positions)
 
         assert e_theta.shape == (3, 3)
         assert np.all(np.isfinite(e_theta))
@@ -131,7 +131,7 @@ class TestRadiationPattern:
         # Test at equator (not at poles where theta-hat is undefined)
         pos = np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
 
-        e_theta = antenna.GetETheta(pos)
+        e_theta = antenna.get_e_theta(pos)
         magnitudes = np.linalg.norm(e_theta, axis=1)
 
         # Should be approximately unit vectors
@@ -142,7 +142,7 @@ class TestRadiationPattern:
         antenna = IsotropicAntenna(np.zeros(3))
         pos = np.array([[1.0, 0.5, 0.3]])
 
-        e_theta = antenna.GetETheta(pos)
+        e_theta = antenna.get_e_theta(pos)
         r_hat = pos / np.linalg.norm(pos)
 
         # Dot product should be zero (perpendicular)
@@ -157,8 +157,8 @@ class TestRadiationPattern:
         north_pole = np.array([[0.0, 0.0, 1.0]])
         south_pole = np.array([[0.0, 0.0, -1.0]])
 
-        e_theta_north = antenna.GetETheta(north_pole)
-        e_theta_south = antenna.GetETheta(south_pole)
+        e_theta_north = antenna.get_e_theta(north_pole)
+        e_theta_south = antenna.get_e_theta(south_pole)
 
         assert np.allclose(e_theta_north, 0.0)
         assert np.allclose(e_theta_south, 0.0)
@@ -168,7 +168,7 @@ class TestRadiationPattern:
         antenna = IsotropicAntenna(np.zeros(3))
         pos = np.array([1.0, 0.0, 0.0])
 
-        e_phi = antenna.GetEPhi(pos)
+        e_phi = antenna.get_e_phi(pos)
 
         assert e_phi.shape == (1, 3)
         assert np.all(np.isfinite(e_phi))
@@ -182,7 +182,7 @@ class TestRadiationPattern:
             [0.0, 0.0, 1.0]
         ])
 
-        e_phi = antenna.GetEPhi(positions)
+        e_phi = antenna.get_e_phi(positions)
 
         assert e_phi.shape == (3, 3)
         assert np.all(np.isfinite(e_phi))
@@ -194,7 +194,7 @@ class TestRadiationPattern:
         # Test at equator (not at poles)
         pos = np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
 
-        e_phi = antenna.GetEPhi(pos)
+        e_phi = antenna.get_e_phi(pos)
         magnitudes = np.linalg.norm(e_phi, axis=1)
 
         # Should be approximately unit vectors
@@ -205,7 +205,7 @@ class TestRadiationPattern:
         antenna = IsotropicAntenna(np.zeros(3))
         pos = np.array([[1.0, 0.5, 0.3]])
 
-        e_phi = antenna.GetEPhi(pos)
+        e_phi = antenna.get_e_phi(pos)
         r_hat = pos / np.linalg.norm(pos)
 
         # Dot product should be zero (perpendicular)
@@ -220,8 +220,8 @@ class TestRadiationPattern:
         north_pole = np.array([[0.0, 0.0, 1.0]])
         south_pole = np.array([[0.0, 0.0, -1.0]])
 
-        e_phi_north = antenna.GetEPhi(north_pole)
-        e_phi_south = antenna.GetEPhi(south_pole)
+        e_phi_north = antenna.get_e_phi(north_pole)
+        e_phi_south = antenna.get_e_phi(south_pole)
 
         assert np.allclose(e_phi_north, 0.0)
         assert np.allclose(e_phi_south, 0.0)
@@ -237,8 +237,8 @@ class TestRadiationPattern:
             [0.5, 0.5, 0.5]
         ])
 
-        e_theta = antenna.GetETheta(positions)
-        e_phi = antenna.GetEPhi(positions)
+        e_theta = antenna.get_e_theta(positions)
+        e_phi = antenna.get_e_phi(positions)
 
         # Dot products should be zero (orthogonal)
         for i in range(len(positions)):
@@ -256,7 +256,7 @@ class TestEffectiveLength:
         pos = np.array([[1.0, 0.0, 0.0]])
         frequency = 26e9  # 26 GHz
 
-        l_eff = antenna.GetEffectiveLength(frequency, pos)
+        l_eff = antenna.get_effective_length(frequency, pos)
 
         magnitude = np.linalg.norm(l_eff[0])
         assert np.isclose(magnitude, eff_len, rtol=1e-10)
@@ -267,7 +267,7 @@ class TestEffectiveLength:
         pos = np.array([[1.0, 0.5, 0.3]])
         frequency = 26e9
 
-        l_eff = antenna.GetEffectiveLength(frequency, pos)
+        l_eff = antenna.get_effective_length(frequency, pos)
         k_hat = pos / np.linalg.norm(pos)
 
         # Effective length should be perpendicular to k
@@ -279,8 +279,8 @@ class TestEffectiveLength:
         antenna = IsotropicAntenna(np.zeros(3), effective_length=0.01)
         pos = np.array([[1.0, 0.0, 0.0]])
 
-        l_eff_1ghz = antenna.GetEffectiveLength(1e9, pos)
-        l_eff_26ghz = antenna.GetEffectiveLength(26e9, pos)
+        l_eff_1ghz = antenna.get_effective_length(1e9, pos)
+        l_eff_26ghz = antenna.get_effective_length(26e9, pos)
 
         # Should be equal (frequency independent for isotropic)
         assert np.allclose(l_eff_1ghz, l_eff_26ghz)
@@ -295,7 +295,7 @@ class TestEffectiveLength:
         ])
         frequency = 26e9
 
-        l_eff = antenna.GetEffectiveLength(frequency, positions)
+        l_eff = antenna.get_effective_length(frequency, positions)
 
         assert l_eff.shape == (3, 3)
         assert np.all(np.isfinite(l_eff))
@@ -310,7 +310,7 @@ class TestEffectiveLength:
         pos = np.array([[1.0, 0.0, 0.0]])
 
         with pytest.raises(ValueError, match="Frequency must be positive"):
-            antenna.GetEffectiveLength(-1e9, pos)
+            antenna.get_effective_length(-1e9, pos)
 
     def test_effective_length_zero_frequency_raises_error(self):
         """Test that zero frequency raises error"""
@@ -318,7 +318,7 @@ class TestEffectiveLength:
         pos = np.array([[1.0, 0.0, 0.0]])
 
         with pytest.raises(ValueError, match="Frequency must be positive"):
-            antenna.GetEffectiveLength(0.0, pos)
+            antenna.get_effective_length(0.0, pos)
 
 
 class TestImpedance:
@@ -329,9 +329,9 @@ class TestImpedance:
         impedance = 75.0 + 5.0j
         antenna = IsotropicAntenna(np.zeros(3), impedance=impedance)
 
-        z1 = antenna.GetImpedance(1e9)
-        z2 = antenna.GetImpedance(26e9)
-        z3 = antenna.GetImpedance(100e9)
+        z1 = antenna.get_impedance(1e9)
+        z2 = antenna.get_impedance(26e9)
+        z3 = antenna.get_impedance(100e9)
 
         assert z1 == impedance
         assert z2 == impedance
@@ -342,7 +342,7 @@ class TestImpedance:
         resistance = 50.0
         antenna = IsotropicAntenna(np.zeros(3), impedance=resistance)
 
-        z = antenna.GetImpedance(26e9)
+        z = antenna.get_impedance(26e9)
 
         assert np.real(z) == resistance
         assert np.imag(z) == 0.0
@@ -352,7 +352,7 @@ class TestImpedance:
         impedance = 50.0 + 20.0j
         antenna = IsotropicAntenna(np.zeros(3), impedance=impedance)
 
-        z = antenna.GetImpedance(26e9)
+        z = antenna.get_impedance(26e9)
 
         assert np.real(z) == 50.0
         assert np.imag(z) == 20.0
@@ -366,7 +366,7 @@ class TestGettersAndSetters:
         position = np.array([1.0, 2.0, 3.0])
         antenna = IsotropicAntenna(position)
 
-        pos = antenna.GetPosition()
+        pos = antenna.get_position()
         assert np.array_equal(pos, position)
 
     def test_get_position_returns_copy(self):
@@ -374,17 +374,17 @@ class TestGettersAndSetters:
         position = np.array([1.0, 2.0, 3.0])
         antenna = IsotropicAntenna(position)
 
-        pos = antenna.GetPosition()
+        pos = antenna.get_position()
         pos[0] = 999.0  # Modify returned array
 
         # Original should be unchanged
-        assert antenna.GetPosition()[0] == 1.0
+        assert antenna.get_position()[0] == 1.0
 
     def test_get_orientation(self):
         """Test GetOrientation returns z-axis"""
         antenna = IsotropicAntenna(np.zeros(3))
 
-        orientation = antenna.GetOrientation()
+        orientation = antenna.get_orientation()
 
         # For isotropic antenna, orientation is [0, 0, 1]
         assert np.array_equal(orientation, np.array([0.0, 0.0, 1.0]))
@@ -394,7 +394,7 @@ class TestGettersAndSetters:
         eff_len = 0.015
         antenna = IsotropicAntenna(np.zeros(3), effective_length=eff_len)
 
-        magnitude = antenna.GetEffectiveLengthMagnitude()
+        magnitude = antenna.get_effective_length_magnitude()
         assert magnitude == eff_len
 
     def test_set_effective_length(self):
@@ -402,9 +402,9 @@ class TestGettersAndSetters:
         antenna = IsotropicAntenna(np.zeros(3), effective_length=0.01)
 
         new_length = 0.02
-        antenna.SetEffectiveLength(new_length)
+        antenna.set_effective_length(new_length)
 
-        assert antenna.GetEffectiveLengthMagnitude() == new_length
+        assert antenna.get_effective_length_magnitude() == new_length
 
     def test_set_effective_length_affects_calculations(self):
         """Test that setting effective length affects GetEffectiveLength"""
@@ -412,12 +412,12 @@ class TestGettersAndSetters:
         pos = np.array([[1.0, 0.0, 0.0]])
 
         # Original length
-        l_eff1 = antenna.GetEffectiveLength(26e9, pos)
+        l_eff1 = antenna.get_effective_length(26e9, pos)
         mag1 = np.linalg.norm(l_eff1[0])
 
         # Update length
-        antenna.SetEffectiveLength(0.02)
-        l_eff2 = antenna.GetEffectiveLength(26e9, pos)
+        antenna.set_effective_length(0.02)
+        l_eff2 = antenna.get_effective_length(26e9, pos)
         mag2 = np.linalg.norm(l_eff2[0])
 
         assert np.isclose(mag1, 0.01)
@@ -428,14 +428,14 @@ class TestGettersAndSetters:
         antenna = IsotropicAntenna(np.zeros(3))
 
         with pytest.raises(ValueError, match="Effective length must be positive"):
-            antenna.SetEffectiveLength(-0.01)
+            antenna.set_effective_length(-0.01)
 
     def test_set_zero_effective_length_raises_error(self):
         """Test that setting zero effective length raises error"""
         antenna = IsotropicAntenna(np.zeros(3))
 
         with pytest.raises(ValueError, match="Effective length must be positive"):
-            antenna.SetEffectiveLength(0.0)
+            antenna.set_effective_length(0.0)
 
 
 class TestAngleCalculations:
@@ -446,7 +446,7 @@ class TestAngleCalculations:
         antenna = IsotropicAntenna(np.zeros(3))
         pos = np.array([[0.0, 0.0, 1.0]])  # On z-axis
 
-        theta = antenna.GetTheta(pos)
+        theta = antenna.get_theta(pos)
 
         # Should be 0 (north pole) or π (south pole depending on direction)
         assert np.isclose(theta, 0.0) or np.isclose(theta, np.pi)
@@ -456,7 +456,7 @@ class TestAngleCalculations:
         antenna = IsotropicAntenna(np.zeros(3))
         pos = np.array([[1.0, 0.0, 0.0]])  # On equator
 
-        theta = antenna.GetTheta(pos)
+        theta = antenna.get_theta(pos)
 
         # Should be π/2
         assert np.isclose(theta, np.pi/2)
@@ -466,7 +466,7 @@ class TestAngleCalculations:
         antenna = IsotropicAntenna(np.zeros(3))
         pos = np.array([[1.0, 0.0, 0.0]])
 
-        phi = antenna.GetPhi(pos)
+        phi = antenna.get_phi(pos)
 
         # Should be 0 or ±π
         assert np.isclose(np.abs(phi), 0.0) or np.isclose(np.abs(phi), np.pi)
@@ -476,7 +476,7 @@ class TestAngleCalculations:
         antenna = IsotropicAntenna(np.zeros(3))
         pos = np.array([[0.0, 1.0, 0.0]])
 
-        phi = antenna.GetPhi(pos)
+        phi = antenna.get_phi(pos)
 
         # Should be ±π/2
         assert np.isclose(np.abs(phi), np.pi/2)
@@ -498,12 +498,12 @@ class TestTypicalCRESParameters:
         frequency = 26e9
 
         # Check basic properties
-        assert antenna.GetGain(np.pi/4, 0.0) == 1.0
-        assert antenna.GetImpedance(frequency) == impedance
+        assert antenna.get_gain(np.pi/4, 0.0) == 1.0
+        assert antenna.get_impedance(frequency) == impedance
 
         # Check effective length at typical observation point
         obs_point = np.array([[0.05, 0.0, 0.1]])  # 5 cm radially, 10 cm axially
-        l_eff = antenna.GetEffectiveLength(frequency, obs_point)
+        l_eff = antenna.get_effective_length(frequency, obs_point)
 
         assert np.isclose(np.linalg.norm(l_eff[0]), effective_length)
 
@@ -515,8 +515,8 @@ class TestTypicalCRESParameters:
         antenna = IsotropicAntenna(position)
 
         # Should still have unity gain everywhere
-        assert antenna.GetGain(0.0, 0.0) == 1.0
-        assert antenna.GetGain(np.pi/2, np.pi/4) == 1.0
+        assert antenna.get_gain(0.0, 0.0) == 1.0
+        assert antenna.get_gain(np.pi/2, np.pi/4) == 1.0
 
 
 class TestEdgeCases:
@@ -526,20 +526,20 @@ class TestEdgeCases:
         """Test with very small effective length"""
         antenna = IsotropicAntenna(np.zeros(3), effective_length=1e-6)
 
-        assert antenna.GetEffectiveLengthMagnitude() == 1e-6
+        assert antenna.get_effective_length_magnitude() == 1e-6
 
     def test_large_effective_length(self):
         """Test with large effective length"""
         antenna = IsotropicAntenna(np.zeros(3), effective_length=1.0)
 
-        assert antenna.GetEffectiveLengthMagnitude() == 1.0
+        assert antenna.get_effective_length_magnitude() == 1.0
 
     def test_purely_reactive_impedance(self):
         """Test antenna with zero resistance (purely reactive)"""
         impedance = 0.0 + 50.0j
         antenna = IsotropicAntenna(np.zeros(3), impedance=impedance)
 
-        z = antenna.GetImpedance(26e9)
+        z = antenna.get_impedance(26e9)
         assert np.real(z) == 0.0
         assert np.imag(z) == 50.0
 
@@ -548,11 +548,11 @@ class TestEdgeCases:
         position = np.array([100.0, 200.0, 300.0])
         antenna = IsotropicAntenna(position)
 
-        assert np.array_equal(antenna.GetPosition(), position)
+        assert np.array_equal(antenna.get_position(), position)
 
         # Should still work correctly
         pos = np.array([[101.0, 200.0, 300.0]])
-        l_eff = antenna.GetEffectiveLength(26e9, pos)
+        l_eff = antenna.get_effective_length(26e9, pos)
 
         assert np.allclose(np.linalg.norm(l_eff[0]), 0.01)
 
@@ -562,10 +562,10 @@ class TestEdgeCases:
         antenna2 = IsotropicAntenna(np.ones(3), effective_length=0.02)
 
         # Modifying one shouldn't affect the other
-        antenna1.SetEffectiveLength(0.03)
+        antenna1.set_effective_length(0.03)
 
-        assert antenna1.GetEffectiveLengthMagnitude() == 0.03
-        assert antenna2.GetEffectiveLengthMagnitude() == 0.02
+        assert antenna1.get_effective_length_magnitude() == 0.03
+        assert antenna2.get_effective_length_magnitude() == 0.02
 
 
 class TestPhysicsConsistency:
@@ -583,7 +583,7 @@ class TestPhysicsConsistency:
         for _ in range(n_samples):
             theta = np.random.uniform(0, np.pi)
             phi = np.random.uniform(0, 2*np.pi)
-            gains.append(antenna.GetGain(theta, phi))
+            gains.append(antenna.get_gain(theta, phi))
 
         # All gains should be exactly 1.0
         assert np.all(np.array(gains) == 1.0)
@@ -593,11 +593,11 @@ class TestPhysicsConsistency:
         antenna = IsotropicAntenna(np.zeros(3), effective_length=0.01)
         pos = np.array([[1.0, 0.0, 0.0]])
 
-        l_eff1 = antenna.GetEffectiveLength(26e9, pos)
+        l_eff1 = antenna.get_effective_length(26e9, pos)
         mag1 = np.linalg.norm(l_eff1[0])
 
-        antenna.SetEffectiveLength(0.02)
-        l_eff2 = antenna.GetEffectiveLength(26e9, pos)
+        antenna.set_effective_length(0.02)
+        l_eff2 = antenna.get_effective_length(26e9, pos)
         mag2 = np.linalg.norm(l_eff2[0])
 
         assert np.isclose(mag2 / mag1, 2.0)
@@ -609,8 +609,8 @@ class TestPhysicsConsistency:
         # Test at a non-special point
         pos = np.array([[0.5, 0.7, 0.3]])
 
-        e_theta = antenna.GetETheta(pos)[0]
-        e_phi = antenna.GetEPhi(pos)[0]
+        e_theta = antenna.get_e_theta(pos)[0]
+        e_phi = antenna.get_e_phi(pos)[0]
         r_hat = pos[0] / np.linalg.norm(pos[0])
 
         # Check magnitudes (unit vectors)

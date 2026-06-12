@@ -9,26 +9,27 @@ with metadata stored as attributes with specific unit-labeled keys.
 import h5py
 import numpy as np
 import scipy.constants as sc
-from typing import Dict, Any, Union
+from typing import Any, Union
 
 # Internal Imports
-from CRESSignalStructure.Particle import Particle
-from CRESSignalStructure.CircularWaveguide import CircularWaveguide
-from CRESSignalStructure.BaseTrap import BaseTrap
-from CRESSignalStructure.BaseField import BaseField
-from CRESSignalStructure.RealFields import HarmonicField, BathtubField
+from .Particle import Particle
+from .CircularWaveguide import CircularWaveguide
+from .BaseTrap import BaseTrap
+from .BaseField import BaseField
+from .RealFields import HarmonicField, BathtubField
+from .QTNMTraps import BathtubTrap, HarmonicTrap
 
 class CRESWriter:
     def __init__(self, filename: str, mode: str = 'w'):
         self.filename = filename
         self.mode = mode
-        self.file = None
+        self.file: h5py.File | None
         self.current_index = 0
-        
+
         # Global objects to query for metadata
-        self._trap = None
-        self._waveguide = None
-        self._config = None
+        self._trap: BaseTrap | BaseField | None
+        self._waveguide: CircularWaveguide | None
+        self._config: dict[str, Any] | None
 
     def __enter__(self):
         self.file = h5py.File(self.filename, self.mode)
@@ -42,7 +43,7 @@ class CRESWriter:
 
     def set_global_config(self, trap: Union[BaseTrap, BaseField], 
                           waveguide: CircularWaveguide, 
-                          sim_config: Dict[str, Any]):
+                          sim_config: dict[str, Any]):
         """
         Stores physics objects to calculate attributes for every event.
         """
@@ -51,7 +52,7 @@ class CRESWriter:
         self._config = sim_config
 
     def _get_trap_params(self):
-        """Helper to extract parameters trap parameters."""
+        """Helper to extract trap parameters."""
         params = {'i_coil [Amps]': np.nan, 'r_coil [metres]': np.nan}
 
         if isinstance(self._trap, HarmonicField):
@@ -72,8 +73,8 @@ class CRESWriter:
         """
         Writes a single event with the exact legacy attribute structure.
         """
-        if self.file is None:
-            raise RuntimeError("CRESWriter must be used within a 'with' statement.")
+        if self.file is None or self._config is None or self._trap is None:
+            raise RuntimeError("CRESWriter must be used within a 'with' statement and set_global_config must be called first.")
 
         # --- SAFETY CHECK ---
         if len(time_array) != len(signal_array):
@@ -98,11 +99,11 @@ class CRESWriter:
         # 2. Calculate Derived Physics Values
         
         # --- Kinematics ---
-        gamma = particle.GetGamma()
-        mass = particle.GetMass()
-        speed = particle.GetSpeed()
-        pos = particle.GetPosition()
-        pitch = particle.GetPitchAngle()
+        gamma = particle.get_gamma()
+        mass = particle.get_mass()
+        speed = particle.get_speed()
+        pos = particle.get_position()
+        pitch = particle.get_pitch_angle()
         
         v_z = speed * np.cos(pitch)
         v_perp = speed * np.sin(pitch)
@@ -110,10 +111,10 @@ class CRESWriter:
 
         # --- Fields & Frequencies ---
         # B_local at the starting position
-        if hasattr(self._trap, 'evaluate_field_magnitude'):
+        if isinstance(self._trap, BaseField):
             B_local = self._trap.evaluate_field_magnitude(pos[0], pos[1], pos[2])
-        elif hasattr(self._trap, 'GetB0'):
-            B_local = self._trap.GetB0() 
+        elif isinstance(self._trap, (HarmonicTrap, BathtubTrap)):
+            B_local = self._trap.get_b0()
         else:
             B_local = 1.0 # Default fallback
 
@@ -124,25 +125,25 @@ class CRESWriter:
         
         # --- Waveguide ---
         omega_cyc = 2 * np.pi * f_cyc
-        try:
-            impedance = self._waveguide.CalcTE11Impedance(omega_cyc)
-        except (ValueError, AttributeError):
+        if isinstance(self._waveguide, CircularWaveguide):
+            impedance = self._waveguide.calc_te11_impedance(omega_cyc)
+        else:
             impedance = np.nan
 
         # 3. Set Attributes (Exact Legacy Keys)
         attrs = dset.attrs
         
         # Trap / Background
-        if hasattr(self._trap, 'background') and isinstance(self._trap.background, np.ndarray):
+        if isinstance(self._trap, (HarmonicField, BathtubField)):
             attrs['B_bkg [Tesla]'] = abs(self._trap.background[2])
-        elif hasattr(self._trap, 'GetB0'):
-            attrs['B_bkg [Tesla]'] = self._trap.GetB0()
+        elif isinstance(self._trap, (HarmonicTrap, BathtubTrap)):
+            attrs['B_bkg [Tesla]'] = self._trap.get_b0()
         else:
             attrs['B_bkg [Tesla]'] = B_local
 
         attrs['Cyclotron frequency [Hertz]'] = f_cyc
         attrs['Downmixed cyclotron frequency [Hertz]'] = abs(f_cyc - f_lo)
-        attrs['Energy [eV]'] = particle.GetEnergy()
+        attrs['Energy [eV]'] = particle.get_energy()
         attrs['LO frequency [Hertz]'] = f_lo
         attrs['Pitch angle [degrees]'] = np.degrees(pitch)
         attrs['Starting position [metres]'] = pos
@@ -162,9 +163,66 @@ class CRESWriter:
         
         # WG Params
         # Handle cases where Waveguide might be a mock or different object
-        if hasattr(self._waveguide, 'wgR'):
-            attrs['r_wg [metres]'] = self._waveguide.wgR
+        if isinstance(self._waveguide, CircularWaveguide):
+            attrs['r_wg [metres]'] = self._waveguide.get_radius()
         else:
             attrs['r_wg [metres]'] = 0.005 # Default 5mm
 
         self.current_index += 1
+
+    def write_scattering_event(self, result):
+        """
+        Write a scattering event including scatter metadata.
+
+        Uses the initial particle for primary attributes (matching legacy
+        format) and adds scattering-specific attributes.
+
+        Parameters
+        ----------
+        result : ScatteringResult
+            Output from ScatteringSimulator.simulate()
+        """
+        if self.file is None or self._config is None or self._trap is None:
+            raise RuntimeError("CRESWriter must be used within a 'with' " \
+                               "statement and set_global_config must be called first.")
+
+        initial_particle = result.particles[0]
+        self.write_event(initial_particle, result.times, result.signal)
+
+        # Add scattering metadata to the dataset just written
+        sig_name = f"signal{self.current_index}"
+        dset = self.file['Data'][sig_name]
+        attrs = dset.attrs
+
+        attrs['n_scatters'] = len(result.scatter_times)
+        attrs['escaped'] = result.escaped
+
+        if result.scatter_times:
+            attrs['scatter_times [seconds]'] = np.array(
+                result.scatter_times)
+            attrs['scatter_energies [eV]'] = np.array(
+                [p.get_energy() for p in result.particles])
+            attrs['scatter_pitch_angles [degrees]'] = np.array(
+                [np.degrees(p.get_pitch_angle())
+                 for p in result.particles])
+
+            f_lo = self._config.get('lo_freq', 0.0)
+            f_cyc_arr = []
+            for p in result.particles:
+                gamma = p.get_gamma()
+                mass = p.get_mass()
+                pos = p.get_position()
+                if isinstance(self._trap, BaseField):
+                    B_local = self._trap.evaluate_field_magnitude(
+                        pos[0], pos[1], pos[2])
+                elif isinstance(self._trap, (HarmonicTrap, BathtubTrap)):
+                    B_local = self._trap.get_b0()
+                else:
+                    B_local = 1.0
+                f_cyc_arr.append(
+                    (sc.e * B_local) / (2 * np.pi * gamma * mass))
+
+            attrs['scatter_cyclotron_frequencies [Hertz]'] = np.array(
+                f_cyc_arr)
+            attrs['scatter_downmixed_cyclotron_frequencies [Hertz]'] = \
+                np.abs(np.array(f_cyc_arr) - f_lo)
