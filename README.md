@@ -201,10 +201,11 @@ The antenna module provides classes for modelling different antenna types:
 
 Example Jupyter notebooks are provided in the repository:
 
-- [GettingStarted.ipynb](GettingStarted.ipynb) - Shows the basic mechanics of generating spectra, both with waveguide geometries and with antennas
-- [HarmonicComparison.ipynb](HarmonicComparison.ipynb) - Comparison of harmonic trap models
-- [RealisticFields.ipynb](RealisticFields.ipynb) - Working with realistic magnetic field configurations
-- [SignalGenExample.ipynb](SignalGenExample.ipynb) - Generating downmixed and sampled signals
+- [GettingStarted.ipynb](examples/GettingStarted.ipynb) - Shows the basic mechanics of generating spectra, both with waveguide geometries and with antennas
+- [HarmonicComparison.ipynb](examples/armonicComparison.ipynb) - Comparison of harmonic trap models
+- [RealisticFields.ipynb](examples/RealisticFields.ipynb) - Working with realistic magnetic field configurations
+- [SignalGenExample.ipynb](examples/SignalGenExample.ipynb) - Generating downmixed and sampled signals
+- [DopplerEffectDemo.ipynb](examples/DopplerEffectDemo.ipynb) - Demonstration of the power of the Doppler effect in a long trap
 
 ## Testing
 
