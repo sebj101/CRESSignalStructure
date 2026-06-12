@@ -10,9 +10,10 @@ exported by HFSS and used to evaluate effective length, gain, and impedance.
 from .HFSSDataParser import HFSSDataParser, EFieldData, GainData, ImpedanceData
 import logging
 import numpy as np
-from numpy.typing import ArrayLike, NDArray
+from numpy.typing import NDArray
 from scipy.interpolate import RegularGridInterpolator, interp1d
 import scipy.constants as sc
+from pathlib import Path
 
 from .BaseAntenna import BaseAntenna
 
@@ -63,8 +64,8 @@ class HFSSAntenna(BaseAntenna):
     """
 
     def __init__(self, position: NDArray, z_ax: NDArray, x_ax: NDArray,
-                 efield_path: str, gain_path: str, impedance_path: str,
-                 pattern_frequency: float):
+                 efield_path: str | Path, gain_path: str | Path, 
+                 impedance_path: str | Path, pattern_frequency: float):
 
         super().__init__(position, z_ax, x_ax)
 
