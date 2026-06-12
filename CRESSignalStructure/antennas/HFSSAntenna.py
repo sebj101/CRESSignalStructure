@@ -7,6 +7,7 @@ The far-field pattern (E-field components and gain) is loaded from CSV files
 exported by HFSS and used to evaluate effective length, gain, and impedance.
 """
 
+from .HFSSDataParser import HFSSDataParser, EFieldData, GainData, ImpedanceData
 import logging
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
@@ -16,8 +17,6 @@ import scipy.constants as sc
 from .BaseAntenna import BaseAntenna
 
 logger = logging.getLogger(__name__)
-from .HFSSDataParser import HFSSDataParser, EFieldData, GainData, ImpedanceData
-
 
 # Free-space wave impedance eta = mu_0 * c
 _ETA0 = sc.mu_0 * sc.c  # ~376.73 Ohm
@@ -42,12 +41,12 @@ class HFSSAntenna(BaseAntenna):
 
     Parameters
     ----------
-    position : ArrayLike
+    position : NDArray
         3-vector antenna phase-centre position in the trap frame, metres.
-    z_ax : ArrayLike
+    z_ax : NDArray
         Unit vector along the HFSS +Z axis (bore-sight) expressed in the
         trap frame.
-    x_ax : ArrayLike
+    x_ax : NDArray
         Unit vector along the HFSS +X axis (phi = 0 reference) expressed in
         the trap frame.  Need not be exactly orthogonal to z_ax; a
         Gram-Schmidt correction is applied in the base class.
@@ -63,7 +62,7 @@ class HFSSAntenna(BaseAntenna):
         length pattern.
     """
 
-    def __init__(self, position: ArrayLike, z_ax: ArrayLike, x_ax: ArrayLike,
+    def __init__(self, position: NDArray, z_ax: NDArray, x_ax: NDArray,
                  efield_path: str, gain_path: str, impedance_path: str,
                  pattern_frequency: float):
 
@@ -106,10 +105,10 @@ class HFSSAntenna(BaseAntenna):
                     efield_path, gain_path, impedance_path)
 
     # ------------------------------------------------------------------ #
-    # BaseAntenna abstract methods                                         #
+    # BaseAntenna abstract methods                                       #
     # ------------------------------------------------------------------ #
 
-    def GetETheta(self, pos: NDArray) -> NDArray:
+    def get_e_theta(self, pos: NDArray) -> NDArray:
         """
         Theta component of the far-field pattern as a Cartesian vector.
 
@@ -134,7 +133,7 @@ class HFSSAntenna(BaseAntenna):
         theta_hat = self._theta_hat_lab(theta, phi)     # (N, 3) real
         return rE_theta[:, np.newaxis] * theta_hat
 
-    def GetEPhi(self, pos: NDArray) -> NDArray:
+    def get_e_phi(self, pos: NDArray) -> NDArray:
         """
         Phi component of the far-field pattern as a Cartesian vector in lab 
         coordinates.
@@ -156,7 +155,7 @@ class HFSSAntenna(BaseAntenna):
         phi_hat = self._phi_hat_lab(phi)                 # (N, 3) real
         return rE_phi[:, np.newaxis] * phi_hat
 
-    def GetEffectiveLength(self, frequency: float, pos: NDArray) -> NDArray:
+    def get_effective_length(self, frequency: float, pos: NDArray) -> NDArray:
         """
         Effective length vector derived from the HFSS pattern.
 
@@ -220,7 +219,7 @@ class HFSSAntenna(BaseAntenna):
         return (scale_theta[:, np.newaxis] * theta_hat
                 + scale_phi[:, np.newaxis] * phi_hat)
 
-    def GetImpedance(self, frequency: float) -> complex:
+    def get_impedance(self, frequency: float) -> complex:
         """
         Input impedance interpolated from HFSS Z-parameter data.
 
@@ -247,7 +246,7 @@ class HFSSAntenna(BaseAntenna):
         im = float(self._z_im_interp(frequency))
         return complex(re, im)
 
-    def GetGain(self, theta: float, phi: float) -> float:
+    def get_gain(self, theta: float, phi: float) -> float:
         """
         Total gain interpolated from HFSS pattern data.
 
