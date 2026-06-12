@@ -78,7 +78,10 @@ from .RealFields import HarmonicField, BathtubField
 from .QTNMTraps import HarmonicTrap, BathtubTrap
 
 # Antennas
-from .antennas import IsotropicAntenna, ShortDipoleAntenna, HalfWaveDipoleAntenna
+from .antennas import (
+    IsotropicAntenna, ShortDipoleAntenna, 
+    HalfWaveDipoleAntenna, HFSSAntenna
+)
 
 # Trajectories
 from .TrajectoryGenerator import Trajectory, TrajectoryGenerator
@@ -119,6 +122,7 @@ __all__ = [
     'IsotropicAntenna',
     'ShortDipoleAntenna',
     'HalfWaveDipoleAntenna',
+    'HFSSAntenna',
 
     # Trajectories
     'Trajectory',
