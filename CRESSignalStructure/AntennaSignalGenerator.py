@@ -302,7 +302,7 @@ class AntennaSignalGenerator:
         """
         # Synthetic positions at unit distance from antenna toward each source.
         # n_hat_ret points source->antenna, so -n_hat_ret is antenna->source.
-        # GetETheta normalises internally, so only direction matters.
+        # get_e_theta normalises internally, so only direction matters.
         pos = self.__antenna.get_position() - ret_quantities['n_hat_ret']
 
         l_eff = self.__antenna.get_effective_length(
