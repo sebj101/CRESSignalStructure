@@ -219,12 +219,10 @@ class ShortDipoleAntenna(BaseAntenna):
         """
         theta, phi = self._validate_angles(theta, phi)
 
-        # Direction to observation point
-        r_hat = np.array([
-            np.sin(theta) * np.cos(phi),
-            np.sin(theta) * np.sin(phi),
-            np.cos(theta)
-        ])
+        # Direction to observation point in the antenna's local frame
+        r_hat = (np.sin(theta) * np.cos(phi) * self._x_ax
+                 + np.sin(theta) * np.sin(phi) * self._y_ax
+                 + np.cos(theta) * self._z_ax)
 
         # Angle between dipole axis and observation direction
         cos_theta_d = np.dot(self._z_ax, r_hat)
@@ -469,12 +467,10 @@ class HalfWaveDipoleAntenna(BaseAntenna):
         """
         theta, phi = self._validate_angles(theta, phi)
 
-        # Direction to observation point
-        r_hat = np.array([
-            np.sin(theta) * np.cos(phi),
-            np.sin(theta) * np.sin(phi),
-            np.cos(theta)
-        ])
+        # Direction to observation point in the antenna's local frame
+        r_hat = (np.sin(theta) * np.cos(phi) * self._x_ax
+                 + np.sin(theta) * np.sin(phi) * self._y_ax
+                 + np.cos(theta) * self._z_ax)
 
         # Angle between dipole axis and observation direction
         cos_theta_d = np.dot(self._z_ax, r_hat)
