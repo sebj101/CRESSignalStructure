@@ -18,6 +18,7 @@ from .BaseAntenna import BaseAntenna
 from .IsotropicAntenna import IsotropicAntenna
 from .DipoleAntennas import ShortDipoleAntenna, HalfWaveDipoleAntenna
 from .HFSSAntenna import HFSSAntenna
+from .HFSSDataParser import HFSSDataParser
 
 __all__ = [
     'BaseAntenna',
@@ -25,4 +26,5 @@ __all__ = [
     'ShortDipoleAntenna',
     'HalfWaveDipoleAntenna',
     'HFSSAntenna',
+    'HFSSDataParser',
 ]

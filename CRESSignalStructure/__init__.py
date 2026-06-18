@@ -80,7 +80,7 @@ from .QTNMTraps import HarmonicTrap, BathtubTrap
 # Antennas
 from .antennas import (
     IsotropicAntenna, ShortDipoleAntenna, 
-    HalfWaveDipoleAntenna, HFSSAntenna
+    HalfWaveDipoleAntenna, HFSSAntenna, HFSSDataParser
 )
 
 # Trajectories
@@ -98,6 +98,9 @@ from .SignalGenerator import SignalGenerator
 
 # Spectrum calculators
 from .SpectrumCalculator import SpectrumCalculator
+
+# Datasets (sample data paths)
+from .datasets import get_dipole_antenna_paths
 
 # Scattering
 from .scattering import (BaseCrossSection, InelasticCrossSection,
@@ -123,6 +126,7 @@ __all__ = [
     'ShortDipoleAntenna',
     'HalfWaveDipoleAntenna',
     'HFSSAntenna',
+    'HFSSDataParser',
 
     # Trajectories
     'Trajectory',
@@ -149,6 +153,9 @@ __all__ = [
     'ScatteringSimulator',
     'ScatteringResult',
     'scatter_to_pitch_angle',
+
+    # Datasets
+    'get_dipole_antenna_paths',
 ]
 
 # Version info
