@@ -16,17 +16,10 @@ class TestHarmonicTrap:
         """Test creating a valid harmonic trap"""
         B0 = 1.0
         L0 = 0.2
-        gradB = 4e-3
-        trap = HarmonicTrap(B0=B0, L0=L0, gradB=gradB)
+        trap = HarmonicTrap(B0=B0, L0=L0)
 
         assert trap.get_b0() == B0
         assert trap.get_l0() == L0
-        assert trap.get_grad_b() == gradB
-
-    def test_valid_trap_creation_without_gradB(self):
-        """Test creating a trap without specifying gradB (should default to 0)"""
-        trap = HarmonicTrap(B0=1.0, L0=0.2)
-        assert trap.get_grad_b() == 0.0
 
     # ==================== B0 Validation Tests ====================
     def test_negative_B0_raises_error(self):
@@ -73,28 +66,6 @@ class TestHarmonicTrap:
             HarmonicTrap(B0=1.0, L0=np.inf)
         with pytest.raises(ValueError, match="L0 must be finite"):
             HarmonicTrap(B0=1.0, L0=np.nan)
-
-    # ==================== gradB Validation Tests ====================
-    def test_non_numeric_gradB_raises_error(self):
-        """Tests that non-numeric gradB raises a TypeError"""
-        with pytest.raises(TypeError, match="Gradient must be a number"):
-            HarmonicTrap(B0=1.0, L0=0.2, gradB="0.004")
-
-    def test_non_finite_gradB_raises_error(self):
-        """Tests that non-finite gradB raises a ValueError"""
-        with pytest.raises(ValueError, match="Gradient must be finite"):
-            HarmonicTrap(B0=1.0, L0=0.2, gradB=np.inf)
-
-    def test_set_gradB(self):
-        """Tests SetGradB method"""
-        trap = HarmonicTrap(B0=1.0, L0=0.2)
-        trap.set_grad_b(0.005)
-        assert trap.get_grad_b() == 0.005
-
-    def test_set_negative_gradB(self):
-        """Tests that negative gradB values are allowed (field can decrease)"""
-        trap = HarmonicTrap(B0=1.0, L0=0.2, gradB=-0.004)
-        assert trap.get_grad_b() == -0.004
 
     # ==================== CalcZMax Tests ====================
     def test_calc_zmax_single_value(self):
@@ -246,18 +217,11 @@ class TestBathtubTrap:
         B0 = 1.0
         L0 = 0.2
         L1 = 0.5
-        gradB = 4e-3
-        trap = BathtubTrap(B0=B0, L0=L0, L1=L1, gradB=gradB)
+        trap = BathtubTrap(B0=B0, L0=L0, L1=L1)
 
         assert trap.get_b0() == B0
         assert trap.get_l0() == L0
         assert trap.get_l1() == L1
-        assert trap.get_grad_b() == gradB
-
-    def test_valid_trap_creation_without_gradB(self):
-        """Test creating a trap without specifying gradB (should default to 0)"""
-        trap = BathtubTrap(B0=1.0, L0=0.2, L1=0.5)
-        assert trap.get_grad_b() == 0.0
 
     # ==================== B0 Validation Tests ====================
     def test_negative_B0_raises_error(self):
@@ -321,28 +285,6 @@ class TestBathtubTrap:
         """Tests that non-finite L1 raises a ValueError"""
         with pytest.raises(ValueError, match="L1 must be finite"):
             BathtubTrap(B0=1.0, L0=0.2, L1=np.inf)
-
-    # ==================== gradB Validation Tests ====================
-    def test_non_numeric_gradB_raises_error(self):
-        """Tests that non-numeric gradB raises a TypeError"""
-        with pytest.raises(TypeError, match="Gradient must be a number"):
-            BathtubTrap(B0=1.0, L0=0.2, L1=0.5, gradB="0.004")
-
-    def test_non_finite_gradB_raises_error(self):
-        """Tests that non-finite gradB raises a ValueError"""
-        with pytest.raises(ValueError, match="Gradient must be finite"):
-            BathtubTrap(B0=1.0, L0=0.2, L1=0.5, gradB=np.inf)
-
-    def test_set_gradB(self):
-        """Tests SetGradB method"""
-        trap = BathtubTrap(B0=1.0, L0=0.2, L1=0.5)
-        trap.set_grad_b(0.005)
-        assert trap.get_grad_b() == 0.005
-
-    def test_set_negative_gradB(self):
-        """Tests that negative gradB values are allowed"""
-        trap = BathtubTrap(B0=1.0, L0=0.2, L1=0.5, gradB=-0.004)
-        assert trap.get_grad_b() == -0.004
 
     # ==================== CalcZMax Tests ====================
     def test_calc_zmax_single_value(self):

@@ -27,7 +27,7 @@ class HarmonicTrap(BaseTrap):
     __B0 = 0.0
     __L0 = 0.0
 
-    def __init__(self, B0: float, L0: float, gradB: float = 0.0):
+    def __init__(self, B0: float, L0: float):
         """
         Constructor for HarmonicTrap
 
@@ -37,8 +37,6 @@ class HarmonicTrap(BaseTrap):
             Magnetic field strength at the trap centre in T
         L0 : float
             Characteristic length of the trap in m
-        gradB : float
-            Gradient of the magnetic field in T/m
         """
         if not isinstance(B0, (int, float)):
             raise TypeError("B0 must be a number")
@@ -56,9 +54,7 @@ class HarmonicTrap(BaseTrap):
 
         self.__B0 = B0
         self.__L0 = L0
-        self.set_grad_b(gradB)
-        logger.info("Created HarmonicTrap: B0=%.3f T, L0=%.3e m, gradB=%.3e T/m",
-                    B0, L0, gradB)
+        logger.info("Created HarmonicTrap: B0=%.3f T, L0=%.3e m", B0, L0)
 
     def calc_z_max(self, pitchAngle: ArrayLike) -> NDArray[np.floating]:
         """
@@ -152,7 +148,7 @@ class BathtubTrap(BaseTrap):
     __L0 = 0.0
     __L1 = 0.0
 
-    def __init__(self, B0: float, L0: float, L1: float, gradB: float = 0.0):
+    def __init__(self, B0: float, L0: float, L1: float):
         """
         Constructor for BathtubTrap
 
@@ -164,8 +160,6 @@ class BathtubTrap(BaseTrap):
             Characteristic length of trap quadratic section in m
         L1 : float
             Length of the flat region of the trap in m
-        gradB : float
-            Radial gradient of the magnetic field in T/m
         """
         if not isinstance(B0, (int, float)):
             raise TypeError("B0 must be a number")
@@ -191,9 +185,7 @@ class BathtubTrap(BaseTrap):
         self.__B0 = B0
         self.__L0 = L0
         self.__L1 = L1
-        self.set_grad_b(gradB)
-        logger.info("Created BathtubTrap: B0=%.3f T, L0=%.3e m, L1=%.3e m, gradB=%.3e T/m",
-                    B0, L0, L1, gradB)
+        logger.info("Created BathtubTrap: B0=%.3f T, L0=%.3e m, L1=%.3e m", B0, L0, L1)
 
     def calc_z_max(self, pitchAngle: ArrayLike) -> NDArray[np.floating]:
         """

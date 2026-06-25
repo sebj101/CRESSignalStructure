@@ -15,13 +15,7 @@ from numpy.typing import ArrayLike, NDArray
 class BaseTrap(ABC):
     """
     Base class for electron traps
-
-    Attributes
-    ----------
-    __gradB: float representing the gradient of the magnetic field
     """
-
-    __gradB = 0.0
 
     def _validate_pitch_angle(self, pitchAngle) -> NDArray[np.floating]:
         """Validate pitch angle parameter"""
@@ -93,28 +87,3 @@ class BaseTrap(ABC):
             Pitch angle in radians
         """
 
-    def get_grad_b(self) -> float:
-        """
-        Getter for the gradient of the magnetic field
-
-        Returns
-        -------
-            float: Gradient of the magnetic field in Tesla per metre
-        """
-        return self.__gradB
-
-    def set_grad_b(self, gradB: float) -> None:
-        """
-        Setter for the gradient of the magnetic field
-
-        Parameters
-        ----------
-        gradB : float
-            Gradient of the magnetic field in Tesla per metre
-        """
-        if not isinstance(gradB, (int, float)):
-            raise TypeError("Gradient must be a number")
-        if not np.isfinite(gradB):
-            raise ValueError("Gradient must be finite")
-
-        self.__gradB = gradB
