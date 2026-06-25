@@ -220,7 +220,7 @@ Use `get_dipole_antenna_paths()` to locate the files from any working directory:
 ```python
 import numpy as np
 from CRESSignalStructure import HFSSAntenna, get_dipole_antenna_paths
-from CRESSignalStructure.antennas.HFSSDataParser import HFSSDataParser
+from CRESSignalStructure import HFSSDataParser
 
 DATA = get_dipole_antenna_paths()
 
