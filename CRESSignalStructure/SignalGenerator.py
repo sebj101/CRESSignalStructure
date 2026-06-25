@@ -9,11 +9,14 @@ signal generation of CRES signals. This includes simulation of:
 - Signal chirp
 """
 
+import logging
 from .SpectrumCalculator import SpectrumCalculator
 import numpy as np
 from numpy.typing import NDArray
 from scipy.signal import butter, sosfiltfilt
 import scipy.constants as sc
+
+logger = logging.getLogger(__name__)
 
 
 class SignalGenerator:
@@ -47,6 +50,10 @@ class SignalGenerator:
         self.__acq_time = _validate_positive_float(
             acq_time, "Acquisition time")
         self.__spec_calc = spectrum_calc
+
+        logger.info("Created Signal generator with sample rate = %2e Hz, "
+                    "LO frequency = %.5e Hz, acquisition time = %.3e s",
+                    sample_rate, lo_freq, acq_time)
 
     def generate_signal(self, max_order: int, phi_c: float = 0.0,
                        phi_a: float = 0.0) -> tuple[NDArray, NDArray]:

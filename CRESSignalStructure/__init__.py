@@ -78,7 +78,10 @@ from .RealFields import HarmonicField, BathtubField
 from .QTNMTraps import HarmonicTrap, BathtubTrap
 
 # Antennas
-from .antennas import IsotropicAntenna, ShortDipoleAntenna, HalfWaveDipoleAntenna
+from .antennas import (
+    IsotropicAntenna, ShortDipoleAntenna, 
+    HalfWaveDipoleAntenna, HFSSAntenna, HFSSDataParser
+)
 
 # Trajectories
 from .TrajectoryGenerator import Trajectory, TrajectoryGenerator
@@ -95,6 +98,9 @@ from .SignalGenerator import SignalGenerator
 
 # Spectrum calculators
 from .SpectrumCalculator import SpectrumCalculator
+
+# Datasets (sample data paths)
+from .datasets import get_dipole_antenna_paths
 
 # Scattering
 from .scattering import (BaseCrossSection, InelasticCrossSection,
@@ -119,6 +125,8 @@ __all__ = [
     'IsotropicAntenna',
     'ShortDipoleAntenna',
     'HalfWaveDipoleAntenna',
+    'HFSSAntenna',
+    'HFSSDataParser',
 
     # Trajectories
     'Trajectory',
@@ -145,8 +153,16 @@ __all__ = [
     'ScatteringSimulator',
     'ScatteringResult',
     'scatter_to_pitch_angle',
+
+    # Datasets
+    'get_dipole_antenna_paths',
 ]
 
 # Version info
 __version__ = '0.1.0'
 __author__ = 'Seb Jones'
+
+# Library-level logging: do not add any handlers other than NullHandler.
+# Applications using this library are responsible for configuring logging.
+import logging
+logging.getLogger(__name__).addHandler(logging.NullHandler())

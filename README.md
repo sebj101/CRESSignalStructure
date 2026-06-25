@@ -180,6 +180,77 @@ The antenna module provides classes for modelling different antenna types:
 - **IsotropicAntenna**: Ideal omnidirectional antenna
 - **ShortDipoleAntenna**: Hertzian dipole antenna (length << wavelength)
 - **HalfWaveDipoleAntenna**: Half-wave dipole antenna (length ≈ λ/2)
+- **HFSSAntenna**: Antenna driven by HFSS simulation exports
+
+#### HFSSAntenna
+
+`HFSSAntenna` loads a radiation pattern and port impedance from CSV files
+exported by HFSS.  It is a drop-in replacement for the analytical antenna classes
+anywhere an antenna model is required.
+
+**Required HFSS exports**
+
+Three CSV files must be provided:
+
+| File | HFSS report type | Required columns |
+|------|------------------|------------------|
+| `EFields.csv` | Far Fields – rE components (real/imag) at a single frequency | `Phi[deg]`, `Theta[deg]`, `re(rETheta)[mV]`, `im(rETheta)[mV]`, `re(rEPhi)[mV]`, `im(rEPhi)[mV]` |
+| `GainTotal.csv` | Far Fields – GainTotal magnitude at the same frequency | `Phi[deg]`, `Theta[deg]`, `mag(GainTotal)` |
+| `ZParameters.csv` | S/Z Parameters – frequency sweep of port impedance | `Freq [GHz]`, `re(Z(1,1)) []`, `im(Z(1,1)) []` |
+
+The E-field and gain exports must cover the full sphere on a **complete rectangular
+grid** — every (phi, theta) combination present.  A 1° step (phi: −180° to +180°,
+theta: 0° to 180°) is typical.
+
+**Coordinate system**
+
+The HFSS coordinate frame is mapped to the lab (trap) frame via two unit vectors
+passed to the constructor:
+
+- `z_ax`: direction of the HFSS +Z axis (bore-sight) in the lab frame
+- `x_ax`: direction of the HFSS +X axis (phi = 0 reference) in the lab frame
+
+The Y axis is derived as `y_ax = z_ax × x_ax` (right-handed).
+
+**Usage**
+
+Sample HFSS data for a half-wave dipole antenna is included in the repository.
+Use `get_dipole_antenna_paths()` to locate the files from any working directory:
+
+```python
+import numpy as np
+from CRESSignalStructure import HFSSAntenna, get_dipole_antenna_paths
+from CRESSignalStructure.antennas.HFSSDataParser import HFSSDataParser
+
+DATA = get_dipole_antenna_paths()
+
+# Find the resonant frequency from the zero-crossing of Im(Z)
+parser = HFSSDataParser()
+z_data = parser.parse_impedance(DATA["impedance"])
+i = np.where(np.diff(np.sign(z_data.impedance.imag)))[0][0]
+frac = -z_data.impedance.imag[i] / (z_data.impedance.imag[i + 1]
+                                    - z_data.impedance.imag[i])
+f0 = z_data.frequency[i] + frac * (z_data.frequency[i + 1] - z_data.frequency[i])
+
+# Construct the antenna — dipole axis along y, 10 cm from the trap centre
+antenna = HFSSAntenna(
+    position=np.array([0.1, 0.0, 0.0]),
+    z_ax=np.array([0.0, 1.0, 0.0]),   # dipole axis along y
+    x_ax=np.array([1.0, 0.0, 0.0]),   # phi = 0 along x
+    efield_path=DATA["efield"],
+    gain_path=DATA["gain"],
+    impedance_path=DATA["impedance"],
+    pattern_frequency=f0,
+)
+```
+
+`get_dipole_antenna_paths()` returns a `dict` with keys `"efield"`, `"gain"`,
+and `"impedance"`.  It requires a git clone with `pip install -e .` (editable
+install); it raises `FileNotFoundError` if the data directory cannot be found.
+
+For a full comparison between `HFSSAntenna` and `HalfWaveDipoleAntenna`, see
+`examples/HFSSvsHalfWaveDipole.py` and
+`examples/AntennaSignalGenerator_HFSSvsDipole.ipynb`.
 
 ### Trajectories
 
@@ -206,6 +277,7 @@ Example Jupyter notebooks are provided in the repository:
 - [RealisticFields.ipynb](examples/RealisticFields.ipynb) - Working with realistic magnetic field configurations
 - [SignalGenExample.ipynb](examples/SignalGenExample.ipynb) - Generating downmixed and sampled signals
 - [DopplerEffectDemo.ipynb](examples/DopplerEffectDemo.ipynb) - Demonstration of the power of the Doppler effect in a long trap
+- [AntennaSignalGenerator_HFSSvsDipole.ipynb](examples/AntennaSignalGenerator_HFSSvsDipole.ipynb) - Full signal generation comparison: `HFSSAntenna` vs `HalfWaveDipoleAntenna`
 
 ## Testing
 

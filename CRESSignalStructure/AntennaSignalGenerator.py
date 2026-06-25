@@ -10,6 +10,8 @@ treatment of retarded time effects and Liénard-Wiechert fields.
 
 from __future__ import annotations
 
+import logging
+
 import numpy as np
 from numpy.typing import NDArray
 import scipy.constants as sc
@@ -18,6 +20,8 @@ from scipy.interpolate import CubicSpline
 from .TrajectoryGenerator import Trajectory
 from .antennas import BaseAntenna
 from .ReceiverChain import ReceiverChain
+
+logger = logging.getLogger(__name__)
 
 
 class AntennaSignalGenerator:
@@ -89,6 +93,11 @@ class AntennaSignalGenerator:
 
         # Calculate average cyclotron frequency for antenna calculations
         self.__avg_cyclotron_frequency = self._calculate_average_cyclotron_frequency()
+        logger.info(
+            "AntennaSignalGenerator initialised: avg_cyclotron_freq=%.6e Hz, "
+            "oversampling_factor=%d",
+            self.__avg_cyclotron_frequency, oversampling_factor
+        )
 
     def _calculate_average_cyclotron_frequency(self) -> float:
         """
@@ -289,11 +298,11 @@ class AntennaSignalGenerator:
         Returns
         -------
         NDArray
-            Real-valued voltage signal, shape (N,)
+            Complex-valued voltage signal, shape (N,)
         """
         # Synthetic positions at unit distance from antenna toward each source.
         # n_hat_ret points source->antenna, so -n_hat_ret is antenna->source.
-        # GetETheta normalises internally, so only direction matters.
+        # get_e_theta normalises internally, so only direction matters.
         pos = self.__antenna.get_position() - ret_quantities['n_hat_ret']
 
         l_eff = self.__antenna.get_effective_length(
@@ -349,16 +358,29 @@ class AntennaSignalGenerator:
         duration = t_obs_end - t_obs_start
         n_points = int(np.floor(duration * signal_sample_rate))
 
+        logger.info(
+            "Generating signal: duration=%.3e s, signal_sample_rate=%.3e Hz, "
+            "n_points=%d",
+            duration, signal_sample_rate, n_points
+        )
+
         # Create time array
         t_obs = t_obs_start + np.arange(n_points) * dt
 
+        logger.debug("Calculating retarded quantities")
         ret_quantities = self._calculate_retarded_quantities(t_obs, spline)
+        logger.debug("Calculating Lienard-Wiechert E-field")
         E_field = self._calculate_E_field(ret_quantities)
         voltage = self._calculate_antenna_voltage(E_field, ret_quantities)
 
         # Downmix and digitize
         t_digitized, signal_digitized = self.__receiver_chain.digitize(
             t_obs, voltage, self.__oversampling_factor)
+
+        logger.info(
+            "Signal generation complete: %d output samples at %.3e Hz",
+            len(t_digitized), adc_rate
+        )
 
         if return_time:
             return t_digitized, signal_digitized

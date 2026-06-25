@@ -6,6 +6,8 @@ This module provides tools for calculating position, velocity, and acceleration
 of trapped electrons including grad-B drift effects.
 """
 
+import logging
+
 import numpy as np
 from numpy.typing import NDArray
 import scipy.constants as sc
@@ -14,6 +16,8 @@ from scipy.interpolate import CubicSpline, interp1d
 
 from .BaseField import BaseField
 from .Particle import Particle
+
+logger = logging.getLogger(__name__)
 
 
 class Trajectory:
@@ -300,6 +304,13 @@ class TrajectoryGenerator:
         # Validate parameters
         self._validate_parameters(sample_rate, t_max)
 
+        n_points = int(np.round(t_max * sample_rate)) + 1
+        logger.info(
+            "Generating trajectory: sample_rate=%.3e Hz, t_max=%.3e s, "
+            "n_points=%d, radiation=%s",
+            sample_rate, t_max, n_points, include_radiation
+        )
+
         # Calculate position (with or without radiation)
         if include_radiation:
             t, pos = self._calc_position_with_radiation(sample_rate, t_max)
@@ -313,6 +324,7 @@ class TrajectoryGenerator:
         vel = self._calc_velocity(t, pos, psi, E_t)
         acc = self._calc_acceleration(pos, vel, sample_rate, E_t)
 
+        logger.info("Trajectory generation complete")
         return Trajectory(t, pos, vel, acc, psi, self.field, self.particle)
 
     def _calc_larmor_power(self) -> float:
@@ -386,6 +398,8 @@ class TrajectoryGenerator:
         # Use trapezoidal integration: <P> = (1/T) ∫ P(t) dt
         P_avg = trapezoid(P_local, t_analytic) / T_axial
 
+        logger.debug(
+            "Larmor power: P_avg=%.3e W, axial period=%.3e s", P_avg, T_axial)
         return P_avg
 
     def _calc_energy_vs_time(self, t: NDArray) -> NDArray:
@@ -620,12 +634,18 @@ class TrajectoryGenerator:
         PERPENDICULAR_THRESHOLD = 1e-4 * np.pi / 180
         # Use approximation if we're too close to 90 degree pitch angle
         if abs(np.pi/2 - self.particle.get_pitch_angle()) < PERPENDICULAR_THRESHOLD:
+            logger.debug(
+                "Pitch angle %.6f rad is within threshold of pi/2; "
+                "treating as no axial motion",
+                self.particle.get_pitch_angle()
+            )
             p_init = self.particle.get_position()
             z_pos = np.full(n_points, p_init[2])
             return t_vals, z_pos
-
         else:
+            # Get analytic t vs z relationship
             axial_period = 2 * np.pi / self.field.calc_omega_axial(self.particle)
+            logger.debug("Axial period: %.3e s", axial_period)
             t_analytic, z_analytic = self.field.calc_t_vs_z(self.particle,
                                                             axial_period)
 
