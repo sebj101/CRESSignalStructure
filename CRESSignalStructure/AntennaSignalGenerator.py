@@ -298,7 +298,7 @@ class AntennaSignalGenerator:
         Returns
         -------
         NDArray
-            Real-valued voltage signal, shape (N,)
+            Complex-valued voltage signal, shape (N,)
         """
         # Synthetic positions at unit distance from antenna toward each source.
         # n_hat_ret points source->antenna, so -n_hat_ret is antenna->source.
