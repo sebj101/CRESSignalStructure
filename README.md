@@ -278,6 +278,7 @@ Example Jupyter notebooks are provided in the repository:
 - [SignalGenExample.ipynb](examples/SignalGenExample.ipynb) - Generating downmixed and sampled signals
 - [DopplerEffectDemo.ipynb](examples/DopplerEffectDemo.ipynb) - Demonstration of the power of the Doppler effect in a long trap
 - [AntennaSignalGenerator_HFSSvsDipole.ipynb](examples/AntennaSignalGenerator_HFSSvsDipole.ipynb) - Full signal generation comparison: `HFSSAntenna` vs `HalfWaveDipoleAntenna`
+- [MultiAntennaBeamforming.ipynb](examples/MultiAntennaBeamforming.ipynb) - Multi-antenna beamforming with an array of `HalfWaveDipole` antennas
 
 ## Testing
 
@@ -315,6 +316,8 @@ CRESSignalStructure/
 │   ├── antennas/                       # Antenna models
 │   │   ├── __init__.py
 │   │   ├── BaseAntenna.py              # Abstract antenna base class
+│   │   ├── HFSSAntenna.py              # Class for antennas simulated using HFSS
+│   │   ├── HFSSDataParser.py           # Parser class for HFSS field data
 │   │   ├── IsotropicAntenna.py         # Isotropic antenna
 │   │   └── DipoleAntennas.py           # Dipole antenna implementations
 │   └── scattering/                     # Scattering sub-folder
