@@ -247,12 +247,11 @@ class HFSSDataParser:
         """Read CSV into a dict of column-name -> list of float strings."""
         with open(filepath, newline="") as fh:
             reader = csv.DictReader(fh)
-            columns: dict[str, list] = {
-                field.strip(): [] for field in reader.fieldnames
-            }
+            stripped_to_original = {f.strip(): f for f in reader.fieldnames}
+            columns: dict[str, list] = {name: [] for name in stripped_to_original}
             for row in reader:
-                for key in columns:
-                    columns[key].append(row[key].strip())
+                for stripped, original in stripped_to_original.items():
+                    columns[stripped].append(row[original].strip())
         return columns
 
     @staticmethod
@@ -281,6 +280,13 @@ class HFSSDataParser:
                 f"{filepath.name}: data has {len(phi_deg)} rows but a regular "
                 f"grid of {len(phi_vals)} phi × {len(theta_vals)} theta values "
                 f"requires {expected} rows.")
+
+        pairs = np.column_stack((phi_deg, theta_deg))
+        if len(np.unique(pairs, axis=0)) != len(phi_deg):
+            raise ValueError(
+                f"{filepath.name}: duplicate (phi, theta) pairs detected. "
+                "Each grid point must appear exactly once.")
+
         return phi_vals, theta_vals
 
     @staticmethod
