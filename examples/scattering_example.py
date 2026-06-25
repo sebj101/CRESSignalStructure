@@ -11,6 +11,7 @@ minimum between the two coils. The trap depth is ~4 mT, trapping electrons with
 pitch angles above ~86.5 deg.
 """
 
+import logging
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal import ShortTimeFFT
@@ -20,6 +21,10 @@ from CRESSignalStructure import (
     Particle, BathtubField, CircularWaveguide,
     InelasticCrossSection, ElasticCrossSection, GasModel, ScatteringSimulator
 )
+
+logging.basicConfig(level=logging.INFO,
+                    format="%(levelname)s %(name)s: %(message)s")
+logger = logging.getLogger(__name__)
 
 
 # --- Physical setup ---
@@ -77,17 +82,17 @@ simulator = ScatteringSimulator(
 
 # --- Run ---
 
-print("Running scattering simulation...")
+logger.info("Running scattering simulation...")
 rng = np.random.default_rng()
 result = simulator.simulate(electron, max_order=3, rng=rng)
 
-print(f"Event duration: {result.times[-1]*1e3:.3f} ms")
-print(f"Scatters: {len(result.scatter_times)}")
-print(f"Escaped: {result.escaped}")
+logger.info("Event duration: %.3f ms", result.times[-1] * 1e3)
+logger.info("Scatters: %d", len(result.scatter_times))
+logger.info("Escaped: %s", result.escaped)
 for i, p in enumerate(result.particles):
     tag = "Initial" if i == 0 else f"After scatter {i}"
-    print(f"  {tag}: E = {p.get_energy():.1f} eV, "
-          f"pitch angle = {np.degrees(p.get_pitch_angle()):.2f} deg")
+    logger.info("  %s: E = %.1f eV, pitch angle = %.2f deg",
+                tag, p.get_energy(), np.degrees(p.get_pitch_angle()))
 
 # --- Plot spectrogram ---
 

@@ -6,10 +6,13 @@ Matches legacy format: Group 'Data' containing individual datasets 'signalX'
 with metadata stored as attributes with specific unit-labeled keys.
 """
 
+import logging
 import h5py
 import numpy as np
 import scipy.constants as sc
 from typing import Any, Union
+
+logger = logging.getLogger(__name__)
 
 # Internal Imports
 from .Particle import Particle
@@ -35,11 +38,14 @@ class CRESWriter:
         self.file = h5py.File(self.filename, self.mode)
         if "Data" not in self.file:
             self.file.create_group("Data")
+        logger.info("Opened HDF5 file: %s (mode='%s')", self.filename, self.mode)
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self.file:
             self.file.close()
+            logger.info("Closed HDF5 file: %s (%d events written)",
+                        self.filename, self.current_index)
 
     def set_global_config(self, trap: Union[BaseTrap, BaseField], 
                           waveguide: CircularWaveguide, 
@@ -169,6 +175,12 @@ class CRESWriter:
             attrs['r_wg [metres]'] = 0.005 # Default 5mm
 
         self.current_index += 1
+        logger.debug(
+            "Wrote event %s: energy=%.1f eV, pitch=%.4f rad, "
+            "n_samples=%d",
+            sig_name, particle.get_energy(),
+            particle.get_pitch_angle(), len(signal_array)
+        )
 
     def write_scattering_event(self, result):
         """
@@ -226,3 +238,9 @@ class CRESWriter:
                 f_cyc_arr)
             attrs['scatter_downmixed_cyclotron_frequencies [Hertz]'] = \
                 np.abs(np.array(f_cyc_arr) - f_lo)
+
+        logger.debug(
+            "Wrote scattering event: n_scatters=%d, escaped=%s, "
+            "n_samples=%d",
+            len(result.scatter_times), result.escaped, len(result.signal)
+        )

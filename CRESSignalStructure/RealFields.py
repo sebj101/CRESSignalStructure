@@ -4,6 +4,7 @@ RealFields.py
 Contains real magnetic fields derived from the BaseField class
 """
 
+import logging
 from .BaseField import BaseField
 from .Particle import Particle
 from scipy.special import ellipk, ellipe
@@ -11,6 +12,8 @@ from scipy.optimize import brentq
 import scipy.constants as sc
 import numpy as np
 from numpy.typing import ArrayLike
+
+logger = logging.getLogger(__name__)
 
 
 class CoilField(BaseField):
@@ -139,6 +142,11 @@ class BathtubField(BaseField):
         self.coil1 = CoilField(radius=radius, current=current, Z=Z1)
         self.coil2 = CoilField(radius=radius, current=current, Z=Z2)
         self.background = background
+        logger.info(
+            "Created BathtubField: radius=%.3e m, current=%.3f A, "
+            "Z1=%.3e m, Z2=%.3e m, B_background=%.3f T",
+            radius, current, Z1, Z2, np.linalg.norm(background)
+        )
 
     def evaluate_field(self, x: ArrayLike, y: ArrayLike, z: ArrayLike) -> tuple:
         b_x1, b_y1, b_z1 = self.coil1.evaluate_field(x, y, z)
@@ -189,6 +197,11 @@ class HarmonicField(BaseField):
 
         self.coil = CoilField(radius=radius, current=current, Z=0.0)
         self.background = np.array([0.0, 0.0, -background])
+        logger.info(
+            "Created HarmonicField: radius=%.3e m, current=%.3f A, "
+            "B_background=%.3f T",
+            radius, current, background
+        )
 
     def evaluate_field(self, x: ArrayLike, y: ArrayLike, z: ArrayLike) -> tuple:
         b_x_coil, b_y_coil, b_z_coil = self.coil.evaluate_field(x, y, z)

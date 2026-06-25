@@ -1,8 +1,11 @@
+import logging
 from scipy.special import j1, jvp
 import numpy as np
 import scipy.constants as sc
 from numpy.typing import ArrayLike, NDArray
 from scipy.integrate import dblquad
+
+logger = logging.getLogger(__name__)
 
 
 class CircularWaveguide:
@@ -18,6 +21,12 @@ class CircularWaveguide:
 
         self._wgR = radius
         self._kc = self._TE11_KC_COEFF / self._wgR
+        f_cutoff = self._kc * sc.c / (2 * np.pi)
+        logger.info(
+            "Created CircularWaveguide (TE11): radius=%.3e m, "
+            "cutoff frequency=%.3e Hz",
+            radius, f_cutoff
+        )
 
     def __str__(self):
         return f"Waveguide with radius {self._wgR} metres"

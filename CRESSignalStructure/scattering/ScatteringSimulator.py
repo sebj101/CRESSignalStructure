@@ -7,10 +7,13 @@ boundaries, then the composite signal is filtered and decimated once.
 """
 
 import dataclasses
+import logging
 import numpy as np
 from numpy.typing import NDArray
 from scipy.signal import butter, sosfiltfilt
 import scipy.constants as sc
+
+logger = logging.getLogger(__name__)
 
 from ..Particle import Particle
 from ..SpectrumCalculator import SpectrumCalculator
@@ -92,6 +95,11 @@ class ScatteringSimulator:
         self.__sample_rate = float(sample_rate)
         self.__lo_freq = float(lo_freq)
         self.__max_event_time = float(max_event_time)
+        logger.info(
+            "Created ScatteringSimulator: trap=%s, sample_rate=%.3e Hz, "
+            "lo_freq=%.5e Hz, max_event_time=%.3e s",
+            type(trap).__name__, sample_rate, lo_freq, max_event_time
+        )
 
     def is_trapped(self, pitch_angle: float, particle: Particle) -> bool:
         """
@@ -154,6 +162,13 @@ class ScatteringSimulator:
         if rng is None:
             rng = np.random.default_rng()
 
+        logger.info(
+            "Starting simulation: energy=%.1f eV, pitch_angle=%.4f rad, "
+            "max_order=%d, max_event_time=%.3e s",
+            particle.get_energy(), particle.get_pitch_angle(),
+            max_order, self.__max_event_time
+        )
+
         fast_rate = self.FAST_SAMPLE_FACTOR * self.__sample_rate
         orders = np.arange(-max_order, max_order + 1, 1)
 
@@ -189,8 +204,20 @@ class ScatteringSimulator:
                     scatter_times.append(elapsed)
                     if new_e <= 0 or not self.is_trapped(new_pa,
                                                         current_particle):
+                        logger.warning(
+                            "Particle escaped after scatter %d: "
+                            "energy=%.1f eV, pitch_angle=%.4f rad",
+                            len(scatter_times), new_e, new_pa
+                        )
                         escaped = True
                         break
+                    logger.info(
+                        "Scatter %d at t=%.3e s: energy %.1f -> %.1f eV, "
+                        "pitch %.4f -> %.4f rad",
+                        len(scatter_times), elapsed,
+                        current_particle.get_energy(), new_e,
+                        current_particle.get_pitch_angle(), new_pa
+                    )
                     particles.append(Particle(
                         new_e, current_particle.get_position(), new_pa,
                         current_particle.get_charge(),
@@ -198,6 +225,10 @@ class ScatteringSimulator:
                     continue
                 break
 
+            logger.debug(
+                "Segment %d: elapsed=%.3e s, duration=%.3e s, n_samples=%d",
+                len(segments), elapsed, segment_duration, n_samples
+            )
             segment = self._generate_segment(
                 spec_calc, orders, n_samples, fast_rate, elapsed,
                 current_phi_c, current_phi_a, phi_chirp)
@@ -230,9 +261,21 @@ class ScatteringSimulator:
                 new_pa = np.pi - new_pa
 
             if new_e <= 0 or not self.is_trapped(new_pa, current_particle):
+                logger.warning(
+                    "Particle escaped after scatter %d: "
+                    "energy=%.1f eV, pitch_angle=%.4f rad",
+                    len(scatter_times), new_e, new_pa
+                )
                 escaped = True
                 break
 
+            logger.info(
+                "Scatter %d at t=%.3e s: energy %.1f -> %.1f eV, "
+                "pitch %.4f -> %.4f rad",
+                len(scatter_times), elapsed,
+                current_particle.get_energy(), new_e,
+                current_particle.get_pitch_angle(), new_pa
+            )
             particles.append(Particle(
                 new_e, current_particle.get_position(), new_pa,
                 current_particle.get_charge(),
@@ -276,6 +319,11 @@ class ScatteringSimulator:
         decimated = filtered[::self.FAST_SAMPLE_FACTOR]
         times_out = np.arange(len(decimated)) / self.__sample_rate
 
+        logger.info(
+            "Simulation complete: %d segments, %d scatters, "
+            "escaped=%s, output_samples=%d",
+            len(segments), len(scatter_times), escaped, len(decimated)
+        )
         return ScatteringResult(
             times=times_out,
             signal=decimated,

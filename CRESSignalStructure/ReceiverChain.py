@@ -7,9 +7,12 @@ This module provides tools for simulating the receiver chain, including
 local oscillator mixing and analog-to-digital conversion.
 """
 
+import logging
 import numpy as np
 from numpy.typing import NDArray
 from scipy.signal import butter, sosfiltfilt
+
+logger = logging.getLogger(__name__)
 
 
 class ReceiverChain:
@@ -72,6 +75,12 @@ class ReceiverChain:
             lo_frequency, "lo_frequency")
         self._receiver_gain = self._validate_positive_finite(
             receiver_gain, "receiver_gain")
+        logger.info(
+            "Created ReceiverChain: sample_rate=%.3e Hz, "
+            "lo_frequency=%.5e Hz, receiver_gain=%.3f (%.1f dB)",
+            sample_rate, lo_frequency, receiver_gain,
+            20 * np.log10(receiver_gain)
+        )
 
     def _validate_positive_finite(self, value, name: str) -> float:
         """
@@ -177,6 +186,11 @@ class ReceiverChain:
         cutoff = self._sample_rate / 2.
         nyquist_freq = 1.0 / dt / 2.0
         normalised_cutoff = cutoff / nyquist_freq
+        logger.debug(
+            "Lowpass filter: cutoff=%.3e Hz, nyquist=%.3e Hz, "
+            "normalised_cutoff=%.4f, order=6",
+            cutoff, nyquist_freq, normalised_cutoff
+        )
         filter_coeffs = butter(6, normalised_cutoff, btype='low', output='sos')
         return sosfiltfilt(filter_coeffs, if_signal)
 
@@ -239,6 +253,11 @@ class ReceiverChain:
         # Resample to ADC sample rate with integer decimation
         time_resampled = time[::oversample_factor]
         if_signal_resampled = if_signal[::oversample_factor]
+        logger.debug(
+            "Digitize: %d input samples -> %d output samples "
+            "(decimation factor %d)",
+            len(signal), len(if_signal_resampled), oversample_factor
+        )
         return time_resampled, if_signal_resampled
 
     def get_sample_rate(self) -> float:

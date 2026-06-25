@@ -103,6 +103,7 @@ class SignalGenerator:
         chirp_rate_ang = sc.e**2 * (2 * np.pi * central_freq)**3 * gamma * \
             beta**2 / (6 * np.pi * sc.epsilon_0 * sc.c) / \
             (sc.m_e * sc.c**2)  # radians per second squared
+        logger.debug("Chirp rate: %.3e rad/s^2", chirp_rate_ang)
 
         # Generate the LO signal for I/Q demodulation and add in the chirp
         lo_signal = np.exp(-2j * np.pi * self.__lo_freq * times_fast_sample)

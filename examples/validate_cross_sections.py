@@ -22,12 +22,17 @@ Run from the repo root:
     python examples/validate_cross_sections.py
 """
 
+import logging
 import numpy as np
 import matplotlib.pyplot as plt
 
 from CRESSignalStructure.scattering.CrossSections import (
     InelasticCrossSection, ElasticCrossSection,
 )
+
+logging.basicConfig(level=logging.INFO,
+                    format="%(levelname)s %(name)s: %(message)s")
+logger = logging.getLogger(__name__)
 
 # -----------------------------------------------------------------------
 # Shah et al. 1987, J. Phys. B 20, 3501 — H ionization (106 points)
@@ -206,5 +211,5 @@ ax.grid(True, alpha=0.3)
 fig.suptitle('Cross-section model validation', fontsize=14)
 plt.tight_layout()
 plt.savefig("examples/validate_cross_sections.png", dpi=150, bbox_inches="tight")
-print("Figure saved to examples/validate_cross_sections.png")
+logger.info("Figure saved to examples/validate_cross_sections.png")
 plt.close(fig)

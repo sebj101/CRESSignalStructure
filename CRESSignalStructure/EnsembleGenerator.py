@@ -4,12 +4,15 @@ EnsembleGenerator.py
 Orchestrates the batch generation of CRES simulation data.
 Supports Multiprocessing and simultaneous Time-Series / FFT output.
 """
+import logging
 from typing import Any, Callable, Iterator
 import numpy as np
 import multiprocessing as mp
 import scipy.fft
 from contextlib import ExitStack
 import time
+
+logger = logging.getLogger(__name__)
 
 # Internal Imports
 from .BaseTrap import BaseTrap
@@ -95,22 +98,26 @@ def generate_ensemble(output_file: str,
         # --- Multiprocessing (Fast) ---
         if use_multiprocessing:
             num_cores = mp.cpu_count()
-            if verbose: print(f"Starting generation of {n_events} events on {num_cores} cores...")
-            
+            if verbose:
+                logger.info("Starting generation of %d events on %d cores...",
+                            n_events, num_cores)
+
             # Create pool
             with mp.Pool(processes=num_cores) as pool:
                 # chunksize improves efficiency for large batches (3000 events)
                 results_iterator = pool.imap_unordered(_worker_generate_event, worker_args, chunksize=10)
-                
+
                 _process_results(results_iterator, n_events, writer, fft_writer, start_time, verbose)
 
         # --- Sequential (Debugging) ---
         else:
-            if verbose: print(f"Starting generation of {n_events} events in SINGLE process mode...")
+            if verbose:
+                logger.info("Starting generation of %d events in SINGLE process mode...",
+                            n_events)
             results_iterator = map(_worker_generate_event, worker_args)
             _process_results(results_iterator, n_events, writer, fft_writer, start_time, verbose)
 
-        print(f"Done! Saved to {output_file}")
+        logger.info("Done! Saved to %s", output_file)
 
 
 def _process_results(results_iterator: Iterator[Any], n_events: int,
@@ -121,7 +128,7 @@ def _process_results(results_iterator: Iterator[Any], n_events: int,
         
         # Error Handling
         if len(result) == 2 and isinstance(result[1], Exception):
-            print(f"WARNING: Event {result[0]} failed: {result[1]}")
+            logger.warning("Event %d failed: %s", result[0], result[1])
             continue
 
         # Unpack
@@ -134,11 +141,12 @@ def _process_results(results_iterator: Iterator[Any], n_events: int,
         if fft_writer:
             fft_writer.write_event(p, freqs, fft_power)
 
-        # Progress Bar
+        # Progress
         if verbose and (i+1) % 50 == 0:
             elapsed = time.time() - start_time
             rate = (i+1) / elapsed
-            print(f"  Processed {i+1}/{n_events} events ({rate:.1f} ev/s)...")
+            logger.info("  Processed %d/%d events (%.1f ev/s)...",
+                        i + 1, n_events, rate)
 
 
 # --- Helper Wrapper for Uniform Sampling ---
@@ -233,7 +241,7 @@ def _process_scattering_results(results_iterator: Iterator[Any], n_events: int,
     for i, result in enumerate(results_iterator):
 
         if len(result) == 2 and isinstance(result[1], Exception):
-            print(f"WARNING: Event {result[0]} failed: {result[1]}")
+            logger.warning("Event %d failed: %s", result[0], result[1])
             continue
 
         idx, scat_result, freqs, fft_power = result
@@ -247,7 +255,8 @@ def _process_scattering_results(results_iterator: Iterator[Any], n_events: int,
         if verbose and (i + 1) % 50 == 0:
             elapsed = time.time() - start_time
             rate = (i + 1) / elapsed
-            print(f"  Processed {i+1}/{n_events} events ({rate:.1f} ev/s)...")
+            logger.info("  Processed %d/%d events (%.1f ev/s)...",
+                        i + 1, n_events, rate)
 
 
 def generate_scattering_ensemble(output_file: str,
@@ -310,8 +319,10 @@ def generate_scattering_ensemble(output_file: str,
         if use_multiprocessing:
             num_cores = mp.cpu_count()
             if verbose:
-                print(f"Starting generation of {n_events} scattering events "
-                      f"on {num_cores} cores...")
+                logger.info(
+                    "Starting generation of %d scattering events on %d cores...",
+                    n_events, num_cores
+                )
 
             with mp.Pool(processes=num_cores) as pool:
                 results_iterator = pool.imap_unordered(
@@ -322,12 +333,14 @@ def generate_scattering_ensemble(output_file: str,
                     start_time, verbose)
         else:
             if verbose:
-                print(f"Starting generation of {n_events} scattering events "
-                      f"in SINGLE process mode...")
+                logger.info(
+                    "Starting generation of %d scattering events in SINGLE process mode...",
+                    n_events
+                )
             results_iterator = map(
                 _worker_generate_scattering_event, worker_args)
             _process_scattering_results(
                 results_iterator, n_events, writer, fft_writer,
                 start_time, verbose)
 
-        print(f"Done! Saved to {output_file}")
+        logger.info("Done! Saved to %s", output_file)

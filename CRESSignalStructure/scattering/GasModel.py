@@ -6,8 +6,11 @@ Combines multiple cross-section models with their number densities to
 compute total scattering rates and sample scatter events.
 """
 
+import logging
 import numpy as np
 from .BaseCrossSection import BaseCrossSection
+
+logger = logging.getLogger(__name__)
 
 
 class GasModel:
@@ -35,6 +38,11 @@ class GasModel:
                 raise ValueError("Number density must be finite")
 
         self.__species = [(model, float(density)) for model, density in species]
+        for model, density in self.__species:
+            logger.info(
+                "GasModel species: %s, number_density=%.3e m^-3",
+                type(model).__name__, density
+            )
 
     def total_scatter_rate(self, energy: float, speed: float) -> float:
         """

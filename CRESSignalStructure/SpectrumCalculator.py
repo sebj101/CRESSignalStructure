@@ -8,6 +8,7 @@ accordingly. The analytical path uses closed-form Bessel-function expressions;
 the numerical path integrates the cyclotron phase over the axial period.
 """
 
+import logging
 from typing import overload
 
 from .BaseTrap import BaseTrap
@@ -21,6 +22,8 @@ from scipy.special import jv, jvp, j1
 from scipy.integrate import quad, simpson
 from scipy.interpolate import interp1d
 from numpy.typing import ArrayLike, NDArray
+
+logger = logging.getLogger(__name__)
 
 
 class SpectrumCalculator:
@@ -39,6 +42,12 @@ class SpectrumCalculator:
         self._trap = trap
         self._waveguide = waveguide
         self._particle = particle
+        logger.info(
+            "Created SpectrumCalculator: trap=%s, waveguide_radius=%.3e m, "
+            "particle_energy=%.1f eV, pitch_angle=%.4f rad",
+            type(trap).__name__, waveguide.get_radius(),
+            particle.get_energy(), particle.get_pitch_angle()
+        )
 
     def get_particle(self) -> Particle:
         return self._particle
@@ -202,6 +211,12 @@ class SpectrumCalculator:
         v0 = self._particle.get_speed()
         zmax = self._trap.calc_z_max(pitchAngle)
         beta = np.sqrt((f1 * 2 * np.pi / sc.c)**2 - kc**2)
+        logger.debug(
+            "Analytical peak amplitudes: trap=%s, zmax=%.3e m, "
+            "n_orders=%d",
+            type(self._trap).__name__, np.atleast_1d(zmax)[0],
+            np.atleast_1d(order).size
+        )
 
         if isinstance(self._trap, HarmonicTrap):
             q = self._trap.calc_q(v0, pitchAngle)
@@ -290,6 +305,10 @@ class SpectrumCalculator:
         if not isinstance(self._trap, BaseField):
             raise ValueError("Cannot numerically calculate peak amplitudes for " \
                              "classes not derived from BaseField.")
+        logger.debug(
+            "Numerical peak amplitudes: n_orders=%d",
+            np.atleast_1d(order).size
+        )
 
         t1, z = self._trap.calc_t_vs_z(self._particle)
         interp_t1_z = interp1d(t1, z, kind='cubic')

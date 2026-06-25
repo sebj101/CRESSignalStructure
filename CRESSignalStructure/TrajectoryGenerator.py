@@ -428,6 +428,12 @@ class TrajectoryGenerator:
         # Ensure energy doesn't go negative
         E_t = np.maximum(E_t, 1.0)
 
+        fractional_loss = (E_initial - E_t[-1]) / E_initial
+        logger.debug(
+            "Radiative energy loss: initial=%.1f eV, final=%.1f eV, "
+            "fractional_loss=%.3e",
+            E_initial, E_t[-1], fractional_loss
+        )
         return E_t
 
     def _calc_gamma_vs_time(self, E_t: NDArray) -> NDArray:
@@ -720,6 +726,10 @@ class TrajectoryGenerator:
 
         phi = cumulative_simpson(v_grad_B / rho, x=t, initial=phi_i)
 
+        logger.debug(
+            "Azimuthal drift: total_phi_range=%.3e rad (%.3e deg)",
+            phi[-1] - phi[0], np.degrees(phi[-1] - phi[0])
+        )
         return phi
 
     def _calc_cyclotron_phase(self, t: NDArray, pos: NDArray,

@@ -10,10 +10,13 @@ HarmonicTrap: Harmonic magnetic field providing trapping field
 BathtubTrap: Two-coil bathtub magnetic field providing trapping field
 """
 
+import logging
 import numpy as np
 from .BaseTrap import BaseTrap
 import scipy.constants as sc
 from numpy.typing import ArrayLike, NDArray
+
+logger = logging.getLogger(__name__)
 
 
 class HarmonicTrap(BaseTrap):
@@ -54,6 +57,8 @@ class HarmonicTrap(BaseTrap):
         self.__B0 = B0
         self.__L0 = L0
         self.set_grad_b(gradB)
+        logger.info("Created HarmonicTrap: B0=%.3f T, L0=%.3e m, gradB=%.3e T/m",
+                    B0, L0, gradB)
 
     def calc_z_max(self, pitchAngle: ArrayLike) -> NDArray[np.floating]:
         """
@@ -187,6 +192,8 @@ class BathtubTrap(BaseTrap):
         self.__L0 = L0
         self.__L1 = L1
         self.set_grad_b(gradB)
+        logger.info("Created BathtubTrap: B0=%.3f T, L0=%.3e m, L1=%.3e m, gradB=%.3e T/m",
+                    B0, L0, L1, gradB)
 
     def calc_z_max(self, pitchAngle: ArrayLike) -> NDArray[np.floating]:
         """
