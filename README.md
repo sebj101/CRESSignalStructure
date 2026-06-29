@@ -130,11 +130,68 @@ time, signal = sig_gen.generate_signal()
 print(f"Generated {len(signal)} samples over {time[-1]*1e6:.2f} μs")
 ```
 
+### Example 3: Waveguide Signal Generation with BathtubTrap
+
+Generate a downmixed time-domain signal for an electron confined in a bathtub trap coupled to a circular waveguide:
+
+```python
+import numpy as np
+from CRESSignalStructure import (
+    BathtubField,
+    CircularWaveguide,
+    Electron,
+    SpectrumCalculator,
+    SignalGenerator,
+)
+import scipy.constants as sc
+
+# Bathtub trap: 1 T background field, 20 cm trap length, 3 cm coil radius
+TRAP_LENGTH = 20e-2  # metres
+COIL_RADIUS = 3e-2   # metres
+TRAP_DEPTH = 4e-3    # Tesla
+COIL_CURRENT = 2 * TRAP_DEPTH * COIL_RADIUS / sc.mu_0  # Amperes
+trap = BathtubField(radius=COIL_RADIUS, current=COIL_CURRENT, Z1=-TRAP_LENGTH/2,
+                    Z2=TRAP_LENGTH/2)
+
+# Circular waveguide (TE11 mode), 5 mm radius
+waveguide = CircularWaveguide(radius=0.005)
+
+# 18.6 keV electron at 89.9° pitch angle, 1 mm off-axis
+electron = Electron(
+    ke=18.6e3,
+    startPos=np.array([1e-3, 0.0, 0.0]),
+    pitchAngle=89.9 * np.pi / 180.0,
+)
+
+# Combine trap, waveguide and particle into a spectrum calculator
+calc = SpectrumCalculator(trap, waveguide, electron)
+
+# Inspect the central cyclotron frequency and axial sideband spacing
+f_c = calc.get_peak_frequency(0)
+f_ax = calc.get_peak_frequency(1) - f_c
+print(f"Cyclotron frequency:  {f_c / 1e9:.4f} GHz")
+print(f"Axial sideband spacing: {f_ax / 1e6:.3f} MHz")
+
+# Signal generator: 1 GHz ADC, LO set 50 MHz below the cyclotron frequency
+sig_gen = SignalGenerator(
+    spectrum_calc=calc,
+    sample_rate=1e9,
+    lo_freq=float(f_c) - 200e6,
+    acq_time=10e-6,
+)
+
+# Generate downmixed signal including sidebands up to order ±10
+times, signal = sig_gen.generate_signal(max_order=10)
+
+print(f"Generated {len(signal)} samples over {times[-1] * 1e6:.2f} µs")
+print(f"Peak signal amplitude: {np.max(np.abs(signal)) * 1e9:.2f} nV")
+```
+
 ## Core Components
 
 ### Traps
 
-- **BaseTrap**: Abstract base class for electron traps
+- **BaseTrap**: Abstract base class for analytic electron traps
 - **HarmonicTrap**: Models harmonic magnetic field configurations with quadratic spatial dependence
 - **BathtubTrap**: Models bathtub-shaped magnetic field profiles with flat bottom regions
 
