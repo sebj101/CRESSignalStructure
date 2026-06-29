@@ -11,19 +11,19 @@ Basic Usage
 -----------
 >>> import numpy as np
 >>> from CRESSignalStructure import (
-...     Particle, HarmonicField, IsotropicAntenna,
+...     Electron, HarmonicField, IsotropicAntenna,
 ...     TrajectoryGenerator, ReceiverChain, AntennaSignalGenerator
 ... )
 >>>
 >>> # Setup components
 >>> field = HarmonicField(radius=0.03, current=400, background=1.0)
->>> particle = Particle(18.6e3, np.array([0.01, 0, 0]), 89.5*np.pi/180)
->>> antenna = IsotropicAntenna(position=np.array([0.02, 0, 0]))
->>> receiver = ReceiverChain(sample_rate=200e6, lo_frequency=26e9)
+>>> electron = Electron(18.6e3, np.array([1e-3, 0, 0]), 89.5*np.pi/180)
+>>> antenna = IsotropicAntenna(position=np.array([0.05, 0, 0]))
+>>> receiver = ReceiverChain(sample_rate=1e9, lo_frequency=26.8e9)
 >>>
 >>> # Generate trajectory
->>> traj_gen = TrajectoryGenerator(field, particle)
->>> trajectory = traj_gen.generate(sample_rate=5e9, t_max=10e-6)
+>>> traj_gen = TrajectoryGenerator(field, electron)
+>>> trajectory = traj_gen.generate(sample_rate=10e9, t_max=10e-6)
 >>>
 >>> # Generate signal
 >>> sig_gen = AntennaSignalGenerator(trajectory, antenna, receiver)
@@ -33,22 +33,22 @@ Package Organization
 --------------------
 Particles:
     Particle - Particle physics and relativistic kinematics
+    Electron - Convenience subclass of Particle with fixed electron mass/charge
 
 Magnetic Fields:
-    BaseField - Abstract base class for magnetic fields
     HarmonicField - Harmonic magnetic field (single coil)
     BathtubField - Bathtub magnetic field (two coils)
 
 Traps:
-    BaseTrap - Abstract base class for analytic electron traps
     HarmonicTrap - Harmonic trap configuration
     BathtubTrap - Bathtub trap configuration
 
 Antennas:
-    BaseAntenna - Abstract base class for antennas
     IsotropicAntenna - Ideal isotropic antenna (omnidirectional)
     ShortDipoleAntenna - Short dipole antenna (length << wavelength)
     HalfWaveDipoleAntenna - Half-wave dipole antenna (length ≈ λ/2)
+    HFSSAntenna - Antenna model driven by HFSS simulation exports
+    HFSSDataParser - Parser for HFSS far-field CSV exports
 
 Trajectories:
     Trajectory - Container for trajectory data
@@ -66,6 +66,14 @@ Signal Generation:
 
 Spectrum Calculators:
     SpectrumCalculator - Unified spectrum calculator (analytical and numerical)
+
+Scattering:
+    InelasticCrossSection - Inelastic electron scattering cross-section
+    ElasticCrossSection - Elastic electron scattering cross-section
+    GasModel - Gas mixture model for scattering simulations
+    ScatteringSimulator - Simulator for events with scattering
+    ScatteringResult - Container for scattering simulation results
+    scatter_to_pitch_angle - Utility for computing post-scatter pitch angles
 """
 
 # Particle
@@ -159,7 +167,7 @@ __all__ = [
 ]
 
 # Version info
-__version__ = '0.1.0'
+__version__ = '1.0.0'
 __author__ = 'Seb Jones'
 
 # Library-level logging: do not add any handlers other than NullHandler.
